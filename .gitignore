@@ -1,0 +1,4 @@
+*.o
+test-sdl
+.ycm_extra_conf.py
+
