@@ -33,6 +33,7 @@ typedef struct{
 }RotaryGauge;
 
 RotaryGauge *rotary_gauge_new(int rubis);
+void rotary_gauge_free(RotaryGauge *self);
 
 SDL_Surface *rotary_gauge_render(RotaryGauge *self, Uint32 dt);
 

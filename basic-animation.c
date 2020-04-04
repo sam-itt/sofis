@@ -31,6 +31,6 @@ float basic_animation_loop(BasicAnimation *self, uint32_t dt)
 
     dv = self->end - self->start;
     self->current = self->start + dv * progress;
-    printf("%s returning %f\n",__FUNCTION__, self->current);
+
     return self->current;
 }

@@ -143,10 +143,12 @@ int main(int argc, char **argv)
     Uint32 last_ticks = 0;
     Uint32 elapsed = 0;
     i = 0;
+    Uint32 acc = 0;
     SDL_Rect dst = {SCREEN_WIDTH/2,SCREEN_HEIGHT/2,0,0};
     do{
         ticks = SDL_GetTicks();
         elapsed = ticks - last_ticks;
+        acc += elapsed;
 
         done = handle_events();
 
@@ -157,10 +159,16 @@ int main(int argc, char **argv)
         if(elapsed < 200){
             SDL_Delay(200 - elapsed);
         }
+        if(acc >= 1000){
+            printf("Rotary gauge value: %f\n",gauge->value);
+            acc = 0;
+        }
+
         i %= N_COLORS;
         last_ticks = ticks;
     }while(!done);
 
+    rotary_gauge_free(gauge);
     SDL_DestroyWindow(window);
     SDL_Quit();
     return 0;

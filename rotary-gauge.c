@@ -47,7 +47,11 @@ ValueSpinner *value_spinner_init(ValueSpinner *self, const char *filename, float
     return self;
 }
 
-
+void value_spinner_dispose(ValueSpinner *self)
+{
+    if(self->values)
+        SDL_FreeSurface(self->values);
+}
 
 /*
  * Rubis is the offset in dst where to align the value fomr the spinner.
@@ -123,6 +127,13 @@ RotaryGauge *rotary_gauge_new(int rubis)
 //rotary_gauge_set_value(RotaryGauge *self, float value)
     }
     return self;
+}
+
+void rotary_gauge_free(RotaryGauge *self)
+{
+    value_spinner_dispose(&self->spinner);
+    SDL_FreeSurface(self->gauge);
+    free(self);
 }
 
 #if 0
