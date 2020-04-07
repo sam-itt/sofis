@@ -80,7 +80,7 @@ LadderPage *ladder_page_init(LadderPage *self)
     }
     self->ppv = self->page->h/(self->end - self->start +1);
 
-    font = TTF_OpenFont("TerminusTTF-4.47.0.ttf", 18);
+    font = TTF_OpenFont("TerminusTTF-4.47.0.ttf", 16);
     SDL_Color white = (SDL_Color){255, 255, 255};
 
     for(int i = self->start; i <= self->end; i += self->vstep){
@@ -123,7 +123,6 @@ bool ladder_page_has_value(LadderPage *self, float value)
  * from a given value
  * TODO be part of generic gauges layer
  */
-
 float ladder_page_resolve_value(LadderPage *self, float value)
 {
     float y;
@@ -164,7 +163,7 @@ LadderPage *ladder_gauge_get_page(LadderGauge *self, uintf8_t idx)
         offset = idx - cmp;
         for(int i = 0; i < N_PAGES; i++){
             j = i - offset;
-            printf("j = %d - %d = %d\n",i,offset,j);
+//            printf("j = %d - %d = %d\n",i,offset,j);
             if( j < 0 ){
                 if(self->pages[i]){
                     ladder_page_free(self->pages[i]);
@@ -210,14 +209,41 @@ LadderPage *ladder_gauge_get_page_for(LadderGauge *self, float value)
     return ladder_gauge_get_page(self, page_idx);
 }
 
+void ladder_gauge_draw_outline(LadderGauge *self)
+{
+    int x,y;
+    SDL_LockSurface(self->gauge);
+    Uint32 *pixels = self->gauge->pixels;
+    Uint32 color = SDL_MapRGB(self->gauge->format, 0xFF, 0xFF, 0xFF);
+    y = 0;
+    for(x = 0; x < self->gauge->w; x++){
+        pixels[y * self->gauge->w + x] = color;
+    }
+    y = self->gauge->h - 1;
+    for(x = 0; x < self->gauge->w; x++){
+        pixels[y * self->gauge->w + x] = color;
+    }
+    x = self->gauge->w - 1;
+    for(y = 0; y < self->gauge->h; y++){
+        pixels[y * self->gauge->w + x] = color;
+    }
+    /*TODO: don't draw left side if current value > page 1 limit*/
+    x = 0;
+    for(y = 0; y < self->gauge->h; y++){
+        pixels[y * self->gauge->w + x] = color;
+    }
+
+    SDL_UnlockSurface(self->gauge);
+}
+
 void ladder_gauge_render_value(LadderGauge *self, float value, float rubis)
 {
     float y;
     LadderPage *page, *page2;
     SDL_Rect dst_region = {0,0,0,0};
 
-//    SDL_FillRect(self->gauge, NULL, 0x000000ff);
     SDL_FillRect(self->gauge, NULL, SDL_MapRGB(self->gauge->format, 255, 0,255));
+    ladder_gauge_draw_outline(self);
 
     value = value >= 0 ? value : 0.0f;
 
