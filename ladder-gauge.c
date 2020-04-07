@@ -10,7 +10,9 @@
 #define SPIN_DURATION 1000
 
 
+static void ladder_gauge_render_value(LadderGauge *self, float value);
 void ladder_page_free(LadderPage *self);
+static void ladder_gauge_draw_rubis(LadderGauge *self);
 
 LadderGauge *ladder_gauge_new(ScrollType direction,  int rubis)
 {
@@ -18,14 +20,17 @@ LadderGauge *ladder_gauge_new(ScrollType direction,  int rubis)
 
     self = calloc(1, sizeof(LadderGauge));
     if(self){
-        self->gauge = SDL_CreateRGBSurface(0, 68, 240, 32, 0, 0, 0, 0);
-        SDL_SetColorKey(self->gauge, SDL_TRUE, SDL_MapRGB(self->gauge->format, 255, 0,255));
-        self->damaged = true;
+        ANIMATED_GAUGE(self)->view = SDL_CreateRGBSurface(0, 68, 240, 32, 0, 0, 0, 0);
+        SDL_SetColorKey(ANIMATED_GAUGE(self)->view, SDL_TRUE, SDL_MapRGB(ANIMATED_GAUGE(self)->view->format, 255, 0,255));
+        ANIMATED_GAUGE(self)->damaged = true;
+        ANIMATED_GAUGE(self)->renderer = (ValueRenderFunc)ladder_gauge_render_value;
+
         self->direction = direction;
+
         if(rubis > 0)
             self->rubis = rubis;
         else
-            self->rubis = round(self->gauge->h/2.0);
+            self->rubis = round(ANIMATED_GAUGE(self)->view->h/2.0);
     }
 
     return self;
@@ -39,7 +44,7 @@ void ladder_gauge_free(LadderGauge *self)
             self->pages[i] = NULL;
         }
     }
-    SDL_FreeSurface(self->gauge);
+    animated_gauge_dispose(ANIMATED_GAUGE(self));
     free(self);
 }
 
@@ -181,37 +186,45 @@ LadderPage *ladder_gauge_get_page_for(LadderGauge *self, float value)
 void ladder_gauge_draw_outline(LadderGauge *self)
 {
     int x,y;
-    SDL_LockSurface(self->gauge);
-    Uint32 *pixels = self->gauge->pixels;
-    Uint32 color = SDL_MapRGB(self->gauge->format, 0xFF, 0xFF, 0xFF);
+    SDL_Surface *gauge;
+
+    gauge = ANIMATED_GAUGE(self)->view;
+
+    SDL_LockSurface(gauge);
+    Uint32 *pixels = gauge->pixels;
+    Uint32 color = SDL_MapRGB(gauge->format, 0xFF, 0xFF, 0xFF);
     y = 0;
-    for(x = 0; x < self->gauge->w; x++){
-        pixels[y * self->gauge->w + x] = color;
+    for(x = 0; x < gauge->w; x++){
+        pixels[y * gauge->w + x] = color;
     }
-    y = self->gauge->h - 1;
-    for(x = 0; x < self->gauge->w; x++){
-        pixels[y * self->gauge->w + x] = color;
+    y = gauge->h - 1;
+    for(x = 0; x < gauge->w; x++){
+        pixels[y * gauge->w + x] = color;
     }
-    x = self->gauge->w - 1;
-    for(y = 0; y < self->gauge->h; y++){
-        pixels[y * self->gauge->w + x] = color;
+    x = gauge->w - 1;
+    for(y = 0; y < gauge->h; y++){
+        pixels[y * gauge->w + x] = color;
     }
     /*TODO: don't draw left side if current value > page 1 limit*/
     x = 0;
-    for(y = 0; y < self->gauge->h; y++){
-        pixels[y * self->gauge->w + x] = color;
+    for(y = 0; y < gauge->h; y++){
+        pixels[y * gauge->w + x] = color;
     }
 
-    SDL_UnlockSurface(self->gauge);
+    SDL_UnlockSurface(gauge);
 }
 
-void ladder_gauge_render_value(LadderGauge *self, float value, float rubis)
+static void ladder_gauge_render_value(LadderGauge *self, float value)
 {
     float y;
+    float rubis;
     LadderPage *page, *page2;
     SDL_Rect dst_region = {0,0,0,0};
+    SDL_Surface *gauge;
 
-    SDL_FillRect(self->gauge, NULL, SDL_MapRGB(self->gauge->format, 255, 0,255));
+    gauge = ANIMATED_GAUGE(self)->view;
+
+    SDL_FillRect(gauge, NULL, SDL_MapRGB(gauge->format, 255, 0,255));
     ladder_gauge_draw_outline(self);
 
     value = value >= 0 ? value : 0.0f;
@@ -219,12 +232,12 @@ void ladder_gauge_render_value(LadderGauge *self, float value, float rubis)
     page = ladder_gauge_get_page_for(self, value);
 
     y = vertical_strip_resolve_value(VERTICAL_STRIP(page), value, self->direction == BOTTUM_UP);
-    rubis = (rubis < 0) ? self->gauge->h / 2.0 : rubis;
+    rubis = (self->rubis < 0) ? gauge->h / 2.0 : self->rubis;
     SDL_Rect portion = {
         .x = 0,
         .y = round(y - rubis),
         .w = VERTICAL_STRIP(page)->ruler->w,
-        .h = self->gauge->h
+        .h = gauge->h
     };
     /*All pages must have the same size*/
     if(portion.y < 0){ //Fill top
@@ -240,14 +253,14 @@ void ladder_gauge_render_value(LadderGauge *self, float value, float rubis)
             int pidx = ladder_page_get_index(page);
             if(pidx > 0){
                 page2 = ladder_gauge_get_page(self, pidx - 1);
-                SDL_BlitSurface(VERTICAL_STRIP(page2)->ruler, &patch, self->gauge, &dst_region);
+                SDL_BlitSurface(VERTICAL_STRIP(page2)->ruler, &patch, gauge, &dst_region);
             }
         }else{
             /* 0 at the bottom, 100 is upwards. We need to fill the top with values after the end
              * of the current page, i.e get the next page */
             int pidx = ladder_page_get_index(page);
             page2 = ladder_gauge_get_page(self, pidx + 1);
-            SDL_BlitSurface(VERTICAL_STRIP(page2)->ruler, &patch, self->gauge, &dst_region);
+            SDL_BlitSurface(VERTICAL_STRIP(page2)->ruler, &patch, gauge, &dst_region);
 
         }
         dst_region.y = patch.h;
@@ -255,11 +268,11 @@ void ladder_gauge_render_value(LadderGauge *self, float value, float rubis)
         portion.h -= patch.h;
     }
 
-    SDL_BlitSurface(VERTICAL_STRIP(page)->ruler, &portion, self->gauge, &dst_region);
+    SDL_BlitSurface(VERTICAL_STRIP(page)->ruler, &portion, gauge, &dst_region);
 
-    if(portion.y + self->gauge->h > VERTICAL_STRIP(page)->ruler->h){// fill bottom
+    if(portion.y + gauge->h > VERTICAL_STRIP(page)->ruler->h){// fill bottom
         float taken = VERTICAL_STRIP(page)->ruler->h - portion.y; //number of pixels taken from the bottom of values pict
-        float delta = self->gauge->h - taken;
+        float delta = gauge->h - taken;
         dst_region.y += taken;
         SDL_Rect patch = {
             .x = 0,
@@ -272,51 +285,35 @@ void ladder_gauge_render_value(LadderGauge *self, float value, float rubis)
              * of the current page, i.e get the next page */
             int pidx = ladder_page_get_index(page);
             page2 = ladder_gauge_get_page(self, pidx + 1);
-            SDL_BlitSurface(VERTICAL_STRIP(page2)->ruler, &patch, self->gauge, &dst_region);
+            SDL_BlitSurface(VERTICAL_STRIP(page2)->ruler, &patch, gauge, &dst_region);
         }else{
             /* 0 at the bottom, 100 is upwards. We need to fill the bottom with values that are before the begining
              * of the current page, i.e get the previous page */
             int pidx = ladder_page_get_index(page);
             if(pidx > 0){
                 page2 = ladder_gauge_get_page(self, pidx - 1);
-                SDL_BlitSurface(VERTICAL_STRIP(page2)->ruler, &patch, self->gauge, &dst_region);
+                SDL_BlitSurface(VERTICAL_STRIP(page2)->ruler, &patch, gauge, &dst_region);
             }
         }
     }
-}
-
-void ladder_gauge_set_value(LadderGauge *self, float value)
-{
-    basic_animation_start(&self->animation, self->value, value, SPIN_DURATION);
-    self->value = value;
+    ladder_gauge_draw_rubis(self);
 }
 
 static void ladder_gauge_draw_rubis(LadderGauge *self)
 {
-    SDL_LockSurface(self->gauge);
-    Uint32 *pixels = self->gauge->pixels;
-    Uint32 color = SDL_MapRGB(self->gauge->format, 0xFF, 0x00, 0x00);
-    int empty_pixels = self->gauge->w / 2;
+    SDL_Surface *gauge;
+
+    gauge = ANIMATED_GAUGE(self)->view;
+
+    SDL_LockSurface(gauge);
+    Uint32 *pixels = gauge->pixels;
+    Uint32 color = SDL_MapRGB(gauge->format, 0xFF, 0x00, 0x00);
+    int empty_pixels = gauge->w / 2;
     int stop_idx = round(empty_pixels/2.0);
-    int restart_idx = round(self->gauge->w - empty_pixels/2.0);
-    for(int x = 0; x < self->gauge->w; x++){
+    int restart_idx = round(gauge->w - empty_pixels/2.0);
+    for(int x = 0; x < gauge->w; x++){
         if(!empty_pixels || x < stop_idx || x >= restart_idx)
-            pixels[self->rubis * self->gauge->w + x] = color;
+            pixels[self->rubis * gauge->w + x] = color;
     }
-    SDL_UnlockSurface(self->gauge);
-}
-
-
-SDL_Surface *ladder_gauge_render(LadderGauge *self, uint32_t dt)
-{
-    float _current;
-
-    if(self->animation.current != self->value || self->damaged){
-        _current = basic_animation_loop(&self->animation, dt);
-
-        ladder_gauge_render_value(self, _current, -1);
-        ladder_gauge_draw_rubis(self);
-        self->damaged = false;
-    }
-    return self->gauge;
+    SDL_UnlockSurface(gauge);
 }

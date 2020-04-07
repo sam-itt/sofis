@@ -2,9 +2,7 @@
 #define LADDER_GAUGE_H
 #include <stdbool.h>
 
-#include <SDL2/SDL.h>
-
-#include "basic-animation.h"
+#include "animated-gauge.h"
 #include "vertical-strip.h"
 #include "misc.h"
 
@@ -20,12 +18,8 @@ typedef struct{
 }LadderPage;
 
 typedef struct{
-    SDL_Surface *gauge;
+    AnimatedGauge parent;
 
-    BasicAnimation animation;
-    bool damaged;
-
-    float value;
     int rubis;
 
     LadderPage *pages[N_PAGES];
@@ -40,8 +34,5 @@ float ladder_page_resolve_value(LadderPage *self, float value);
 
 LadderGauge *ladder_gauge_new(ScrollType direction,  int rubis);
 void ladder_gauge_free(LadderGauge *self);
-
-void ladder_gauge_set_value(LadderGauge *self, float value);
-SDL_Surface *ladder_gauge_render(LadderGauge *self, uint32_t dt);
 
 #endif /* LADDER_GAUGE_H */

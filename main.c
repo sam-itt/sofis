@@ -79,14 +79,14 @@ bool handle_keyboard(SDL_KeyboardEvent *event)
         case SDLK_UP:
             if(event->state == SDL_PRESSED){
                 alt += 150;
-                ladder_gauge_set_value(ladder, alt);
+                animated_gauge_set_value(ANIMATED_GAUGE(ladder), alt);
                 odo_gauge_set_value(wheel, alt);
             }
             break;
         case SDLK_DOWN:
             if(event->state == SDL_PRESSED){
                 alt -= 150;
-                ladder_gauge_set_value(ladder, alt);
+                animated_gauge_set_value(ANIMATED_GAUGE(ladder), alt);
                 odo_gauge_set_value(wheel, alt);
             }
             break;
@@ -182,7 +182,7 @@ int main(int argc, char **argv)
     gauge = odo_gauge_new(digit_barrel_new(61, 0, 99,10),-1,-1);
 
     ladder = ladder_gauge_new(BOTTUM_UP, -1);
-    ladder_gauge_set_value(ladder, alt);
+    animated_gauge_set_value(ANIMATED_GAUGE(ladder), alt);
 
     DigitBarrel *db = digit_barrel_new(18, 0, 9.999, 1);
     DigitBarrel *db2 = digit_barrel_new(18, 0, 99, 10);
@@ -222,27 +222,27 @@ int main(int argc, char **argv)
         done = handle_events();
 
         SDL_FillRect(screenSurface, NULL, colors[i]);
-        SDL_BlitSurface(ladder_gauge_render(ladder, elapsed) , NULL, screenSurface, &lrect);
-        SDL_BlitSurface(odo_gauge_render(gauge, elapsed) , NULL, screenSurface, &dst);
-        SDL_BlitSurface(odo_gauge_render(wheel, elapsed) , NULL, screenSurface, &wheelrect);
-        SDL_BlitSurface(odo_gauge_render(odo, elapsed) , NULL, screenSurface, &odorect);
+        SDL_BlitSurface(animated_gauge_render(ANIMATED_GAUGE(ladder), elapsed) , NULL, screenSurface, &lrect);
+        SDL_BlitSurface(animated_gauge_render(ANIMATED_GAUGE(gauge), elapsed) , NULL, screenSurface, &dst);
+        SDL_BlitSurface(animated_gauge_render(ANIMATED_GAUGE(wheel), elapsed) , NULL, screenSurface, &wheelrect);
+        SDL_BlitSurface(animated_gauge_render(ANIMATED_GAUGE(odo), elapsed) , NULL, screenSurface, &odorect);
         SDL_UpdateWindowSurface(window);
 
         if(elapsed < 200){
             SDL_Delay(200 - elapsed);
         }
         if(acc >= 1000){
-            if(ladder->value != oldv[0]){
-                printf("Ladder value: %f\n",ladder->value);
-                oldv[0] = ladder->value;
+            if(ANIMATED_GAUGE(ladder)->value != oldv[0]){
+                printf("Ladder value: %f\n",ANIMATED_GAUGE(ladder)->value);
+                oldv[0] = ANIMATED_GAUGE(ladder)->value;
             }
-            if(gauge->value != oldv[1]){
-                printf("Rotary gauge value: %f\n",gauge->value);
-                oldv[1] = gauge->value;
+            if(ANIMATED_GAUGE(gauge)->value != oldv[1]){
+                printf("Rotary gauge value: %f\n",ANIMATED_GAUGE(gauge)->value);
+                oldv[1] = ANIMATED_GAUGE(gauge)->value;
             }
-            if(odo->value != oldv[2]){
-                printf("Odo gauge value: %f\n",odo->value);
-                oldv[2] = odo->value;
+            if(ANIMATED_GAUGE(odo)->value != oldv[2]){
+                printf("Odo gauge value: %f\n",ANIMATED_GAUGE(odo)->value);
+                oldv[2] = ANIMATED_GAUGE(odo)->value;
             }
 
             acc = 0;
