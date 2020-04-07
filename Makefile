@@ -3,8 +3,8 @@
 SRCDIR=.
 
 CC=gcc
-CFLAGS=-g3 -O0 `pkg-config glib-2.0 sdl2 SDL2_image SDL2_ttf --cflags` -I$(SRCDIR)
-LDFLAGS=-lz -lm `pkg-config glib-2.0 sdl2 SDL2_image SDL2_ttf --libs`
+CFLAGS=-g3 -O0 `pkg-config sdl2 SDL2_image SDL2_ttf --cflags` -I$(SRCDIR)
+LDFLAGS=-lz -lm `pkg-config sdl2 SDL2_image SDL2_ttf --libs` -Wl,--as-needed
 EXEC=test-sdl
 SRC= $(wildcard $(SRCDIR)/*.c)
 OBJ= $(SRC:.c=.o)

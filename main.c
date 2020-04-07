@@ -5,18 +5,24 @@
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_ttf.h>
 
-#include "rotary-gauge.h"
 #include "ladder-gauge.h"
+
+#include "odo-gauge.h"
 
 #define SCREEN_WIDTH 640
 #define SCREEN_HEIGHT 480
 
 #define N_COLORS 4
 
-RotaryGauge *gauge = NULL; 
+OdoGauge *gauge = NULL;
 LadderGauge *ladder = NULL;
+OdoGauge *wheel = NULL;
+OdoGauge *odo = NULL;
 
-float alt = 0.0;
+//float alt = 1150.0;
+float alt = 9800.0;
+float odo_val = 842.0;
+#define ODO_INC 1
 
 /*Return true to quit the app*/
 bool handle_keyboard(SDL_KeyboardEvent *event)
@@ -28,69 +34,81 @@ bool handle_keyboard(SDL_KeyboardEvent *event)
             break;
         case SDLK_a:
             if(event->state == SDL_PRESSED)
-                rotary_gauge_set_value(gauge, 50);
+                odo_gauge_set_value(gauge, 50);
             break;
         case SDLK_b:
             if(event->state == SDL_PRESSED)
-                rotary_gauge_set_value(gauge, 30);
+                odo_gauge_set_value(gauge, 30);
             break;
         case SDLK_c:
             if(event->state == SDL_PRESSED)
-                rotary_gauge_set_value(gauge, 80);
+                odo_gauge_set_value(gauge, 80);
             break;
         case SDLK_d:
             if(event->state == SDL_PRESSED)
-                rotary_gauge_set_value(gauge, 99);
+                odo_gauge_set_value(gauge, 99);
             break;
         case SDLK_e:
             if(event->state == SDL_PRESSED)
-                rotary_gauge_set_value(gauge, 0);
+                odo_gauge_set_value(gauge, 0);
             break;
         case SDLK_f:
             if(event->state == SDL_PRESSED)
-                rotary_gauge_set_value(gauge, 10);
+                odo_gauge_set_value(gauge, 10);
             break;
         case SDLK_g:
             if(event->state == SDL_PRESSED)
-                rotary_gauge_set_value(gauge, 75);
+                odo_gauge_set_value(gauge, 75);
             break;
         case SDLK_h:
             if(event->state == SDL_PRESSED)
-                rotary_gauge_set_value(gauge, 77.5);
+                odo_gauge_set_value(gauge, 77.5);
             break;
         case SDLK_i:
             if(event->state == SDL_PRESSED)
-                rotary_gauge_set_value(gauge, 78);
+                odo_gauge_set_value(gauge, 78);
             break;
         case SDLK_j:
             if(event->state == SDL_PRESSED)
-                rotary_gauge_set_value(gauge, 79);
+                odo_gauge_set_value(gauge, 79);
             break;
         case SDLK_k:
             if(event->state == SDL_PRESSED)
-                rotary_gauge_set_value(gauge, 80);
+                odo_gauge_set_value(gauge, 80);
             break;
         case SDLK_UP:
             if(event->state == SDL_PRESSED){
                 alt += 150;
                 ladder_gauge_set_value(ladder, alt);
+                odo_gauge_set_value(wheel, alt);
             }
             break;
         case SDLK_DOWN:
             if(event->state == SDL_PRESSED){
                 alt -= 150;
                 ladder_gauge_set_value(ladder, alt);
+                odo_gauge_set_value(wheel, alt);
             }
             break;
-
-
-
-
-
-
-
-
-
+        case SDLK_l:
+            if(event->state == SDL_PRESSED){
+                odo_gauge_set_value(wheel, 300);
+            }
+            break;
+        case SDLK_PAGEUP:
+            if(event->state == SDL_PRESSED){
+                if(odo_val < odo->max_value)
+                    odo_val += ODO_INC;
+                odo_gauge_set_value(odo, odo_val);
+            }
+            break;
+        case SDLK_PAGEDOWN:
+            if(event->state == SDL_PRESSED){
+                if(odo_val > 0.0)
+                    odo_val -= ODO_INC;
+                odo_gauge_set_value(odo, odo_val);
+            }
+            break;
     }
     return false;
 }
@@ -126,6 +144,7 @@ int main(int argc, char **argv)
     Uint32 colors[N_COLORS];
     bool done;
     int i;
+    float oldv[3] = {0,0,0};
 
     if (SDL_Init(SDL_INIT_VIDEO) < 0) {
         return 1;
@@ -160,10 +179,30 @@ int main(int argc, char **argv)
     colors[2] = SDL_MapRGB(screenSurface->format, 0x00, 0xFF, 0x00);
     colors[3] = SDL_MapRGB(screenSurface->format, 0x11, 0x56, 0xFF);
 
-    gauge = rotary_gauge_new(40);
+    gauge = odo_gauge_new(digit_barrel_new(61, 0, 99,10),-1,-1);
 
     ladder = ladder_gauge_new(BOTTUM_UP, -1);
     ladder_gauge_set_value(ladder, alt);
+
+    DigitBarrel *db = digit_barrel_new(18, 0, 9.999, 1);
+    DigitBarrel *db2 = digit_barrel_new(18, 0, 99, 10);
+    wheel = odo_gauge_new_multiple(-1, 4,
+            -1, db2,
+            -2, db,
+            -2, db,
+            -2, db
+    );
+    odo_gauge_set_value(wheel, alt);
+
+    DigitBarrel *db4 = digit_barrel_new(18, 0, 9.999, 1);
+    DigitBarrel *db3 = digit_barrel_new(18, 0, 99, 10);
+    odo = odo_gauge_new_multiple(-1, 3,
+            -1, db3,
+            -2, db4,
+            -2, db4
+    );
+    odo_gauge_set_value(odo, odo_val);
+
 
     done = false;
     Uint32 ticks;
@@ -173,6 +212,8 @@ int main(int argc, char **argv)
     i = 3;
     SDL_Rect dst = {SCREEN_WIDTH/2,SCREEN_HEIGHT/2,0,0};
     SDL_Rect lrect = {150,20,0,0};
+    SDL_Rect wheelrect = {400,20,0,0};
+    SDL_Rect odorect = {SCREEN_WIDTH/2 - 80,SCREEN_HEIGHT/2,0,0};
     do{
         ticks = SDL_GetTicks();
         elapsed = ticks - last_ticks;
@@ -182,15 +223,28 @@ int main(int argc, char **argv)
 
         SDL_FillRect(screenSurface, NULL, colors[i]);
         SDL_BlitSurface(ladder_gauge_render(ladder, elapsed) , NULL, screenSurface, &lrect);
-        SDL_BlitSurface(rotary_gauge_render(gauge, elapsed) , NULL, screenSurface, &dst);
+        SDL_BlitSurface(odo_gauge_render(gauge, elapsed) , NULL, screenSurface, &dst);
+        SDL_BlitSurface(odo_gauge_render(wheel, elapsed) , NULL, screenSurface, &wheelrect);
+        SDL_BlitSurface(odo_gauge_render(odo, elapsed) , NULL, screenSurface, &odorect);
         SDL_UpdateWindowSurface(window);
 
         if(elapsed < 200){
             SDL_Delay(200 - elapsed);
         }
         if(acc >= 1000){
-            printf("Ladder value: %f\n",ladder->value);
-            printf("Rotary gauge value: %f\n",gauge->value);
+            if(ladder->value != oldv[0]){
+                printf("Ladder value: %f\n",ladder->value);
+                oldv[0] = ladder->value;
+            }
+            if(gauge->value != oldv[1]){
+                printf("Rotary gauge value: %f\n",gauge->value);
+                oldv[1] = gauge->value;
+            }
+            if(odo->value != oldv[2]){
+                printf("Odo gauge value: %f\n",odo->value);
+                oldv[2] = odo->value;
+            }
+
             acc = 0;
         }
 
@@ -198,7 +252,9 @@ int main(int argc, char **argv)
         last_ticks = ticks;
     }while(!done);
 
-    rotary_gauge_free(gauge);
+    odo_gauge_free(gauge);
+    odo_gauge_free(wheel);
+    odo_gauge_free(odo);
     ladder_gauge_free(ladder);
     SDL_DestroyWindow(window);
     TTF_Quit();
