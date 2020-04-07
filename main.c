@@ -8,6 +8,7 @@
 #include "ladder-gauge.h"
 
 #include "odo-gauge.h"
+#include "alt-indicator.h"
 
 #define SCREEN_WIDTH 640
 #define SCREEN_HEIGHT 480
@@ -18,6 +19,7 @@ OdoGauge *gauge = NULL;
 LadderGauge *ladder = NULL;
 OdoGauge *wheel = NULL;
 OdoGauge *odo = NULL;
+AltIndicator *alt_ind = NULL;
 
 //float alt = 1150.0;
 float alt = 9800.0;
@@ -81,6 +83,7 @@ bool handle_keyboard(SDL_KeyboardEvent *event)
                 alt += 150;
                 animated_gauge_set_value(ANIMATED_GAUGE(ladder), alt);
                 odo_gauge_set_value(wheel, alt);
+                alt_indicator_set_value(alt_ind, alt);
             }
             break;
         case SDLK_DOWN:
@@ -88,6 +91,7 @@ bool handle_keyboard(SDL_KeyboardEvent *event)
                 alt -= 150;
                 animated_gauge_set_value(ANIMATED_GAUGE(ladder), alt);
                 odo_gauge_set_value(wheel, alt);
+                alt_indicator_set_value(alt_ind, alt);
             }
             break;
         case SDLK_l:
@@ -203,6 +207,8 @@ int main(int argc, char **argv)
     );
     odo_gauge_set_value(odo, odo_val);
 
+    alt_ind = alt_indicator_new();
+    alt_indicator_set_value(alt_ind, alt);
 
     done = false;
     Uint32 ticks;
@@ -210,10 +216,14 @@ int main(int argc, char **argv)
     Uint32 elapsed = 0;
     Uint32 acc = 0;
     i = 3;
+#if 0
     SDL_Rect dst = {SCREEN_WIDTH/2,SCREEN_HEIGHT/2,0,0};
     SDL_Rect lrect = {150,20,0,0};
     SDL_Rect wheelrect = {400,20,0,0};
     SDL_Rect odorect = {SCREEN_WIDTH/2 - 80,SCREEN_HEIGHT/2,0,0};
+    SDL_Rect airect = {SCREEN_WIDTH/2 + 90,SCREEN_HEIGHT/2-20,0,0};
+#endif
+    SDL_Rect airect = {439,50,0,0};
     do{
         ticks = SDL_GetTicks();
         elapsed = ticks - last_ticks;
@@ -222,10 +232,13 @@ int main(int argc, char **argv)
         done = handle_events();
 
         SDL_FillRect(screenSurface, NULL, colors[i]);
+#if 0
         SDL_BlitSurface(animated_gauge_render(ANIMATED_GAUGE(ladder), elapsed) , NULL, screenSurface, &lrect);
         SDL_BlitSurface(animated_gauge_render(ANIMATED_GAUGE(gauge), elapsed) , NULL, screenSurface, &dst);
         SDL_BlitSurface(animated_gauge_render(ANIMATED_GAUGE(wheel), elapsed) , NULL, screenSurface, &wheelrect);
         SDL_BlitSurface(animated_gauge_render(ANIMATED_GAUGE(odo), elapsed) , NULL, screenSurface, &odorect);
+#endif
+        SDL_BlitSurface(alt_indicator_render(alt_ind, elapsed) , NULL, screenSurface, &airect);
         SDL_UpdateWindowSurface(window);
 
         if(elapsed < 200){
