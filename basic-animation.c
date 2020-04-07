@@ -11,6 +11,7 @@ void basic_animation_start(BasicAnimation *self, float from, float to, float dur
     self->start = from;
     self->end = to;
     self->duration = duration;
+    self->current = self->start;
 }
 
 /**
