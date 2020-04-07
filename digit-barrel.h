@@ -3,14 +3,11 @@
 
 #include <SDL2/SDL.h>
 
+#include "vertical-strip.h"
 #include "misc.h"
 
 typedef struct{
-    SDL_Surface *values;
-    float symbol_h; //symbol (i.e digits) height in pixels
-    float fvo; //first value offset
-    float ppv; /* pixels per value*/
-    float start, end; //range
+    VerticalStrip parent;
 
     uintf8_t refcount;
 }DigitBarrel;

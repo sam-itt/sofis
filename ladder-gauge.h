@@ -5,6 +5,7 @@
 #include <SDL2/SDL.h>
 
 #include "basic-animation.h"
+#include "vertical-strip.h"
 #include "misc.h"
 
 #define PAGE_SIZE 700 /*number of values per page*/
@@ -13,12 +14,8 @@
 typedef enum {TOP_DOWN, BOTTUM_UP} ScrollType;
 
 typedef struct{
-    SDL_Surface *page;
+    VerticalStrip parent;
 
-    float fvo; /*First value offset*/
-    float ppv; /* pixels per value*/
-    float start, end; /*Range*/
-    float vstep; /* increment between two major graduations*/
     ScrollType direction;
 }LadderPage;
 

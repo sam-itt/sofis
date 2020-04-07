@@ -43,12 +43,15 @@ DigitBarrel *digit_barrel_init(DigitBarrel *self, uintf8_t font_size, float star
     TTF_Font *font;
     SDL_Surface *tmp;
     char *number;
-    SDL_Rect cursor; /*write cursor (into self->values)*/
+    SDL_Rect cursor; /*write cursor (into VERTICAL_SPLIT(self)->ruler)*/
     SDL_Rect fcursor; /*font read cursor*/
     char fmt[10];
+    VerticalStrip *strip;
 
-    self->start = start;
-    self->end = end;
+    strip = VERTICAL_STRIP(self);
+
+    strip->start = start;
+    strip->end = end;
 
     maxvalue = fabs((end > start) ? end : start);
     maxvalue = (maxvalue > 0) ? maxvalue : 1;
@@ -61,39 +64,33 @@ DigitBarrel *digit_barrel_init(DigitBarrel *self, uintf8_t font_size, float star
     TTF_GlyphMetrics(font,'0',&minx,&maxx, &miny, &maxy, &advance);
     vheight = round((fabs(end-start)) / step)*font_size; /*end should be .9999 so there is no need for the +1*/
     vwidth = advance * ndigits;
-    self->values = SDL_CreateRGBSurface(0, vwidth, vheight, 32, 0, 0, 0, 0);
+    strip->ruler = SDL_CreateRGBSurface(0, vwidth, vheight, 32, 0, 0, 0, 0);
 
     minv = (start < end) ? start : end;
     maxv = (start > end) ? start : end;
-    cursor = (SDL_Rect){0,0,self->values->w,font_size};
+    cursor = (SDL_Rect){0,0,strip->ruler->w,font_size};
     fcursor = (SDL_Rect){0,0,vwidth,font_size};
     for(float i = minv; i < maxv; i += step){
         snprintf(number, 6, fmt, (int)round(i));
         tmp = TTF_RenderText_Solid(font, number, (SDL_Color){255, 255, 255, SDL_ALPHA_OPAQUE});
-        SDL_BlitSurface(tmp, &fcursor, self->values, &cursor);
+        SDL_BlitSurface(tmp, &fcursor, strip->ruler, &cursor);
         cursor.y += cursor.h;
         SDL_FreeSurface(tmp);
     }
     TTF_CloseFont(font);
 
-    self->symbol_h = font_size;
-    self->fvo = (self->symbol_h-1)/2.0;
+    strip->vstep = font_size; /*vstep is equivalent to symbol_h*/
+    strip->fvo = (strip->vstep-1)/2.0;
     /* The value is the centerline of the digit.
      * There is exactly @param step between two digits'
      * centerlines. This dimension (between centerlnes)
      * happend to be the same as the symbol size,i as it
      * is two consective halves of a symbol
      * */
-    self->ppv = self->symbol_h / step;
+    strip->ppv = strip->vstep / step;
 
 
     return self;
-}
-
-void digit_barrel_dispose(DigitBarrel *self)
-{
-    if(self->values)
-        SDL_FreeSurface(self->values);
 }
 
 void digit_barrel_free(DigitBarrel *self)
@@ -102,42 +99,9 @@ void digit_barrel_free(DigitBarrel *self)
         self->refcount--;
     if(!self->refcount){
 //        printf("DigitBarrel %p free\n",self);
-        digit_barrel_dispose(self);
+        vertical_strip_dispose(VERTICAL_STRIP(self));
         free(self);
     }
-}
-
-bool digit_barrel_has_value(DigitBarrel *self, float value)
-{
-    float min, max;
-
-    min = (self->end > self->start) ? self->start : self->end;
-    max = (self->end < self->start) ? self->start : self->end;
-
-    return value >= min && value <= max;
-}
-
-/**
- * Returns image pixel index (i.e y for vertical gauges, x for horizontal)
- * from a given value
- * TODO be part of generic gauges layer
- */
-float digit_barrel_resolve_value(DigitBarrel *self, float value)
-{
-    float y;
-
-    if(!digit_barrel_has_value(self, value))
-        return -1;
-
-    value = fmod(value, fabs(self->end - self->start) + 1);
-
-    y =  round(value * self->ppv + self->fvo);
-//    printf("returning y=%f for value %f\n",y,value);
-#if 0
-    if(self->direction == BOTTUM_UP)
-        y = (self->page->h-1) - y;
-#endif
-    return y;
 }
 
 /*
@@ -150,42 +114,44 @@ void digit_barrel_render_value(DigitBarrel *self, float value, SDL_Surface *dst,
 {
     float y;
     SDL_Rect dst_region = {region->x,region->y,region->w,region->h};
+    VerticalStrip *strip;
+    strip = VERTICAL_STRIP(self);
 
     /*translate @param value to an index in the spinner texture*/
-    y = digit_barrel_resolve_value(self, value);
+    y = vertical_strip_resolve_value(strip, value, false);
     rubis = (rubis < 0) ? region->h / 2.0 : rubis;
     rubis -= region->y;
     SDL_Rect portion = {
         .x = 0,
         .y = round(y - rubis),
-        .w = self->values->w,
+        .w = strip->ruler->w,
         .h = region->h
     };
 
     if(portion.y < 0){ //Fill top
         SDL_Rect patch = {
             .x = 0,
-            .y = self->values->h + portion.y, //means - portion.y as portion.y < 0 here
-            .w = self->values->w,
-            .h = self->values->h - patch.y
+            .y = strip->ruler->h + portion.y, //means - portion.y as portion.y < 0 here
+            .w = strip->ruler->w,
+            .h = strip->ruler->h - patch.y
         };
-        SDL_BlitSurface(self->values, &patch, dst, &dst_region);
+        SDL_BlitSurface(strip->ruler, &patch, dst, &dst_region);
         dst_region.y = patch.h;
         portion.y = 0;
         portion.h -= patch.h;
     }
-    SDL_BlitSurface(self->values, &portion, dst, &dst_region);
-    if(portion.y + region->h > self->values->h){// fill bottom
-        float taken = self->values->h - portion.y; //number of pixels taken from the bottom of values pict
+    SDL_BlitSurface(strip->ruler, &portion, dst, &dst_region);
+    if(portion.y + region->h > strip->ruler->h){// fill bottom
+        float taken = strip->ruler->h - portion.y; //number of pixels taken from the bottom of values pict
         float delta = region->h - taken;
         dst_region.y += taken;
         SDL_Rect patch = {
             .x = 0,
             .y = 0,
-            .w = self->values->w,
+            .w = strip->ruler->w,
             .h = delta
         };
-        SDL_BlitSurface(self->values, &patch, dst, &dst_region);
+        SDL_BlitSurface(strip->ruler, &patch, dst, &dst_region);
     }
 }
 

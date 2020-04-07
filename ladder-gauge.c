@@ -49,10 +49,10 @@ LadderPage *ladder_page_new(float start, float end, float vstep, ScrollType dire
 
     self = calloc(1, sizeof(LadderPage));
     if(self){
-        self->fvo = 17;
-        self->start = start;
-        self->end = end;
-        self->vstep = vstep;
+        VERTICAL_STRIP(self)->fvo = 17;
+        VERTICAL_STRIP(self)->start = start;
+        VERTICAL_STRIP(self)->end = end;
+        VERTICAL_STRIP(self)->vstep = vstep;
         self->direction = direction;
 
         if(!ladder_page_init(self)){
@@ -72,26 +72,27 @@ LadderPage *ladder_page_init(LadderPage *self)
     SDL_Rect dst;
     char number[6]; //5 digits plus \0
     float y;
+    VerticalStrip *strip;
 
-
-    self->page = IMG_Load("alt-ladder.png");
-    if(!self->page){
+    strip = VERTICAL_STRIP(self);
+    strip->ruler = IMG_Load("alt-ladder.png");
+    if(!strip->ruler){
         return NULL;
     }
-    self->ppv = self->page->h/(self->end - self->start +1);
+    strip->ppv = strip->ruler->h/(strip->end - strip->start +1);
 
     font = TTF_OpenFont("TerminusTTF-4.47.0.ttf", 16);
     SDL_Color white = (SDL_Color){255, 255, 255};
 
-    for(int i = self->start; i <= self->end; i += self->vstep){
+    for(int i = strip->start; i <= strip->end; i += strip->vstep){
         snprintf(number, 6, "%d", i);
         text = TTF_RenderText_Solid(font, number, white);
 
-        y = ladder_page_resolve_value(self, i);
+        y = vertical_strip_resolve_value(strip, i, self->direction == BOTTUM_UP);
         dst.y = y - text->h/2.0; /*verticaly center text*/
         dst.x = 10 + 5;
 
-        SDL_BlitSurface(text, NULL, self->page, &dst);
+        SDL_BlitSurface(text, NULL, strip->ruler, &dst);
         SDL_FreeSurface(text);
     }
 
@@ -103,45 +104,13 @@ LadderPage *ladder_page_init(LadderPage *self)
 
 void ladder_page_free(LadderPage *self)
 {
-    if(self->page)
-        SDL_FreeSurface(self->page);
+    vertical_strip_dispose(VERTICAL_STRIP(self));
     free(self);
-}
-
-bool ladder_page_has_value(LadderPage *self, float value)
-{
-    float min, max;
-
-    min = (self->end > self->start) ? self->start : self->end;
-    max = (self->end < self->start) ? self->start : self->end;
-
-    return value >= min && value <= max;
-}
-
-/**
- * Returns image pixel index (i.e y for vertical gauges, x for horizontal)
- * from a given value
- * TODO be part of generic gauges layer
- */
-float ladder_page_resolve_value(LadderPage *self, float value)
-{
-    float y;
-
-    if(!ladder_page_has_value(self, value))
-        return -1;
-
-    value = fmod(value, fabs(self->end - self->start) + 1);
-
-    y =  round(value * self->ppv + self->fvo);
-    if(self->direction == BOTTUM_UP)
-        y = (self->page->h-1) - y;
-
-    return y;
 }
 
 int ladder_page_get_index(LadderPage *self)
 {
-    return self->start / PAGE_SIZE;
+    return VERTICAL_STRIP(self)->start / PAGE_SIZE;
 }
 
 /**
@@ -249,21 +218,21 @@ void ladder_gauge_render_value(LadderGauge *self, float value, float rubis)
 
     page = ladder_gauge_get_page_for(self, value);
 
-    y = ladder_page_resolve_value(page, value);
+    y = vertical_strip_resolve_value(VERTICAL_STRIP(page), value, self->direction == BOTTUM_UP);
     rubis = (rubis < 0) ? self->gauge->h / 2.0 : rubis;
     SDL_Rect portion = {
         .x = 0,
         .y = round(y - rubis),
-        .w = page->page->w,
+        .w = VERTICAL_STRIP(page)->ruler->w,
         .h = self->gauge->h
     };
     /*All pages must have the same size*/
     if(portion.y < 0){ //Fill top
         SDL_Rect patch = {
             .x = 0,
-            .y = page->page->h + portion.y, //means - portion.y as portion.y < 0 here
-            .w = page->page->w,
-            .h = page->page->h - patch.y
+            .y = VERTICAL_STRIP(page)->ruler->h + portion.y, //means - portion.y as portion.y < 0 here
+            .w = VERTICAL_STRIP(page)->ruler->w,
+            .h = VERTICAL_STRIP(page)->ruler->h - patch.y
         };
         if(self->direction == TOP_DOWN){
             /* 0 is on top, 100 is downwards. We need to fill the top with values before the begining
@@ -271,14 +240,14 @@ void ladder_gauge_render_value(LadderGauge *self, float value, float rubis)
             int pidx = ladder_page_get_index(page);
             if(pidx > 0){
                 page2 = ladder_gauge_get_page(self, pidx - 1);
-                SDL_BlitSurface(page2->page, &patch, self->gauge, &dst_region);
+                SDL_BlitSurface(VERTICAL_STRIP(page2)->ruler, &patch, self->gauge, &dst_region);
             }
         }else{
             /* 0 at the bottom, 100 is upwards. We need to fill the top with values after the end
              * of the current page, i.e get the next page */
             int pidx = ladder_page_get_index(page);
             page2 = ladder_gauge_get_page(self, pidx + 1);
-            SDL_BlitSurface(page2->page, &patch, self->gauge, &dst_region);
+            SDL_BlitSurface(VERTICAL_STRIP(page2)->ruler, &patch, self->gauge, &dst_region);
 
         }
         dst_region.y = patch.h;
@@ -286,16 +255,16 @@ void ladder_gauge_render_value(LadderGauge *self, float value, float rubis)
         portion.h -= patch.h;
     }
 
-    SDL_BlitSurface(page->page, &portion, self->gauge, &dst_region);
+    SDL_BlitSurface(VERTICAL_STRIP(page)->ruler, &portion, self->gauge, &dst_region);
 
-    if(portion.y + self->gauge->h > page->page->h){// fill bottom
-        float taken = page->page->h - portion.y; //number of pixels taken from the bottom of values pict
+    if(portion.y + self->gauge->h > VERTICAL_STRIP(page)->ruler->h){// fill bottom
+        float taken = VERTICAL_STRIP(page)->ruler->h - portion.y; //number of pixels taken from the bottom of values pict
         float delta = self->gauge->h - taken;
         dst_region.y += taken;
         SDL_Rect patch = {
             .x = 0,
             .y = 0,
-            .w = page->page->w,
+            .w = VERTICAL_STRIP(page)->ruler->w,
             .h = delta
         };
         if(self->direction == TOP_DOWN){
@@ -303,14 +272,14 @@ void ladder_gauge_render_value(LadderGauge *self, float value, float rubis)
              * of the current page, i.e get the next page */
             int pidx = ladder_page_get_index(page);
             page2 = ladder_gauge_get_page(self, pidx + 1);
-            SDL_BlitSurface(page2->page, &patch, self->gauge, &dst_region);
+            SDL_BlitSurface(VERTICAL_STRIP(page2)->ruler, &patch, self->gauge, &dst_region);
         }else{
             /* 0 at the bottom, 100 is upwards. We need to fill the bottom with values that are before the begining
              * of the current page, i.e get the previous page */
             int pidx = ladder_page_get_index(page);
             if(pidx > 0){
                 page2 = ladder_gauge_get_page(self, pidx - 1);
-                SDL_BlitSurface(page2->page, &patch, self->gauge, &dst_region);
+                SDL_BlitSurface(VERTICAL_STRIP(page2)->ruler, &patch, self->gauge, &dst_region);
             }
         }
     }

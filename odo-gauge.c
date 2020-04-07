@@ -82,16 +82,16 @@ OdoGauge *odo_gauge_vainit(OdoGauge *self, int rubis, int nbarrels, va_list ap)
         self->barrels[i] = va_arg(ap, DigitBarrel*);
         self->barrels[i]->refcount++;
 
-        width += self->barrels[i]->values->w;
+        width += VERTICAL_STRIP(self->barrels[i])->ruler->w;
         if(self->heights[i] == -1)
-            self->heights[i] = self->barrels[i]->symbol_h*2;
+            self->heights[i] = VERTICAL_STRIP(self->barrels[i])->vstep*2;
         else if(self->heights[i] == -2)
-            self->heights[i] = self->barrels[i]->symbol_h;
+            self->heights[i] = VERTICAL_STRIP(self->barrels[i])->vstep;
         max_height = (self->heights[i] > max_height) ? self->heights[i] : max_height;
 
-        float val = floor(self->barrels[i]->end) * powf(10.0,pwr);
+        float val = floor(VERTICAL_STRIP(self->barrels[i])->end) * powf(10.0,pwr);
         self->max_value += val;
-        pwr += number_digits(self->barrels[i]->end);
+        pwr += number_digits(VERTICAL_STRIP(self->barrels[i])->end);
     }
 
     self->gauge = SDL_CreateRGBSurface(0, width, max_height, 32, 0, 0, 0, 0);
@@ -170,7 +170,7 @@ void odo_gauge_render_value(OdoGauge *self, float value)
 //    printf("doing value %f, splitted in to %d parts\n",value,nparts);
     do{
 //        current_rotor_rank = current_rotor;
-        current_rotor_rank += floor(log10(self->barrels[current_rotor]->end));
+        current_rotor_rank += floor(log10(VERTICAL_STRIP(self->barrels[current_rotor])->end));
 //        printf("current_part: %d, current_rotor_rank: %d\n",current_part,current_rotor_rank);
         if(current_part == current_rotor_rank){
             current_val = vparts[current_part];
@@ -181,10 +181,10 @@ void odo_gauge_render_value(OdoGauge *self, float value)
                 current_val += vparts[i] * powf(10.0, i);
             next_part = i;
         }
-        cursor.x -= self->barrels[current_rotor]->values->w;
+        cursor.x -= VERTICAL_STRIP(self->barrels[current_rotor])->ruler->w;
         cursor.h = self->heights[current_rotor];
         cursor.y = 0 + self->gauge->h/2 - cursor.h/2;
-        cursor.w = self->barrels[current_rotor]->values->w;
+        cursor.w = VERTICAL_STRIP(self->barrels[current_rotor])->ruler->w;
         digit_barrel_render_value(self->barrels[current_rotor], current_val, self->gauge, &cursor, self->rubis);
 //        printf("setting rotor %d to %f\n",current_rotor, current_val);
         //render that value
@@ -197,10 +197,10 @@ void odo_gauge_render_value(OdoGauge *self, float value)
 
     /*Place holders for rotors that didn't render any value*/
     for(; current_rotor < self->nbarrels; current_rotor++){
-        cursor.x -= self->barrels[current_rotor]->values->w;
+        cursor.x -= VERTICAL_STRIP(self->barrels[current_rotor])->ruler->w;
         cursor.h = self->heights[current_rotor];
         cursor.y = 0 + self->gauge->h/2 - cursor.h/2;
-        cursor.w = self->barrels[current_rotor]->values->w;
+        cursor.w = VERTICAL_STRIP(self->barrels[current_rotor])->ruler->w;
 
         SDL_FillRect(self->gauge, &cursor, SDL_MapRGB(self->gauge->format, 0, 0,0));
     }
