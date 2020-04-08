@@ -47,7 +47,7 @@ SDL_Surface *alt_indicator_render(AltIndicator *self, Uint32 dt)
         memset(&placement, 0, sizeof(SDL_Rect));
         odo = animated_gauge_render(ANIMATED_GAUGE(self->odo), dt);
 
-        placement.y = 0 + (rv->h-1)/2.0 - odo->h/2.0;
+        placement.y = 0 + (rv->h-1)/2.0 - odo->h/2.0 +1;
         placement.x = (rv->w - odo->w-1) -1; /*The last -1 in there to prevent eating the border*/
         SDL_BlitSurface(odo, NULL, rv, &placement);
     }
