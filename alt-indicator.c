@@ -53,3 +53,13 @@ SDL_Surface *alt_indicator_render(AltIndicator *self, Uint32 dt)
     }
     return rv;
 }
+
+uint32_t alt_indicator_get_width(AltIndicator *self)
+{
+    return ANIMATED_GAUGE(self->ladder)->view->w;
+}
+
+uint32_t alt_indicator_get_height(AltIndicator *self)
+{
+    return ANIMATED_GAUGE(self->ladder)->view->h;
+}

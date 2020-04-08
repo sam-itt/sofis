@@ -10,6 +10,7 @@
 #include "odo-gauge.h"
 #include "alt-indicator.h"
 #include "vertical-stair.h"
+#include "alt-group.h"
 
 #define SCREEN_WIDTH 640
 #define SCREEN_HEIGHT 480
@@ -22,12 +23,13 @@ OdoGauge *wheel = NULL;
 OdoGauge *odo = NULL;
 AltIndicator *alt_ind = NULL;
 VerticalStair *stair = NULL;
+AltGroup *group = NULL;
 
 //float alt = 1150.0;
-float alt = 9800.0;
+float alt = 0.0;
 float odo_val = 842.0;
-float vario = 2000.0;
-//float vario = 0.0;
+//float vs = 2000.0;
+float vs = 0.0;
 #define ODO_INC 1
 #define VARIO_INC 100
 
@@ -89,6 +91,7 @@ bool handle_keyboard(SDL_KeyboardEvent *event)
                 animated_gauge_set_value(ANIMATED_GAUGE(ladder), alt);
                 odo_gauge_set_value(wheel, alt);
                 alt_indicator_set_value(alt_ind, alt);
+                alt_group_set_altitude(group, alt);
             }
             break;
         case SDLK_DOWN:
@@ -97,6 +100,7 @@ bool handle_keyboard(SDL_KeyboardEvent *event)
                 animated_gauge_set_value(ANIMATED_GAUGE(ladder), alt);
                 odo_gauge_set_value(wheel, alt);
                 alt_indicator_set_value(alt_ind, alt);
+                alt_group_set_altitude(group, alt);
             }
             break;
         case SDLK_l:
@@ -120,16 +124,18 @@ bool handle_keyboard(SDL_KeyboardEvent *event)
             break;
         case SDLK_p:
             if(event->state == SDL_PRESSED){
-//                if(vario < stair->scale.end)
-                    vario += VARIO_INC;
-                animated_gauge_set_value(ANIMATED_GAUGE(stair), vario);
+//                if(vs < stair->scale.end)
+                    vs += VARIO_INC;
+                animated_gauge_set_value(ANIMATED_GAUGE(stair), vs);
+                alt_group_set_vertical_speed(group, vs);
             }
             break;
         case SDLK_m:
             if(event->state == SDL_PRESSED){
-//                if(vario > stair->scale.start)
-                    vario -= VARIO_INC;
-                animated_gauge_set_value(ANIMATED_GAUGE(stair), vario);
+//                if(vs > stair->scale.start)
+                    vs -= VARIO_INC;
+                animated_gauge_set_value(ANIMATED_GAUGE(stair), vs);
+                alt_group_set_vertical_speed(group, vs);
             }
             break;
 
@@ -232,8 +238,11 @@ int main(int argc, char **argv)
     alt_ind = alt_indicator_new();
     alt_indicator_set_value(alt_ind, alt);
 
-    stair = vertical_stair_new("vario-bg.png","vario-cursor.png", 16);
-    animated_gauge_set_value(ANIMATED_GAUGE(stair), vario);
+    stair = vertical_stair_new("vs-bg.png","vs-cursor.png", 16);
+    animated_gauge_set_value(ANIMATED_GAUGE(stair), vs);
+
+    group = alt_group_new();
+    alt_group_set_values(group, alt, vs);
 
     done = false;
     Uint32 ticks;
@@ -264,8 +273,10 @@ int main(int argc, char **argv)
         SDL_BlitSurface(animated_gauge_render(ANIMATED_GAUGE(wheel), elapsed) , NULL, screenSurface, &wheelrect);
         SDL_BlitSurface(animated_gauge_render(ANIMATED_GAUGE(odo), elapsed) , NULL, screenSurface, &odorect);
 #endif
-        SDL_BlitSurface(alt_indicator_render(alt_ind, elapsed) , NULL, screenSurface, &airect);
-        SDL_BlitSurface(animated_gauge_render(ANIMATED_GAUGE(stair), elapsed) , NULL, screenSurface, &vrect);
+//        SDL_BlitSurface(alt_indicator_render(alt_ind, elapsed) , NULL, screenSurface, &airect);
+//        SDL_BlitSurface(animated_gauge_render(ANIMATED_GAUGE(stair), elapsed) , NULL, screenSurface, &vrect);
+
+        alt_group_render_at(group, elapsed, screenSurface, &airect);
         SDL_UpdateWindowSurface(window);
 
         if(elapsed < 200){
