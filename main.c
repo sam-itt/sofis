@@ -33,8 +33,11 @@ float vs = 0.0;
 #define ODO_INC 1
 #define VARIO_INC 100
 
+
+float compute_vs(float old_alt, float new_alt, Uint32 elapsed);
+
 /*Return true to quit the app*/
-bool handle_keyboard(SDL_KeyboardEvent *event)
+bool handle_keyboard(SDL_KeyboardEvent *event, Uint32 elapsed)
 {
     switch(event->keysym.sym){
         case SDLK_ESCAPE:
@@ -87,20 +90,24 @@ bool handle_keyboard(SDL_KeyboardEvent *event)
             break;
         case SDLK_UP:
             if(event->state == SDL_PRESSED){
+                vs = compute_vs(alt, alt+150, elapsed);
                 alt += 150;
                 animated_gauge_set_value(ANIMATED_GAUGE(ladder), alt);
                 odo_gauge_set_value(wheel, alt);
                 alt_indicator_set_value(alt_ind, alt);
-                alt_group_set_altitude(group, alt);
+                //alt_group_set_altitude(group, alt);
+                alt_group_set_values(group, alt, vs);
             }
             break;
         case SDLK_DOWN:
             if(event->state == SDL_PRESSED){
+                vs = compute_vs(alt, alt-150, elapsed);
                 alt -= 150;
                 animated_gauge_set_value(ANIMATED_GAUGE(ladder), alt);
                 odo_gauge_set_value(wheel, alt);
                 alt_indicator_set_value(alt_ind, alt);
-                alt_group_set_altitude(group, alt);
+                //alt_group_set_altitude(group, alt);
+                alt_group_set_values(group, alt, vs);
             }
             break;
         case SDLK_l:
@@ -146,7 +153,7 @@ bool handle_keyboard(SDL_KeyboardEvent *event)
 }
 
 /*Return true to quit the app*/
-bool handle_events(void)
+bool handle_events(Uint32 elapsed)
 {
     SDL_Event event;
 
@@ -161,11 +168,21 @@ bool handle_events(void)
             break;
             case SDL_KEYUP:
             case SDL_KEYDOWN:
-                return handle_keyboard(&(event.key));
+                return handle_keyboard(&(event.key), elapsed);
                 break;
         }
     }
     return false;
+}
+
+float compute_vs(float old_alt, float new_alt, Uint32 elapsed)
+{
+    float rv;
+
+    rv = (new_alt-old_alt)/(elapsed/1000); /*ft per second*/
+    rv *= 60; /*ft/min*/
+
+    return rv;
 }
 
 
@@ -264,7 +281,7 @@ int main(int argc, char **argv)
         elapsed = ticks - last_ticks;
         acc += elapsed;
 
-        done = handle_events();
+        done = handle_events(elapsed);
 
         SDL_FillRect(screenSurface, NULL, colors[i]);
 #if 0
