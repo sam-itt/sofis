@@ -38,10 +38,17 @@ float vertical_strip_resolve_value(VerticalStrip *self, float value, bool revers
         return -1;
 
     value = fmod(value, fabs(self->end - self->start) + 1);
-
     y =  round(value * self->ppv + self->fvo);
     if(reverse)
         y = (self->ruler->h-1) - y;
 
     return y;
+}
+
+void vertical_strip_clip_value(VerticalStrip *self, float *value)
+{
+    if(*value > self->end)
+        *value = self->end;
+    if(*value < self->start)
+        *value = self->start;
 }

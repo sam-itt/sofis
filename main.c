@@ -9,6 +9,7 @@
 
 #include "odo-gauge.h"
 #include "alt-indicator.h"
+#include "vertical-stair.h"
 
 #define SCREEN_WIDTH 640
 #define SCREEN_HEIGHT 480
@@ -20,11 +21,15 @@ LadderGauge *ladder = NULL;
 OdoGauge *wheel = NULL;
 OdoGauge *odo = NULL;
 AltIndicator *alt_ind = NULL;
+VerticalStair *stair = NULL;
 
 //float alt = 1150.0;
 float alt = 9800.0;
 float odo_val = 842.0;
+float vario = 2000.0;
+//float vario = 0.0;
 #define ODO_INC 1
+#define VARIO_INC 100
 
 /*Return true to quit the app*/
 bool handle_keyboard(SDL_KeyboardEvent *event)
@@ -113,6 +118,23 @@ bool handle_keyboard(SDL_KeyboardEvent *event)
                 odo_gauge_set_value(odo, odo_val);
             }
             break;
+        case SDLK_p:
+            if(event->state == SDL_PRESSED){
+//                if(vario < stair->scale.end)
+                    vario += VARIO_INC;
+                animated_gauge_set_value(ANIMATED_GAUGE(stair), vario);
+            }
+            break;
+        case SDLK_m:
+            if(event->state == SDL_PRESSED){
+//                if(vario > stair->scale.start)
+                    vario -= VARIO_INC;
+                animated_gauge_set_value(ANIMATED_GAUGE(stair), vario);
+            }
+            break;
+
+
+
     }
     return false;
 }
@@ -210,6 +232,9 @@ int main(int argc, char **argv)
     alt_ind = alt_indicator_new();
     alt_indicator_set_value(alt_ind, alt);
 
+    stair = vertical_stair_new("vario-bg.png","vario-cursor.png", 16);
+    animated_gauge_set_value(ANIMATED_GAUGE(stair), vario);
+
     done = false;
     Uint32 ticks;
     Uint32 last_ticks = 0;
@@ -224,6 +249,7 @@ int main(int argc, char **argv)
     SDL_Rect airect = {SCREEN_WIDTH/2 + 90,SCREEN_HEIGHT/2-20,0,0};
 #endif
     SDL_Rect airect = {439,50,0,0};
+    SDL_Rect vrect = {370,50,0,0};
     do{
         ticks = SDL_GetTicks();
         elapsed = ticks - last_ticks;
@@ -239,6 +265,7 @@ int main(int argc, char **argv)
         SDL_BlitSurface(animated_gauge_render(ANIMATED_GAUGE(odo), elapsed) , NULL, screenSurface, &odorect);
 #endif
         SDL_BlitSurface(alt_indicator_render(alt_ind, elapsed) , NULL, screenSurface, &airect);
+        SDL_BlitSurface(animated_gauge_render(ANIMATED_GAUGE(stair), elapsed) , NULL, screenSurface, &vrect);
         SDL_UpdateWindowSurface(window);
 
         if(elapsed < 200){
