@@ -17,11 +17,11 @@ $(EXEC): $(OBJ)
 %.o: %.c
 	$(CC) -o $@ -c $< $(CFLAGS)
 
-.PHONY: clean mrproper 
+.PHONY: clean mrproper
 
 clean:
 	rm -rf *.o
 
 mrproper: clean
-	rm -rf $(EXEC) 
+	rm -rf $(EXEC)
 

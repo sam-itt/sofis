@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <stdbool.h>
 #include <math.h>
 
 /**
@@ -55,3 +56,13 @@ int number_digits(float n)
     return rank;
 }
 
+bool interval_intersect(float as, float ae, float bs, float be, float *is, float *ie)
+{
+    if(bs > ae || as > be)
+        return false;
+
+    *is = (as > bs) ? as : bs;
+    *ie = (ae < be) ? ae : be;
+
+    return true;
+}

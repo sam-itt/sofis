@@ -12,6 +12,7 @@
 #include "alt-indicator.h"
 #include "vertical-stair.h"
 #include "alt-group.h"
+#include "airspeed-indicator.h"
 
 #define SCREEN_WIDTH 640
 #define SCREEN_HEIGHT 480
@@ -25,14 +26,18 @@ OdoGauge *odo = NULL;
 AltIndicator *alt_ind = NULL;
 VerticalStair *stair = NULL;
 AltGroup *group = NULL;
+AirspeedIndicator *asi = NULL;
+
 
 //float alt = 1150.0;
 float alt = 900.0;
 float odo_val = 842.0;
 //float vs = 2000.0;
 float vs = 0.0;
+float ias = 10.0;
 #define ODO_INC 1
 #define VARIO_INC 100
+#define IAS_INC 1
 #define ALT_INC 150
 
 
@@ -47,48 +52,16 @@ bool handle_keyboard(SDL_KeyboardEvent *event, Uint32 elapsed)
                 return true;
             break;
         case SDLK_a:
-            if(event->state == SDL_PRESSED)
-                odo_gauge_set_value(gauge, 50);
+            if(event->state == SDL_PRESSED){
+                ias += IAS_INC;
+                airspeed_indicator_set_value(asi, ias);
+            }
             break;
-        case SDLK_b:
-            if(event->state == SDL_PRESSED)
-                odo_gauge_set_value(gauge, 30);
-            break;
-        case SDLK_c:
-            if(event->state == SDL_PRESSED)
-                odo_gauge_set_value(gauge, 80);
-            break;
-        case SDLK_d:
-            if(event->state == SDL_PRESSED)
-                odo_gauge_set_value(gauge, 99);
-            break;
-        case SDLK_e:
-            if(event->state == SDL_PRESSED)
-                odo_gauge_set_value(gauge, 0);
-            break;
-        case SDLK_f:
-            if(event->state == SDL_PRESSED)
-                odo_gauge_set_value(gauge, 10);
-            break;
-        case SDLK_g:
-            if(event->state == SDL_PRESSED)
-                odo_gauge_set_value(gauge, 75);
-            break;
-        case SDLK_h:
-            if(event->state == SDL_PRESSED)
-                odo_gauge_set_value(gauge, 77.5);
-            break;
-        case SDLK_i:
-            if(event->state == SDL_PRESSED)
-                odo_gauge_set_value(gauge, 78);
-            break;
-        case SDLK_j:
-            if(event->state == SDL_PRESSED)
-                odo_gauge_set_value(gauge, 79);
-            break;
-        case SDLK_k:
-            if(event->state == SDL_PRESSED)
-                odo_gauge_set_value(gauge, 80);
+        case SDLK_z:
+            if(event->state == SDL_PRESSED){
+                ias -= IAS_INC;
+                airspeed_indicator_set_value(asi, ias);
+            }
             break;
         case SDLK_UP:
             if(event->state == SDL_PRESSED){
@@ -264,6 +237,10 @@ int main(int argc, char **argv)
     group = alt_group_new();
     alt_group_set_values(group, alt, vs);
 
+
+    asi = airspeed_indicator_new(50,60,85,155,200);
+    airspeed_indicator_set_value(asi, ias);
+
     done = false;
     Uint32 ticks;
     Uint32 last_ticks = 0;
@@ -278,7 +255,7 @@ int main(int argc, char **argv)
     SDL_Rect airect = {SCREEN_WIDTH/2 + 90,SCREEN_HEIGHT/2-20,0,0};
 #endif
     SDL_Rect airect = {439,50,0,0};
-    SDL_Rect vrect = {370,50,0,0};
+    SDL_Rect vrect = {300,70,0,0};
     do{
         ticks = SDL_GetTicks();
         elapsed = ticks - last_ticks;
@@ -297,6 +274,9 @@ int main(int argc, char **argv)
 //        SDL_BlitSurface(animated_gauge_render(ANIMATED_GAUGE(stair), elapsed) , NULL, screenSurface, &vrect);
 
         alt_group_render_at(group, elapsed, screenSurface, &airect);
+        SDL_BlitSurface(airspeed_indicator_render(asi, elapsed), NULL, screenSurface, &vrect);
+
+
         SDL_UpdateWindowSurface(window);
 
         if(elapsed < 200){
