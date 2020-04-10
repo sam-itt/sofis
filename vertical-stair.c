@@ -5,6 +5,7 @@
 #include <SDL2/SDL_ttf.h>
 
 #include "vertical-stair.h"
+#include "sdl-colors.h"
 
 
 static void vertical_stair_render_value(VerticalStair *self, float value);
@@ -35,15 +36,13 @@ void vertical_stair_cursor_set_value(VerticalStairCursor *self, float value)
     int ivalue;
 
     if(self->value != value){
-        SDL_FillRect(self->bg, &(SDL_Rect){5,5,8,7}, SDL_MapRGB(self->bg->format, 0, 0,0));
-        SDL_FillRect(self->bg, &(SDL_Rect){13,0,self->bg->w-13,self->bg->h}, SDL_MapRGB(self->bg->format, 0, 0,0));
-
-
-        SDL_Color white = (SDL_Color){255, 255, 255, SDL_ALPHA_OPAQUE};
+        Uint32 black = SDL_UBLACK(self->bg);
+        SDL_FillRect(self->bg, &(SDL_Rect){5,5,8,7}, black);
+        SDL_FillRect(self->bg, &(SDL_Rect){13,0,self->bg->w-13,self->bg->h}, black);
 
         ivalue = round(value);
         snprintf(number, 6, "% -d", ivalue);
-        text = TTF_RenderText_Solid(self->font, number, white);
+        text = TTF_RenderText_Solid(self->font, number, SDL_WHITE);
 
         dst = (SDL_Rect){7,-1,0,0};
         SDL_BlitSurface(text, NULL, self->bg, &dst);
@@ -85,7 +84,7 @@ VerticalStair *vertical_stair_init(VerticalStair *self, const char *bg_img, cons
     vertical_stair_cursor_init(&self->cursor, cursor_img, cfont_size);
 //    ANIMATED_GAUGE(self)->view = SDL_CreateRGBSurface(0, self->scale.ruler->w,self->scale.ruler->h, 32,0,0,0,0);
     ANIMATED_GAUGE(self)->view = SDL_CreateRGBSurface(0, self->cursor.bg->w, self->scale.ruler->h, 32,0,0,0,0);
-    SDL_SetColorKey(ANIMATED_GAUGE(self)->view, SDL_TRUE, SDL_MapRGB(ANIMATED_GAUGE(self)->view->format, 255, 0,255));
+    SDL_SetColorKey(ANIMATED_GAUGE(self)->view, SDL_TRUE, SDL_UCKEY(ANIMATED_GAUGE(self)->view));
 
     return self;
 }
@@ -126,7 +125,7 @@ static void vertical_stair_render_value(VerticalStair *self, float value)
 
     vertical_stair_cursor_set_value(&self->cursor, value);
     vertical_strip_clip_value(&self->scale, &value);
-    SDL_FillRect(ANIMATED_GAUGE(self)->view, NULL, SDL_MapRGB(ANIMATED_GAUGE(self)->view->format, 255, 0,255));
+    SDL_FillRect(ANIMATED_GAUGE(self)->view, NULL, SDL_UCKEY(ANIMATED_GAUGE(self)->view));
     SDL_BlitSurface(self->scale.ruler, NULL, ANIMATED_GAUGE(self)->view, NULL);
 
     //y = vertical_strip_resolve_value(&self->scale, value, true);

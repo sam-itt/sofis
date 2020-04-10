@@ -9,6 +9,7 @@
 //ms
 #define SPIN_DURATION 1000
 
+#include "sdl-colors.h"
 
 static void ladder_gauge_render_value(LadderGauge *self, float value);
 void ladder_page_free(LadderPage *self);
@@ -21,7 +22,7 @@ LadderGauge *ladder_gauge_new(ScrollType direction,  int rubis)
     self = calloc(1, sizeof(LadderGauge));
     if(self){
         ANIMATED_GAUGE(self)->view = SDL_CreateRGBSurface(0, 68, 240, 32, 0, 0, 0, 0);
-        SDL_SetColorKey(ANIMATED_GAUGE(self)->view, SDL_TRUE, SDL_MapRGB(ANIMATED_GAUGE(self)->view->format, 255, 0,255));
+        SDL_SetColorKey(ANIMATED_GAUGE(self)->view, SDL_TRUE, SDL_UCKEY(ANIMATED_GAUGE(self)->view));
         ANIMATED_GAUGE(self)->damaged = true;
         ANIMATED_GAUGE(self)->renderer = (ValueRenderFunc)ladder_gauge_render_value;
 
@@ -87,11 +88,10 @@ LadderPage *ladder_page_init(LadderPage *self)
     strip->ppv = strip->ruler->h/(strip->end - strip->start +1);
 
     font = TTF_OpenFont("TerminusTTF-4.47.0.ttf", 16);
-    SDL_Color white = (SDL_Color){255, 255, 255};
 
     for(int i = strip->start; i <= strip->end; i += strip->vstep){
         snprintf(number, 6, "%d", i);
-        text = TTF_RenderText_Solid(font, number, white);
+        text = TTF_RenderText_Solid(font, number, SDL_WHITE);
 
         y = vertical_strip_resolve_value(strip, i, self->direction == BOTTUM_UP);
         dst.y = y - text->h/2.0; /*verticaly center text*/
@@ -192,7 +192,7 @@ void ladder_gauge_draw_outline(LadderGauge *self)
 
     SDL_LockSurface(gauge);
     Uint32 *pixels = gauge->pixels;
-    Uint32 color = SDL_MapRGB(gauge->format, 0xFF, 0xFF, 0xFF);
+    Uint32 color = SDL_UWHITE(gauge);
     y = 0;
     for(x = 0; x < gauge->w; x++){
         pixels[y * gauge->w + x] = color;
@@ -224,7 +224,7 @@ static void ladder_gauge_render_value(LadderGauge *self, float value)
 
     gauge = ANIMATED_GAUGE(self)->view;
 
-    SDL_FillRect(gauge, NULL, SDL_MapRGB(gauge->format, 255, 0,255));
+    SDL_FillRect(gauge, NULL, SDL_UCKEY(gauge));
     ladder_gauge_draw_outline(self);
 
     value = value >= 0 ? value : 0.0f;
@@ -307,7 +307,7 @@ static void ladder_gauge_draw_rubis(LadderGauge *self)
 
     SDL_LockSurface(gauge);
     Uint32 *pixels = gauge->pixels;
-    Uint32 color = SDL_MapRGB(gauge->format, 0xFF, 0x00, 0x00);
+    Uint32 color = SDL_URED(gauge);
     int empty_pixels = gauge->w / 2;
     int stop_idx = round(empty_pixels/2.0);
     int restart_idx = round(gauge->w - empty_pixels/2.0);

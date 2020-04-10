@@ -6,7 +6,7 @@
 #include <SDL2/SDL_ttf.h>
 
 #include "digit-barrel.h"
-
+#include "sdl-colors.h"
 
 DigitBarrel *digit_barrel_new(uintf8_t font_size, float start, float end, float step)
 {
@@ -72,7 +72,7 @@ DigitBarrel *digit_barrel_init(DigitBarrel *self, uintf8_t font_size, float star
     fcursor = (SDL_Rect){0,0,vwidth,font_size};
     for(float i = minv; i < maxv; i += step){
         snprintf(number, 6, fmt, (int)round(i));
-        tmp = TTF_RenderText_Solid(font, number, (SDL_Color){255, 255, 255, SDL_ALPHA_OPAQUE});
+        tmp = TTF_RenderText_Solid(font, number, SDL_WHITE);
         SDL_BlitSurface(tmp, &fcursor, strip->ruler, &cursor);
         cursor.y += cursor.h;
         SDL_FreeSurface(tmp);

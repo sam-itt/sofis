@@ -3,7 +3,7 @@
 #include <stdbool.h>
 #include <stdarg.h>
 
-
+#include "sdl-colors.h"
 #include "odo-gauge.h"
 
 
@@ -102,7 +102,7 @@ OdoGauge *odo_gauge_vainit(OdoGauge *self, int rubis, int nbarrels, va_list ap)
         free(self->barrels);
         return NULL;
     }
-    SDL_SetColorKey(ANIMATED_GAUGE(self)->view, SDL_TRUE, SDL_MapRGB(ANIMATED_GAUGE(self)->view->format, 255, 0,255));
+    SDL_SetColorKey(ANIMATED_GAUGE(self)->view, SDL_TRUE, SDL_UCKEY(ANIMATED_GAUGE(self)->view));
     if(rubis > 0)
         self->rubis = rubis;
     else
@@ -148,7 +148,7 @@ static void odo_gauge_draw_rubis(OdoGauge *self)
     SDL_LockSurface(gauge);
 
     Uint32 *pixels = gauge->pixels;
-    Uint32 color = SDL_MapRGB(gauge->format, 0xFF, 0x00, 0x00);
+    Uint32 color = SDL_URED(gauge);
     int empty_pixels = gauge->w / 2;
     int stop_idx = round(empty_pixels/2.0);
     int restart_idx = round(gauge->w - empty_pixels/2.0);
@@ -177,7 +177,7 @@ void odo_gauge_render_value(OdoGauge *self, float value)
 
     cursor = (SDL_Rect){gauge->w,0,gauge->w,gauge->h};
 
-    SDL_FillRect(gauge, NULL, SDL_MapRGB(gauge->format, 255, 0,255));
+    SDL_FillRect(gauge, NULL, SDL_UCKEY(gauge));
     nparts = number_split(value, vparts, 6);
 //    printf("doing value %f, splitted in to %d parts\n",value,nparts);
     do{
@@ -214,7 +214,7 @@ void odo_gauge_render_value(OdoGauge *self, float value)
         cursor.y = 0 + gauge->h/2 - cursor.h/2;
         cursor.w = VERTICAL_STRIP(self->barrels[current_rotor])->ruler->w;
 
-        SDL_FillRect(gauge, &cursor, SDL_MapRGB(gauge->format, 0, 0,0));
+        SDL_FillRect(gauge, &cursor, SDL_UBLACK(gauge));
     }
     odo_gauge_draw_rubis(self);
 }

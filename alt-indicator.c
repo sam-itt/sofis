@@ -2,6 +2,7 @@
 #include <stdlib.h>
 
 #include "alt-indicator.h"
+#include "sdl-colors.h"
 
 AltIndicator *alt_indicator_new(void)
 {
@@ -66,11 +67,7 @@ static void alt_indicator_draw_outline(AltIndicator *self)
 
     SDL_LockSurface(gauge);
     Uint32 *pixels = gauge->pixels;
-    Uint32 color = SDL_MapRGB(gauge->format, 0xFF, 0xFF, 0xFF);
-    y = 0;
-    for(x = 0; x < gauge->w; x++){
-        pixels[y * gauge->w + x] = color;
-    }
+    Uint32 color = SDL_UWHITE(gauge);
     y= 19;
     for(x = 0; x < gauge->w; x++){
         pixels[y * gauge->w + x] = color;
