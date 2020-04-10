@@ -70,10 +70,10 @@ static void alt_indicator_draw_outline(AltIndicator *self)
     SDL_LockSurface(gauge);
     Uint32 *pixels = gauge->pixels;
     Uint32 color = SDL_UWHITE(gauge);
-//    y = 0;
-//    for(x = 0; x < gauge->w; x++){
-//        pixels[y * gauge->w + x] = color;
-//    }
+    y = 0;
+    for(x = 0; x < gauge->w; x++){
+        pixels[y * gauge->w + x] = color;
+    }
     y= 19;
     for(x = 0; x < gauge->w; x++){
         pixels[y * gauge->w + x] = color;
@@ -82,19 +82,19 @@ static void alt_indicator_draw_outline(AltIndicator *self)
     for(x = 0; x < gauge->w; x++){
         pixels[y * gauge->w + x] = color;
     }
-//    y = gauge->h - 1;
-//    for(x = 0; x < gauge->w; x++){
-//        pixels[y * gauge->w + x] = color;
-//    }
-//    x = gauge->w - 1;
-//    for(y = 0; y < gauge->h; y++){
-//        pixels[y * gauge->w + x] = color;
-//    }
-//    /*TODO: don't draw left side if current value > page 1 limit*/
-//    x = 0;
-//    for(y = 0; y < gauge->h; y++){
-//        pixels[y * gauge->w + x] = color;
-//    }
+    y = gauge->h - 1;
+    for(x = 0; x < gauge->w; x++){
+        pixels[y * gauge->w + x] = color;
+    }
+    x = gauge->w - 1;
+    for(y = 0; y < gauge->h; y++){
+        pixels[y * gauge->w + x] = color;
+    }
+    /*TODO: don't draw left side if current value > page 1 limit*/
+    x = 0;
+    for(y = 0; y < gauge->h; y++){
+        pixels[y * gauge->w + x] = color;
+    }
 
     SDL_UnlockSurface(gauge);
 }
@@ -168,9 +168,9 @@ SDL_Surface *alt_indicator_render(AltIndicator *self, Uint32 dt)
 
         SDL_FillRect(self->view, NULL, SDL_UCKEY(self->view));
 
-        alt_indicator_draw_outline(self);
         alt_indicator_draw_qnh(self);
         alt_indicator_draw_target_altitude(self);
+        alt_indicator_draw_outline(self);
 
         lad = animated_gauge_render(ANIMATED_GAUGE(self->ladder), dt);
         odo = animated_gauge_render(ANIMATED_GAUGE(self->odo), dt);
