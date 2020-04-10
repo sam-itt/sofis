@@ -20,6 +20,7 @@ DigitBarrel *digit_barrel_init(DigitBarrel *self, uintf8_t font_size, float star
 void digit_barrel_free(DigitBarrel *self);
 
 
+void digit_barrel_draw_etch_marks(DigitBarrel *self);
 float digit_barrel_resolve_value(DigitBarrel *self, float value);
 
 void digit_barrel_render_value(DigitBarrel *self, float value, SDL_Surface *dst, SDL_Rect *region, float rubis);

@@ -89,6 +89,7 @@ DigitBarrel *digit_barrel_init(DigitBarrel *self, uintf8_t font_size, float star
      * */
     strip->ppv = self->symbol_h / step;
 
+//    digit_barrel_draw_etch_marks(self);
     return self;
 }
 
@@ -181,6 +182,29 @@ void digit_barrel_render_value(DigitBarrel *self, float value, SDL_Surface *dst,
         };
         SDL_BlitSurface(strip->ruler, &patch, dst, &dst_region);
     }
+}
+
+void digit_barrel_draw_etch_marks(DigitBarrel *self)
+{
+    int iy;
+    VerticalStrip *strip;
+
+    strip = VERTICAL_STRIP(self);
+
+    SDL_LockSurface(strip->ruler);
+
+    Uint32 *pixels = strip->ruler->pixels;
+    Uint32 color = SDL_UYELLOW(strip->ruler);
+    float count = 0;
+    for(float y = self->fei; round(y) < strip->ruler->h; y += self->symbol_h/2.0){
+        iy = round(y);
+//        printf("%0.2f y = %d\n",count,iy);
+        for(int x = 0; x < strip->ruler->w; x++){
+            pixels[iy * strip->ruler->w + x] = color;
+        }
+        count += 5.0;
+    }
+    SDL_UnlockSurface(strip->ruler);
 }
 
 
