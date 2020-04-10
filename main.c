@@ -257,7 +257,7 @@ int main(int argc, char **argv)
 //    SDL_Rect airect = {SCREEN_WIDTH/2 + 90,SCREEN_HEIGHT/2-20,0,0};
 
     SDL_Rect airect = {439,50,0,0};
-    SDL_Rect vrect = {300,70,0,0};
+    SDL_Rect vrect = {96,70,0,0};
     do{
         ticks = SDL_GetTicks();
         elapsed = ticks - last_ticks;
