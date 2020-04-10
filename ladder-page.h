@@ -100,5 +100,6 @@ LadderPage *ladder_page_new(float start, LadderPageDescriptor *descriptor);
 void ladder_page_free(LadderPage *self);
 
 int ladder_page_get_index(LadderPage *self);
+float ladder_page_resolve_value(LadderPage *self, float value);
 void ladder_page_etch_markings(LadderPage *self, int font_size);
 #endif /* LADDER_PAGE_H */

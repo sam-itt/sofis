@@ -155,9 +155,8 @@ static void ladder_gauge_render_value(LadderGauge *self, float value)
     value = value >= 0 ? value : 0.0f;
 
     page = ladder_gauge_get_page_for(self, value);
-    int page_idx = ladder_page_get_index(page);
 
-    y = vertical_strip_resolve_value_new(VERTICAL_STRIP(page), value, page_idx*self->descriptor->page_size ,self->descriptor->direction == BOTTUM_UP);
+    y = ladder_page_resolve_value(page, value);
 //    printf("y = %f for value = %f\n",y,value);
     rubis = (self->rubis < 0) ? gauge->h / 2.0 : self->rubis;
     SDL_Rect portion = {

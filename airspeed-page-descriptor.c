@@ -90,9 +90,8 @@ static void airspeed_ladder_page_draw_arc(LadderPage *self, float start, float e
         surface = VERTICAL_STRIP(self)->ruler;
         white = SDL_UWHITE(surface);
 
-        int page_idx = ladder_page_get_index(self);
-        ystart = vertical_strip_resolve_value_new(VERTICAL_STRIP(self), istart, page_idx*self->descriptor->page_size ,self->descriptor->direction == BOTTUM_UP);
-        yend = vertical_strip_resolve_value_new(VERTICAL_STRIP(self), iend, page_idx*self->descriptor->page_size,self->descriptor->direction == BOTTUM_UP);
+        ystart = ladder_page_resolve_value(self, istart);
+        yend = ladder_page_resolve_value(self, iend);
 
         firsty = (ystart < yend) ? ystart : yend;
         lasty = (yend > ystart) ? yend : ystart;

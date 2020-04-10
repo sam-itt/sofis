@@ -45,11 +45,8 @@ LadderPage *ladder_page_new(float start, LadderPageDescriptor *descriptor)
 
     self = calloc(1, sizeof(LadderPage));
     if(self){
-        VERTICAL_STRIP(self)->fei = descriptor->fei;
         VERTICAL_STRIP(self)->start = start;
         VERTICAL_STRIP(self)->end = NAN;
-        VERTICAL_STRIP(self)->vstep = descriptor->vstep;
-        VERTICAL_STRIP(self)->vsubstep = descriptor->vsubstep;
         self->descriptor = descriptor;
     }
     return self;
@@ -67,6 +64,37 @@ int ladder_page_get_index(LadderPage *self)
     return VERTICAL_STRIP(self)->start/(self->descriptor->page_size+self->descriptor->offset);
 }
 
+/*TODO: inline*/
+float ladder_page_resolve_value(LadderPage *self, float value)
+{
+    VerticalStrip *strip;
+    bool reverse;
+
+    strip = VERTICAL_STRIP(self);
+    reverse = (self->descriptor->direction == BOTTUM_UP);
+
+    if(fmod(value, self->descriptor->vstep) == 0){ /*Value is a big graduation*/
+        float y;
+        value = fmod(value, fabs(round(strip->end - strip->start)) + 1);
+        int ngrads = value/self->descriptor->vstep;
+        if(!reverse)
+            y = self->descriptor->fei + ngrads * strip->ppv * self->descriptor->vstep;
+        else
+            y = self->descriptor->fei - ngrads * strip->ppv * self->descriptor->vstep;
+        return y;
+    }else if(self->descriptor->vsubstep != 0 && fmod(value, self->descriptor->vsubstep) == 0){ /*Value is a small graduation*/
+        float y;
+        value = fmod(value, fabs(round(strip->end - strip->start)) + 1);
+        int ngrads = value/self->descriptor->vsubstep;
+        if(!reverse)
+            y = self->descriptor->fei + ngrads * strip->ppv * self->descriptor->vsubstep;
+        else
+            y = self->descriptor->fei - ngrads * strip->ppv * self->descriptor->vsubstep;
+        return y;
+    }else{
+        return vertical_strip_resolve_value(strip, value, reverse);
+    }
+}
 
 /*Put markings*/
 void ladder_page_etch_markings(LadderPage *self, int font_size)
@@ -88,11 +116,11 @@ void ladder_page_etch_markings(LadderPage *self, int font_size)
 
     font = TTF_OpenFont("TerminusTTF-4.47.0.ttf", font_size);
     printf("Writing indexes on %d starting at %d to %f\n",page_index, page_index*self->descriptor->page_size, strip->end);
-    for(int i = page_index*self->descriptor->page_size; i <= strip->end; i += strip->vstep){
+    for(int i = page_index*self->descriptor->page_size; i <= strip->end; i += self->descriptor->vstep){
         snprintf(number, 6, "%d", i);
         text = TTF_RenderText_Solid(font, number, SDL_WHITE);
 
-        y = vertical_strip_resolve_value_new(strip, i, page_index*self->descriptor->page_size ,self->descriptor->direction == BOTTUM_UP);
+        y = ladder_page_resolve_value(self, i);
         dst.y = y - text->h/2.0; /*verticaly center text*/
         dst.x = (strip->ruler->w-1) - 10 - 5 - text->w;
 

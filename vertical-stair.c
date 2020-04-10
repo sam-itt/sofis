@@ -76,13 +76,10 @@ VerticalStair *vertical_stair_init(VerticalStair *self, const char *bg_img, cons
 
     self->scale.ruler = IMG_Load(bg_img);
     self->scale.ppv = 43.0/1000.0; /*0.0426*/
-    self->scale.fei = 11;
-    self->scale.vstep = 1000;
     self->scale.start = -2279;
     self->scale.end = 2279;
 
     vertical_stair_cursor_init(&self->cursor, cursor_img, cfont_size);
-//    ANIMATED_GAUGE(self)->view = SDL_CreateRGBSurface(0, self->scale.ruler->w,self->scale.ruler->h, 32,0,0,0,0);
     ANIMATED_GAUGE(self)->view = SDL_CreateRGBSurface(0, self->cursor.bg->w, self->scale.ruler->h, 32,0,0,0,0);
     SDL_SetColorKey(ANIMATED_GAUGE(self)->view, SDL_TRUE, SDL_UCKEY(ANIMATED_GAUGE(self)->view));
 
@@ -97,27 +94,6 @@ void vertical_stair_free(VerticalStair *self)
     free(self);
 }
 
-/**
- * TODO: Find a way to integrate this in vertical_strip_resolve_value
- * without breaking everything
- */
-float vertical_stair_resolve_value(VerticalStair *self, float value)
-{
-    float rv;
-
-    /* To map [A, B] --> [a, b]
-     *
-     * use this formula : (val - A)*(b-a)/(B-A) + a
-     *
-     */
-
-/*    first interval is start,end, second interval is 0,190*/
-    rv = (value - self->scale.start)*((self->scale.ruler->h-1) - 0)/(self->scale.end - self->scale.start) + 0;
-    rv = (self->scale.ruler->h-1) - rv;
-    return rv;
-}
-
-
 static void vertical_stair_render_value(VerticalStair *self, float value)
 {
     float y;
@@ -127,8 +103,7 @@ static void vertical_stair_render_value(VerticalStair *self, float value)
     SDL_FillRect(ANIMATED_GAUGE(self)->view, NULL, SDL_UCKEY(ANIMATED_GAUGE(self)->view));
     SDL_BlitSurface(self->scale.ruler, NULL, ANIMATED_GAUGE(self)->view, NULL);
 
-    //y = vertical_strip_resolve_value(&self->scale, value, true);
-    y = vertical_stair_resolve_value(self, value);
+    y = vertical_strip_resolve_value(&self->scale, value, true);
     y = round(round(y) - self->cursor.bg->h/2.0);
 
     SDL_BlitSurface(self->cursor.bg, NULL, ANIMATED_GAUGE(self)->view, &(SDL_Rect){1, y,0,0});

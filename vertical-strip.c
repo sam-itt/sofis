@@ -21,8 +21,10 @@ bool vertical_strip_has_value(VerticalStrip *self, float value)
 
 /**
  * Returns image pixel index (i.e y for vertical gauges, x for horizontal)
- * from a given value
- * TODO be part of generic gauges layer
+ * from a given value. This function does a crude approximation that might fail
+ * to align with etch marks, if any. If there are any etch marks on the strip,
+ * derivative classes should handle them and call this function only to resolve
+ * values between marks
  *
  * @param value the value to look for
  * @param reverse if true, assumes that 0 is a the bottom of the strip instead of
@@ -31,27 +33,6 @@ bool vertical_strip_has_value(VerticalStrip *self, float value)
  * be mapped (outside of the [{@link #start}, {@link #end}] range)
  */
 float vertical_strip_resolve_value(VerticalStrip *self, float value, bool reverse)
-{
-    float y;
-
-    if(!vertical_strip_has_value(self, value))
-        return -1;
-
-    value = fmod(value, fabs(self->end - self->start) + 1);
-    y =  round(value * self->ppv + self->fei);
-//    printf("VerticalStrip: mapping value %f from [%f %f] to [%d %d]: %f",value, self->start,self->end,0,self->ruler->h-1,y);
-    if(reverse){
-        y = (self->ruler->h-1) - y;
-//        printf(" reversed: %f\n",y);
-    }else{
-//        printf("\n");
-    }
-
-    return y;
-
-}
-
-float vertical_strip_resolve_value_fuzzy(VerticalStrip *self, float value, bool reverse)
 {
     float rv;
     /* To map [A, B] --> [a, b]
@@ -67,46 +48,8 @@ float vertical_strip_resolve_value_fuzzy(VerticalStrip *self, float value, bool 
         rv = (value - self->start)*(0 - (self->ruler->h-1))/(self->end - self->start) + (self->ruler->h-1);
 //        printf("Reverse: New resolve: mapping value %f from [%f %f] to [%d %d]: %f\n",value, self->start,self->end,self->ruler->h-1,0,rv);
     }
-#if 0
-    if(reverse){
-        rv = (self->ruler->h-1) - rv;
-        printf(" reversed: %f\n",rv);
-    }else{
-        printf("\n");
-    }
-#endif
     return rv;
 }
-
-float vertical_strip_resolve_value_new(VerticalStrip *self, float value, float first_grad, bool reverse)
-{
-/*
-    if(!vertical_strip_has_value(self, value))
-        return -1;*/
-
-    if(fmod(value, self->vstep) == 0){ /*Value is a big graduation*/
-        float y;
-        value -= first_grad;
-        int ngrads = value/self->vstep;
-        if(!reverse)
-            y = self->fei + ngrads * self->ppv * self->vstep;
-        else
-            y = self->fei - ngrads * self->ppv * self->vstep;
-        return y;
-    }else if(self->vsubstep != 0 && fmod(value, self->vsubstep) == 0){ /*Value is a small graduation*/
-        float y;
-        value -= first_grad;
-        int ngrads = value/self->vsubstep;
-        if(!reverse)
-            y = self->fei + ngrads * self->ppv * self->vsubstep;
-        else
-            y = self->fei - ngrads * self->ppv * self->vsubstep;
-        return y;
-    }else{
-        return vertical_strip_resolve_value_fuzzy(self, value, reverse);
-    }
-}
-
 
 void vertical_strip_clip_value(VerticalStrip *self, float *value)
 {
