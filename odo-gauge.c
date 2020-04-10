@@ -87,9 +87,9 @@ OdoGauge *odo_gauge_vainit(OdoGauge *self, int rubis, int nbarrels, va_list ap)
 
         width += VERTICAL_STRIP(self->barrels[i])->ruler->w;
         if(self->heights[i] == -1)
-            self->heights[i] = VERTICAL_STRIP(self->barrels[i])->vstep*2;
+            self->heights[i] = self->barrels[i]->symbol_h*2;
         else if(self->heights[i] == -2)
-            self->heights[i] = VERTICAL_STRIP(self->barrels[i])->vstep;
+            self->heights[i] = self->barrels[i]->symbol_h;
         max_height = (self->heights[i] > max_height) ? self->heights[i] : max_height;
 
         float val = floor(VERTICAL_STRIP(self->barrels[i])->end) * powf(10.0,pwr);

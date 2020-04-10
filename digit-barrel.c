@@ -79,16 +79,15 @@ DigitBarrel *digit_barrel_init(DigitBarrel *self, uintf8_t font_size, float star
     }
     TTF_CloseFont(font);
 
-    strip->vstep = font_size; /*vstep is equivalent to symbol_h*/
-    strip->fei = (strip->vstep-1)/2.0;
+    self->symbol_h = font_size;
+    self->fei = round((self->symbol_h-1)/2.0);
     /* The value is the centerline of the digit.
      * There is exactly @param step between two digits'
      * centerlines. This dimension (between centerlnes)
      * happend to be the same as the symbol size,i as it
      * is two consective halves of a symbol
      * */
-    strip->ppv = strip->vstep / step;
-
+    strip->ppv = self->symbol_h / step;
 
     return self;
 }
@@ -104,6 +103,35 @@ void digit_barrel_free(DigitBarrel *self)
     }
 }
 
+
+
+
+/**
+ * Returns pixel index (i.e y)
+ * from a given value
+ *
+ * @param value the value to look for
+ * @param reverse if true, assumes that 0 is a the bottom of the strip instead of
+ * at the top
+ * @return the pixel index in {@link #ruler} that maps to @param value, or -1 if value
+ * can't be mapped (outside of the [{@link #start}, {@link #end}] range)
+ */
+float digit_barrel_resolve_value(DigitBarrel *self, float value)
+{
+    VerticalStrip *strip;
+    float y;
+
+    strip = VERTICAL_STRIP(self);
+    if(!vertical_strip_has_value(strip, value))
+        return -1;
+
+    value = fmod(value, fabs(strip->end - strip->start) + 1);
+    y =  value * strip->ppv + self->fei;
+
+    return round(y);
+}
+
+
 /*
  * Rubis is the offset in region where to align the value fomr the spinner.
  * if its negative, the rubis will be (vertical) the center dst: the y index
@@ -118,7 +146,7 @@ void digit_barrel_render_value(DigitBarrel *self, float value, SDL_Surface *dst,
     strip = VERTICAL_STRIP(self);
 
     /*translate @param value to an index in the spinner texture*/
-    y = vertical_strip_resolve_value(strip, value, false);
+    y = digit_barrel_resolve_value(self, value);
     rubis = (rubis < 0) ? region->h / 2.0 : rubis;
     rubis -= region->y;
     SDL_Rect portion = {

@@ -9,6 +9,8 @@
 typedef struct{
     VerticalStrip parent;
 
+    float symbol_h;
+    float fei;
     uintf8_t refcount;
 }DigitBarrel;
 
@@ -16,6 +18,9 @@ typedef struct{
 DigitBarrel *digit_barrel_new(uintf8_t font_size, float start, float end, float step);
 DigitBarrel *digit_barrel_init(DigitBarrel *self, uintf8_t font_size, float start, float end, float step);
 void digit_barrel_free(DigitBarrel *self);
+
+
+float digit_barrel_resolve_value(DigitBarrel *self, float value);
 
 void digit_barrel_render_value(DigitBarrel *self, float value, SDL_Surface *dst, SDL_Rect *region, float rubis);
 #endif /* DIGIT_BARREL_H */
