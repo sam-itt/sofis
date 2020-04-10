@@ -25,7 +25,8 @@ AltIndicator *alt_indicator_new(void)
             ANIMATED_GAUGE(self->ladder)->view->h + 20 * 2,
             32, SDL_PIXELFORMAT_RGBA32
         );
-        SDL_FillRect(ANIMATED_GAUGE(self)->view, NULL, SDL_UCKEY(ANIMATED_GAUGE(self)->view));
+        SDL_SetColorKey(self->view, SDL_TRUE, SDL_UCKEY(self->view));
+        SDL_FillRect(self->view, NULL, SDL_UCKEY(self->view));
         self->font  = TTF_OpenFont("TerminusTTF-4.47.0.ttf", 16);
     }
     return self;
@@ -63,7 +64,7 @@ static void alt_indicator_draw_outline(AltIndicator *self)
     int x,y;
     SDL_Surface *gauge;
 
-    gauge = ANIMATED_GAUGE(self)->view;
+    gauge = self->view;
 
     SDL_LockSurface(gauge);
     Uint32 *pixels = gauge->pixels;
@@ -160,8 +161,7 @@ SDL_Surface *alt_indicator_render(AltIndicator *self, Uint32 dt)
         placement[0].y = 19;
 
 
-        SDL_FillRect(ANIMATED_GAUGE(self)->view, NULL, SDL_UCKEY(ANIMATED_GAUGE(self)->view));
-        SDL_SetColorKey(ANIMATED_GAUGE(self)->view, SDL_TRUE, SDL_UCKEY(ANIMATED_GAUGE(self)->view));
+        SDL_FillRect(self->view, NULL, SDL_UCKEY(self->view));
 
         alt_indicator_draw_outline(self);
         alt_indicator_draw_qnh(self);
