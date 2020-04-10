@@ -6,6 +6,7 @@
 #include <SDL2/SDL_ttf.h>
 
 #include "ladder-gauge.h"
+#include "alt-ladder-page-descriptor.h"
 
 #include "odo-gauge.h"
 #include "alt-indicator.h"
@@ -26,12 +27,13 @@ VerticalStair *stair = NULL;
 AltGroup *group = NULL;
 
 //float alt = 1150.0;
-float alt = 0.0;
+float alt = 900.0;
 float odo_val = 842.0;
 //float vs = 2000.0;
 float vs = 0.0;
 #define ODO_INC 1
 #define VARIO_INC 100
+#define ALT_INC 150
 
 
 float compute_vs(float old_alt, float new_alt, Uint32 elapsed);
@@ -90,8 +92,8 @@ bool handle_keyboard(SDL_KeyboardEvent *event, Uint32 elapsed)
             break;
         case SDLK_UP:
             if(event->state == SDL_PRESSED){
-                vs = compute_vs(alt, alt+150, elapsed);
-                alt += 150;
+                vs = compute_vs(alt, alt+ALT_INC, elapsed);
+                alt += ALT_INC;
                 animated_gauge_set_value(ANIMATED_GAUGE(ladder), alt);
                 odo_gauge_set_value(wheel, alt);
                 alt_indicator_set_value(alt_ind, alt);
@@ -101,8 +103,8 @@ bool handle_keyboard(SDL_KeyboardEvent *event, Uint32 elapsed)
             break;
         case SDLK_DOWN:
             if(event->state == SDL_PRESSED){
-                vs = compute_vs(alt, alt-150, elapsed);
-                alt -= 150;
+                vs = compute_vs(alt, alt-ALT_INC, elapsed);
+                alt -= ALT_INC;
                 animated_gauge_set_value(ANIMATED_GAUGE(ladder), alt);
                 odo_gauge_set_value(wheel, alt);
                 alt_indicator_set_value(alt_ind, alt);
@@ -177,6 +179,7 @@ bool handle_events(Uint32 elapsed)
 
 float compute_vs(float old_alt, float new_alt, Uint32 elapsed)
 {
+    return vs;
     float rv;
 
     rv = (new_alt-old_alt)/(elapsed/1000); /*ft per second*/
@@ -230,7 +233,7 @@ int main(int argc, char **argv)
 
     gauge = odo_gauge_new(digit_barrel_new(61, 0, 99,10),-1,-1);
 
-    ladder = ladder_gauge_new(BOTTUM_UP, -1);
+    ladder = ladder_gauge_new((LadderPageDescriptor *)alt_ladder_page_descriptor_new(), -1);
     animated_gauge_set_value(ANIMATED_GAUGE(ladder), alt);
 
     DigitBarrel *db = digit_barrel_new(18, 0, 9.999, 1);

@@ -1,21 +1,15 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include <SDL2/SDL_image.h>
-#include <SDL2/SDL_ttf.h>
-
 #include "ladder-gauge.h"
-
-//ms
-#define SPIN_DURATION 1000
-
+#include "ladder-page-factory.h"
 #include "sdl-colors.h"
 
 static void ladder_gauge_render_value(LadderGauge *self, float value);
-void ladder_page_free(LadderPage *self);
 static void ladder_gauge_draw_rubis(LadderGauge *self);
 
-LadderGauge *ladder_gauge_new(ScrollType direction,  int rubis)
+
+LadderGauge *ladder_gauge_new(LadderPageDescriptor *descriptor, int rubis)
 {
     LadderGauge *self;
 
@@ -26,7 +20,7 @@ LadderGauge *ladder_gauge_new(ScrollType direction,  int rubis)
         ANIMATED_GAUGE(self)->damaged = true;
         ANIMATED_GAUGE(self)->renderer = (ValueRenderFunc)ladder_gauge_render_value;
 
-        self->direction = direction;
+        self->descriptor = descriptor;
 
         if(rubis > 0)
             self->rubis = rubis;
@@ -46,76 +40,8 @@ void ladder_gauge_free(LadderGauge *self)
         }
     }
     animated_gauge_dispose(ANIMATED_GAUGE(self));
+    free(self->descriptor); /*No need for virtual dispose ATM*/
     free(self);
-}
-
-LadderPage *ladder_page_new(float start, float end, float vstep, ScrollType direction)
-{
-    LadderPage *self;
-
-    self = calloc(1, sizeof(LadderPage));
-    if(self){
-        VERTICAL_STRIP(self)->fvo = 17;
-        VERTICAL_STRIP(self)->start = start;
-        VERTICAL_STRIP(self)->end = end;
-        VERTICAL_STRIP(self)->vstep = vstep;
-        self->direction = direction;
-
-        if(!ladder_page_init(self)){
-            free(self);
-            return NULL;
-        }
-
-
-    }
-    return self;
-}
-
-LadderPage *ladder_page_init(LadderPage *self)
-{
-    SDL_Surface *text;
-    TTF_Font *font;
-    SDL_Rect dst;
-    char number[6]; //5 digits plus \0
-    float y;
-    VerticalStrip *strip;
-
-    strip = VERTICAL_STRIP(self);
-    strip->ruler = IMG_Load("alt-ladder.png");
-    if(!strip->ruler){
-        return NULL;
-    }
-    strip->ppv = strip->ruler->h/(strip->end - strip->start +1);
-
-    font = TTF_OpenFont("TerminusTTF-4.47.0.ttf", 16);
-
-    for(int i = strip->start; i <= strip->end; i += strip->vstep){
-        snprintf(number, 6, "%d", i);
-        text = TTF_RenderText_Solid(font, number, SDL_WHITE);
-
-        y = vertical_strip_resolve_value(strip, i, self->direction == BOTTUM_UP);
-        dst.y = y - text->h/2.0; /*verticaly center text*/
-        dst.x = 10 + 5;
-
-        SDL_BlitSurface(text, NULL, strip->ruler, &dst);
-        SDL_FreeSurface(text);
-    }
-
-
-    TTF_CloseFont(font);
-
-    return self;
-}
-
-void ladder_page_free(LadderPage *self)
-{
-    vertical_strip_dispose(VERTICAL_STRIP(self));
-    free(self);
-}
-
-int ladder_page_get_index(LadderPage *self)
-{
-    return VERTICAL_STRIP(self)->start / PAGE_SIZE;
 }
 
 /**
@@ -124,7 +50,6 @@ int ladder_page_get_index(LadderPage *self)
  * If range is 0-699, then page 0 would be 0 -> 699, page 1
  * 700-1399, etc.
  */
-
 LadderPage *ladder_gauge_get_page(LadderGauge *self, uintf8_t idx)
 {
     int a_idx;
@@ -168,7 +93,7 @@ LadderPage *ladder_gauge_get_page(LadderGauge *self, uintf8_t idx)
 
     a_idx = idx - self->base;
     if(!self->pages[a_idx])
-        self->pages[a_idx] = ladder_page_new(idx * PAGE_SIZE, idx * PAGE_SIZE + (PAGE_SIZE-1), 100, self->direction);
+        self->pages[a_idx] = ladder_page_factory_create(idx, self->descriptor);
 
     return self->pages[a_idx];
 }
@@ -178,7 +103,7 @@ LadderPage *ladder_gauge_get_page_for(LadderGauge *self, float value)
 {
     int page_idx;
 
-    page_idx = (int)value/PAGE_SIZE;
+    page_idx = (int)value/(self->descriptor->page_size+self->descriptor->offset);
 
     return ladder_gauge_get_page(self, page_idx);
 }
@@ -230,8 +155,10 @@ static void ladder_gauge_render_value(LadderGauge *self, float value)
     value = value >= 0 ? value : 0.0f;
 
     page = ladder_gauge_get_page_for(self, value);
+    int page_idx = ladder_page_get_index(page);
 
-    y = vertical_strip_resolve_value(VERTICAL_STRIP(page), value, self->direction == BOTTUM_UP);
+    y = vertical_strip_resolve_value_new(VERTICAL_STRIP(page), value, page_idx*self->descriptor->page_size ,self->descriptor->direction == BOTTUM_UP);
+//    printf("y = %f for value = %f\n",y,value);
     rubis = (self->rubis < 0) ? gauge->h / 2.0 : self->rubis;
     SDL_Rect portion = {
         .x = 0,
@@ -247,7 +174,7 @@ static void ladder_gauge_render_value(LadderGauge *self, float value)
             .w = VERTICAL_STRIP(page)->ruler->w,
             .h = VERTICAL_STRIP(page)->ruler->h - patch.y
         };
-        if(self->direction == TOP_DOWN){
+        if(self->descriptor->direction == TOP_DOWN){
             /* 0 is on top, 100 is downwards. We need to fill the top with values before the begining
              * of the current page, i.e get the previous page */
             int pidx = ladder_page_get_index(page);
@@ -280,7 +207,7 @@ static void ladder_gauge_render_value(LadderGauge *self, float value)
             .w = VERTICAL_STRIP(page)->ruler->w,
             .h = delta
         };
-        if(self->direction == TOP_DOWN){
+        if(self->descriptor->direction == TOP_DOWN){
             /* 0 is on top, 100 is downwards. We need to fill the bottom with values that are after the end
              * of the current page, i.e get the next page */
             int pidx = ladder_page_get_index(page);

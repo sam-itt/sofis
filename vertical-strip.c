@@ -38,12 +38,75 @@ float vertical_strip_resolve_value(VerticalStrip *self, float value, bool revers
         return -1;
 
     value = fmod(value, fabs(self->end - self->start) + 1);
-    y =  round(value * self->ppv + self->fvo);
-    if(reverse)
+    y =  round(value * self->ppv + self->fei);
+//    printf("VerticalStrip: mapping value %f from [%f %f] to [%d %d]: %f",value, self->start,self->end,0,self->ruler->h-1,y);
+    if(reverse){
         y = (self->ruler->h-1) - y;
+//        printf(" reversed: %f\n",y);
+    }else{
+//        printf("\n");
+    }
 
     return y;
+
 }
+
+float vertical_strip_resolve_value_fuzzy(VerticalStrip *self, float value, bool reverse)
+{
+    float rv;
+    /* To map [A, B] --> [a, b]
+     *
+     * use this formula : (val - A)*(b-a)/(B-A) + a
+     *
+     */
+/*    first interval is start,end, second interval is 0,surface->h-1*/
+    if(!reverse){
+        rv = (value - self->start)*((self->ruler->h-1) - 0)/(self->end - self->start) + 0;
+//        printf("Forward: New resolve: mapping value %f from [%f %f] to [%d %d]: %f\n",value, self->start,self->end,0,self->ruler->h-1,rv);
+    }else{
+        rv = (value - self->start)*(0 - (self->ruler->h-1))/(self->end - self->start) + (self->ruler->h-1);
+//        printf("Reverse: New resolve: mapping value %f from [%f %f] to [%d %d]: %f\n",value, self->start,self->end,self->ruler->h-1,0,rv);
+    }
+#if 0
+    if(reverse){
+        rv = (self->ruler->h-1) - rv;
+        printf(" reversed: %f\n",rv);
+    }else{
+        printf("\n");
+    }
+#endif
+    return rv;
+}
+
+float vertical_strip_resolve_value_new(VerticalStrip *self, float value, float first_grad, bool reverse)
+{
+/*
+    if(!vertical_strip_has_value(self, value))
+        return -1;*/
+
+    if(fmod(value, self->vstep) == 0){ /*Value is a big graduation*/
+        float y;
+        value -= first_grad;
+        int ngrads = value/self->vstep;
+        if(!reverse)
+            y = self->fei + ngrads * self->ppv * self->vstep;
+        else
+            y = self->fei - ngrads * self->ppv * self->vstep;
+        return y;
+    }else if(self->vsubstep != 0 && fmod(value, self->vsubstep) == 0){ /*Value is a small graduation*/
+        float y;
+        value -= first_grad;
+        int ngrads = value/self->vsubstep;
+        if(!reverse)
+            y = self->fei + ngrads * self->ppv * self->vsubstep;
+        else
+            y = self->fei - ngrads * self->ppv * self->vsubstep;
+        return y;
+    }else{
+        return vertical_strip_resolve_value_fuzzy(self, value, reverse);
+    }
+}
+
 
 void vertical_strip_clip_value(VerticalStrip *self, float *value)
 {

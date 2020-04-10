@@ -80,7 +80,7 @@ DigitBarrel *digit_barrel_init(DigitBarrel *self, uintf8_t font_size, float star
     TTF_CloseFont(font);
 
     strip->vstep = font_size; /*vstep is equivalent to symbol_h*/
-    strip->fvo = (strip->vstep-1)/2.0;
+    strip->fei = (strip->vstep-1)/2.0;
     /* The value is the centerline of the digit.
      * There is exactly @param step between two digits'
      * centerlines. This dimension (between centerlnes)

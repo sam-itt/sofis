@@ -1,0 +1,16 @@
+#include <stdio.h>
+#include <stdlib.h>
+
+#include "ladder-page-factory.h"
+
+LadderPage *ladder_page_factory_create(int index, LadderPageDescriptor *descriptor)
+{
+    LadderPage *rv;
+    float start;
+
+    start = index * descriptor->page_size; /*'nominal' start, will be offsted by the init func */
+
+    rv = ladder_page_new(start, descriptor);
+
+    return descriptor->init_page(rv);
+}

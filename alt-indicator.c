@@ -2,6 +2,7 @@
 #include <stdlib.h>
 
 #include "alt-indicator.h"
+#include "alt-ladder-page-descriptor.h"
 #include "sdl-colors.h"
 
 AltIndicator *alt_indicator_new(void)
@@ -9,7 +10,7 @@ AltIndicator *alt_indicator_new(void)
     AltIndicator *self;
     self = calloc(1, sizeof(AltIndicator));
     if(self){
-        self->ladder = ladder_gauge_new(BOTTUM_UP, -1);
+        self->ladder = ladder_gauge_new((LadderPageDescriptor *)alt_ladder_page_descriptor_new(), -1);
 
         DigitBarrel *db = digit_barrel_new(18, 0, 9.999, 1);
         DigitBarrel *db2 = digit_barrel_new(18, 0, 99, 10);
@@ -69,6 +70,10 @@ static void alt_indicator_draw_outline(AltIndicator *self)
     SDL_LockSurface(gauge);
     Uint32 *pixels = gauge->pixels;
     Uint32 color = SDL_UWHITE(gauge);
+//    y = 0;
+//    for(x = 0; x < gauge->w; x++){
+//        pixels[y * gauge->w + x] = color;
+//    }
     y= 19;
     for(x = 0; x < gauge->w; x++){
         pixels[y * gauge->w + x] = color;
@@ -77,19 +82,19 @@ static void alt_indicator_draw_outline(AltIndicator *self)
     for(x = 0; x < gauge->w; x++){
         pixels[y * gauge->w + x] = color;
     }
-    y = gauge->h - 1;
-    for(x = 0; x < gauge->w; x++){
-        pixels[y * gauge->w + x] = color;
-    }
-    x = gauge->w - 1;
-    for(y = 0; y < gauge->h; y++){
-        pixels[y * gauge->w + x] = color;
-    }
-    /*TODO: don't draw left side if current value > page 1 limit*/
-    x = 0;
-    for(y = 0; y < gauge->h; y++){
-        pixels[y * gauge->w + x] = color;
-    }
+//    y = gauge->h - 1;
+//    for(x = 0; x < gauge->w; x++){
+//        pixels[y * gauge->w + x] = color;
+//    }
+//    x = gauge->w - 1;
+//    for(y = 0; y < gauge->h; y++){
+//        pixels[y * gauge->w + x] = color;
+//    }
+//    /*TODO: don't draw left side if current value > page 1 limit*/
+//    x = 0;
+//    for(y = 0; y < gauge->h; y++){
+//        pixels[y * gauge->w + x] = color;
+//    }
 
     SDL_UnlockSurface(gauge);
 }

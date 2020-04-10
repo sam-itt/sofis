@@ -76,7 +76,7 @@ VerticalStair *vertical_stair_init(VerticalStair *self, const char *bg_img, cons
 
     self->scale.ruler = IMG_Load(bg_img);
     self->scale.ppv = 43.0/1000.0; /*0.0426*/
-    self->scale.fvo = 11;
+    self->scale.fei = 11;
     self->scale.vstep = 1000;
     self->scale.start = -2279;
     self->scale.end = 2279;
@@ -104,13 +104,12 @@ void vertical_stair_free(VerticalStair *self)
 float vertical_stair_resolve_value(VerticalStair *self, float value)
 {
     float rv;
-    /*
-    To map
-    [A, B] --> [a, b]
 
-    use this formula
-    (val - A)*(b-a)/(B-A) + a
-    */
+    /* To map [A, B] --> [a, b]
+     *
+     * use this formula : (val - A)*(b-a)/(B-A) + a
+     *
+     */
 
 /*    first interval is start,end, second interval is 0,190*/
     rv = (value - self->scale.start)*((self->scale.ruler->h-1) - 0)/(self->scale.end - self->scale.start) + 0;
