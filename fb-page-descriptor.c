@@ -31,7 +31,8 @@ FBPageDescriptor *fb_page_descriptor_init(FBPageDescriptor *self, const char *fi
         page_size, vstep, vsubstep,
         fb_ladder_page_init
     );
-    self->filename = strdup(filename); //TODO: strdup ?
+//    self->filename = strdup(filename); //TODO: strdup ?
+    self->filename = filename; //TODO: strdup ?
 
     return self;
 }

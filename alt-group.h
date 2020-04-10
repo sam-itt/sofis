@@ -12,6 +12,7 @@ typedef struct{
 
 AltGroup *alt_group_new(void);
 AltGroup *alt_group_init(AltGroup *self);
+void alt_group_free(AltGroup *self);
 
 
 void alt_group_set_altitude(AltGroup *self, float value);

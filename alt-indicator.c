@@ -38,6 +38,7 @@ void alt_indicator_free(AltIndicator *self)
     ladder_gauge_free(self->ladder);
     odo_gauge_free(self->odo);
     TTF_CloseFont(self->font);
+    SDL_FreeSurface(self->view);
     free(self);
 }
 

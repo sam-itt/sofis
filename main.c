@@ -307,6 +307,10 @@ int main(int argc, char **argv)
     odo_gauge_free(wheel);
     odo_gauge_free(odo);
     ladder_gauge_free(ladder);
+    alt_group_free(group);
+    airspeed_indicator_free(asi);
+    alt_indicator_free(alt_ind);
+    vertical_stair_free(stair);
     SDL_DestroyWindow(window);
     TTF_Quit();
     SDL_Quit();
