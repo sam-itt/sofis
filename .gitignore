@@ -2,4 +2,6 @@
 test-sdl
 .ycm_extra_conf.py
 local-data
+.clangd/
+compile_commands.json
 
