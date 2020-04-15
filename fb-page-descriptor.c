@@ -58,8 +58,8 @@ LadderPage *fb_ladder_page_init(LadderPage *self)
     }
 
     strip->ppv = (strip->ruler->h)/(adesc->page_size*1.0);
-    printf("FileBacked on %s ppv is %f\n",descriptor->filename,strip->ppv);
-    printf("Page marking range is [%f, %f]\n", strip->start, strip->end);
+//    printf("FileBacked on %s ppv is %f\n",descriptor->filename,strip->ppv);
+//    printf("Page marking range is [%f, %f]\n", strip->start, strip->end);
 
     /* We are just going to offset the interval, size remains the same
      * so ppv wont change and can be computed before or afterwards*/
@@ -71,8 +71,8 @@ LadderPage *fb_ladder_page_init(LadderPage *self)
     strip->start += adesc->offset;
     strip->end = strip->start + adesc->page_size-1;
 
-    int page_index = ladder_page_get_index(LADDER_PAGE(self));
-    printf("Page %d real range is [%f, %f]\n",page_index, strip->start, strip->end);
+//    int page_index = ladder_page_get_index(LADDER_PAGE(self));
+//    printf("Page %d real range is [%f, %f]\n",page_index, strip->start, strip->end);
 
     return self;
 }

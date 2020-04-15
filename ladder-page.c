@@ -111,11 +111,11 @@ void ladder_page_etch_markings(LadderPage *self, int font_size)
     strip = VERTICAL_STRIP(self);
 
     page_index = ladder_page_get_index(self);
-    printf("Page %d real range is [%f, %f]\n",page_index, strip->start, strip->end);
+//    printf("Page %d real range is [%f, %f]\n",page_index, strip->start, strip->end);
 
 
     font = TTF_OpenFont("TerminusTTF-4.47.0.ttf", font_size);
-    printf("Writing indexes on %d starting at %d to %f\n",page_index, page_index*self->descriptor->page_size, strip->end);
+//    printf("Writing indexes on %d starting at %d to %f\n",page_index, page_index*self->descriptor->page_size, strip->end);
     for(int i = page_index*self->descriptor->page_size; i <= strip->end; i += self->descriptor->vstep){
         snprintf(number, 6, "%d", i);
         text = TTF_RenderText_Solid(font, number, SDL_WHITE);
