@@ -43,7 +43,7 @@ float odo_val = 0.0;
 float vs = 0.0;
 float ias = 10.0;
 //float pitch = 2.19;
-float pitch = -19.0;
+float pitch = 0.0;
 float roll = 0.0;
 #define ODO_INC 1
 #define VARIO_INC 100
@@ -149,12 +149,14 @@ bool handle_keyboard(SDL_KeyboardEvent *event, Uint32 elapsed)
         case SDLK_c:
             if(event->state == SDL_PRESSED){
                 roll -= ROLL_INC;
+                attitude_indicator_set_roll(ai, roll);
                 animated_gauge_set_value(ANIMATED_GAUGE(rsg), roll);
             }
             break;
         case SDLK_d:
             if(event->state == SDL_PRESSED){
                 roll += ROLL_INC;
+                attitude_indicator_set_roll(ai, roll);
                 animated_gauge_set_value(ANIMATED_GAUGE(rsg), roll);
             }
             break;
@@ -297,6 +299,7 @@ int main(int argc, char **argv)
 
     ai = attitude_indicator_new(640,480);
 	animated_gauge_set_value(ANIMATED_GAUGE(ai), pitch);
+    attitude_indicator_set_roll(ai, roll);
 
     rsg = roll_slip_gauge_new();
     animated_gauge_set_value(ANIMATED_GAUGE(rsg), roll);
@@ -321,7 +324,8 @@ int main(int argc, char **argv)
 //        alt_group_render_at(group, elapsed, screenSurface, &airect);
 //        SDL_BlitSurface(airspeed_indicator_render(asi, elapsed), NULL, screenSurface, &vrect);
 
-        SDL_BlitSurface(animated_gauge_render(ANIMATED_GAUGE(rsg), elapsed) , NULL, screenSurface, &dst);
+//        SDL_BlitSurface(animated_gauge_render(ANIMATED_GAUGE(rsg), elapsed) , NULL, screenSurface, &dst);
+        animated_gauge_render(ANIMATED_GAUGE(ai->rollslip), elapsed);
         SDL_BlitSurface(animated_gauge_render(ANIMATED_GAUGE(ai), elapsed) , NULL, screenSurface, NULL);
         SDL_UpdateWindowSurface(window);
 
@@ -345,9 +349,9 @@ int main(int argc, char **argv)
                 printf("Attitude pitch: %0.2f\n",ANIMATED_GAUGE(ai)->value);
                 oldv[3] = ANIMATED_GAUGE(ai)->value;
             }
-            if(ANIMATED_GAUGE(rsg)->value != oldv[4]){
-                printf("Attitude roll: %0.2f\n", ANIMATED_GAUGE(rsg)->value);
-                oldv[4] = ANIMATED_GAUGE(rsg)->value;
+            if(ai->rollslip->parent.value != oldv[4]){
+                printf("Attitude roll: %0.2f\n", ai->rollslip->parent.value);
+                oldv[4] = ai->rollslip->parent.value;
             }
 
 
@@ -367,6 +371,7 @@ int main(int argc, char **argv)
     alt_indicator_free(alt_ind);
     vertical_stair_free(stair);
     roll_slip_gauge_free(rsg);
+    attitude_indicator_free(ai);
     SDL_DestroyWindow(window);
     TTF_Quit();
     SDL_Quit();
