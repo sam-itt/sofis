@@ -7,6 +7,7 @@
 
 #include "animated-gauge.h"
 #include "basic-hud.h"
+#include "flightgear-connector.h"
 #include "ladder-gauge.h"
 #include "alt-ladder-page-descriptor.h"
 
@@ -187,6 +188,10 @@ int main(int argc, char **argv)
     Uint32 acc = 0;
     i = 3;
 
+    FlightgearConnector *fglink;
+    fglink = flightgear_connector_new(6789);
+    flightgear_connector_set_nonblocking(fglink);
+    FlightgearPacket packet;
 
     do{
         ticks = SDL_GetTicks();
@@ -194,6 +199,15 @@ int main(int argc, char **argv)
         acc += elapsed;
 
         done = handle_events(elapsed);
+        if(flightgear_connector_get_packet(fglink, &packet)){
+            basic_hud_set(hud,  5,
+                ALTITUDE, (float)packet.altitude,
+                AIRSPEED, (float)packet.airspeed,
+                VERTICAL_SPEED, packet.vertical_speed,
+                PITCH, packet.pitch,
+                ROLL, packet.roll
+            );
+        }
 
         SDL_FillRect(screenSurface, NULL, colors[i]);
 
@@ -244,6 +258,7 @@ int main(int argc, char **argv)
     }while(!done);
 
     basic_hud_free(hud);
+    flightgear_connector_free(fglink);
 
     SDL_DestroyWindow(window);
     TTF_Quit();
