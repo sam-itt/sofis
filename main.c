@@ -16,6 +16,9 @@
 #include "airspeed-indicator.h"
 #include "attitude-indicator.h"
 
+#include "roll-slip-gauge.h"
+
+
 #define SCREEN_WIDTH 640
 #define SCREEN_HEIGHT 480
 
@@ -30,6 +33,7 @@ VerticalStair *stair = NULL;
 AltGroup *group = NULL;
 AirspeedIndicator *asi = NULL;
 AttitudeIndicator *ai = NULL;
+RollSlipGauge *rsg = NULL;
 
 
 //float alt = 1150.0;
@@ -144,14 +148,14 @@ bool handle_keyboard(SDL_KeyboardEvent *event, Uint32 elapsed)
             break;
         case SDLK_c:
             if(event->state == SDL_PRESSED){
-                    roll -= ROLL_INC;
-//                animated_gauge_set_value(ANIMATED_GAUGE(ai), pitch);
+                roll -= ROLL_INC;
+                animated_gauge_set_value(ANIMATED_GAUGE(rsg), roll);
             }
             break;
         case SDLK_d:
             if(event->state == SDL_PRESSED){
-                    roll += ROLL_INC;
-//                animated_gauge_set_value(ANIMATED_GAUGE(ai), pitch);
+                roll += ROLL_INC;
+                animated_gauge_set_value(ANIMATED_GAUGE(rsg), roll);
             }
             break;
 
@@ -206,7 +210,7 @@ int main(int argc, char **argv)
     Uint32 colors[N_COLORS];
     bool done;
     int i;
-    float oldv[4] = {0,0,0,0};
+    float oldv[5] = {0,0,0,0,0};
 
     if (SDL_Init(SDL_INIT_VIDEO) < 0) {
         return 1;
@@ -285,7 +289,7 @@ int main(int argc, char **argv)
     Uint32 acc = 0;
     i = 3;
 
-//    SDL_Rect dst = {SCREEN_WIDTH/2,SCREEN_HEIGHT/2,0,0};
+    SDL_Rect dst = {SCREEN_WIDTH/2,SCREEN_HEIGHT/2,0,0};
 //    SDL_Rect lrect = {150,20,0,0};
 //    SDL_Rect wheelrect = {400,20,0,0};
 //    SDL_Rect odorect = {SCREEN_WIDTH/2 - 80,SCREEN_HEIGHT/2,0,0};
@@ -293,6 +297,9 @@ int main(int argc, char **argv)
 
     ai = attitude_indicator_new(640,480);
 	animated_gauge_set_value(ANIMATED_GAUGE(ai), pitch);
+
+    rsg = roll_slip_gauge_new();
+    animated_gauge_set_value(ANIMATED_GAUGE(rsg), roll);
 
     SDL_Rect airect = {439,50,0,0};
     SDL_Rect vrect = {96,70,0,0};
@@ -314,7 +321,7 @@ int main(int argc, char **argv)
 //        alt_group_render_at(group, elapsed, screenSurface, &airect);
 //        SDL_BlitSurface(airspeed_indicator_render(asi, elapsed), NULL, screenSurface, &vrect);
 
-
+        SDL_BlitSurface(animated_gauge_render(ANIMATED_GAUGE(rsg), elapsed) , NULL, screenSurface, &dst);
         SDL_BlitSurface(animated_gauge_render(ANIMATED_GAUGE(ai), elapsed) , NULL, screenSurface, NULL);
         SDL_UpdateWindowSurface(window);
 
@@ -338,6 +345,10 @@ int main(int argc, char **argv)
                 printf("Attitude pitch: %0.2f\n",ANIMATED_GAUGE(ai)->value);
                 oldv[3] = ANIMATED_GAUGE(ai)->value;
             }
+            if(ANIMATED_GAUGE(rsg)->value != oldv[4]){
+                printf("Attitude roll: %0.2f\n", ANIMATED_GAUGE(rsg)->value);
+                oldv[4] = ANIMATED_GAUGE(rsg)->value;
+            }
 
 
             acc = 0;
@@ -355,6 +366,7 @@ int main(int argc, char **argv)
     airspeed_indicator_free(asi);
     alt_indicator_free(alt_ind);
     vertical_stair_free(stair);
+    roll_slip_gauge_free(rsg);
     SDL_DestroyWindow(window);
     TTF_Quit();
     SDL_Quit();
