@@ -4,6 +4,8 @@
 #include <stdbool.h>
 #include <math.h>
 
+#include "misc.h"
+
 /**
  * Separate a base-10 number into its components: units,
  * tens, hundreds, etc. The values will be laid out as
@@ -65,4 +67,23 @@ bool interval_intersect(float as, float ae, float bs, float be, float *is, float
     *ie = (ae < be) ? ae : be;
 
     return true;
+}
+
+/**
+ * Centers self on/in the reference rectangle. Self width
+ * and height *must* be set.
+ *
+ * @param self the SDL_Rect that is worked on. Must have w and h set.
+ * @param reference the rectangle that will have self in its center
+ */
+
+void SDLExt_RectCenter(SDL_Rect *self, SDL_Rect *reference)
+{
+    self->y = reference->y + round(reference->h/2.0) - round(self->h/2.0) -1;
+    self->x = reference->x + round(reference->w/2.0) - round(self->w/2.0) -1;
+}
+
+void SDLExt_RectDump(SDL_Rect *self)
+{
+    printf("SDL_Rect(%p): x:%d, y:%d, w:%d, h:%d\n",self,self->x,self->y,self->w,self->h);
 }
