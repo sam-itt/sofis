@@ -445,6 +445,8 @@ static void attitude_indicator_render_value(AttitudeIndicator *self, float value
 	value = (value > self->size*10) ? self->size*10 + 5 : value;
 	value = (value < self->size*-10) ? self->size*-10 - 5: value;
 
+    value = value * -1.0;
+
 	SDL_FillRect(self->parent.view, NULL, SDL_MapRGBA(self->parent.view->format, 0, 0, 0, SDL_ALPHA_TRANSPARENT));
 
     /*First find out a view-sized window into the larger ball buffer for a 0deg pitch*/

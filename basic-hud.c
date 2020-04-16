@@ -84,7 +84,7 @@ void basic_hud_set_values(BasicHud *self, uintf8_t nvalues, va_list ap)
             animated_gauge_set_value(ANIMATED_GAUGE(self->attitude), val);
             break;
           case ROLL:
-            attitude_indicator_set_roll(self->attitude, val);
+            attitude_indicator_set_roll(self->attitude, -1.0*val);
             break;
         }
     }
