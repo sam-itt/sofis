@@ -6,6 +6,7 @@
 #include <SDL2/SDL_ttf.h>
 #include <SDL2/SDL2_rotozoom.h>
 
+#include "SDL_rect.h"
 #include "SDL_render.h"
 #include "SDL_surface.h"
 #include "animated-gauge.h"
@@ -16,8 +17,7 @@
 #define sign(x) (((x) > 0) - ((x) < 0))
 
 static void attitude_indicator_render_value(AttitudeIndicator *self, float value);
-static void attitude_indicator_create_scale(AttitudeIndicator *self, int size, int font_size);
-static void attitude_indicator_draw_ball(AttitudeIndicator *self);
+static SDL_Surface *attitude_indicator_get_etched_ball(AttitudeIndicator *self);
 
 AttitudeIndicator *attitude_indicator_new(int width, int height)
 {
@@ -76,13 +76,10 @@ AttitudeIndicator *attitude_indicator_init(AttitudeIndicator *self, int width, i
 		0,0
 	};
 
-	self->buffer = SDL_CreateRGBSurfaceWithFormat(0, width, height, 32, SDL_PIXELFORMAT_RGBA32);
+	self->buffer = SDL_CreateRGBSurfaceWithFormat(0, width*2, height*2, 32, SDL_PIXELFORMAT_RGBA32);
 	self->renderer =  SDL_CreateSoftwareRenderer(self->buffer);
 
-	self->tmp_hz = SDL_CreateRGBSurfaceWithFormat(0, width, height, 32, SDL_PIXELFORMAT_RGBA32);
-
-	attitude_indicator_create_scale(self, self->size, 12);
-	attitude_indicator_draw_ball(self);
+    attitude_indicator_get_etched_ball(self);
     return self;
 }
 
@@ -91,20 +88,14 @@ void attitude_indicator_dispose(AttitudeIndicator *self)
 	animated_gauge_dispose(ANIMATED_GAUGE(self));
 
 	roll_slip_gauge_free(self->rollslip);
-	if(self->ball)
-		SDL_FreeSurface(self->ball);
-	if(self->ruler)
-		SDL_FreeSurface(self->ruler);
 	for(int i = 0; i < 3; i++){
 		if(self->markers[i])
 			SDL_FreeSurface(self->markers[i]);
 	}
 	if(self->buffer)
 		SDL_FreeSurface(self->buffer);
-	if(self->tmp_hz)
-		SDL_FreeSurface(self->tmp_hz);
-	if(self->ball_buffer)
-		SDL_FreeSurface(self->ball_buffer);
+	if(self->etched_ball)
+		SDL_FreeSurface(self->etched_ball);
 	SDL_DestroyRenderer(self->renderer);
 }
 
@@ -156,7 +147,7 @@ float range_progress(float value, float start, float end)
 	return rv;
 }
 
-static void attitude_indicator_draw_ball(AttitudeIndicator *self)
+SDL_Surface *attitude_indicator_draw_ball(AttitudeIndicator *self)
 {
     Uint32 *pixels;
     SDL_Surface *surface;
@@ -165,10 +156,19 @@ static void attitude_indicator_draw_ball(AttitudeIndicator *self)
     Uint32 sky,sky_down;
     Uint32 earth;
 
-	if(!self->ball)
-	    self->ball = SDL_CreateRGBSurfaceWithFormat(0, ANIMATED_GAUGE(self)->view->w, ANIMATED_GAUGE(self)->view->h, 32, SDL_PIXELFORMAT_RGBA32);
+    self->ball_window = (SDL_Rect){
+        .x = 0, .y = 0,
+        .w = ANIMATED_GAUGE(self)->view->w,
+        .h = ANIMATED_GAUGE(self)->view->h
+    };
 
-    surface = self->ball;
+    self->ball_all = (SDL_Rect){
+        .x = 0, .y = 0,
+        .w = self->ball_window.w*2,
+        .h = self->ball_window.h*2
+    };
+
+    surface = SDL_CreateRGBSurfaceWithFormat(0, self->ball_all.w, self->ball_all.h, 32, SDL_PIXELFORMAT_RGBA32);
     SDL_LockSurface(surface);
     pixels = surface->pixels;
 
@@ -183,8 +183,15 @@ static void attitude_indicator_draw_ball(AttitudeIndicator *self)
     sky_down = SDL_MapRGB(surface->format, 0x52, 0x6c, 0xd0);
 
 
-    limit = round(surface->h*0.4); /*40/60 split between sky and earth*/
-	self->ball_horizon = limit;
+
+    //limit = round(surface->h*0.4); /*40/60 split between sky and earth*/
+    SDLExt_RectCenter(&self->ball_window, &self->ball_all); /*window x,y coordinates are now relative to "all" x,y*/
+    limit = self->ball_window.y + round(self->ball_window.h*0.4); /*40/60 split between sky and earth*/
+
+	self->ball_horizon = limit; /*self->ball_horizon is in "all" units*/
+    self->ball_center.y = limit; /*TODO: Merge these two center.y and limit*/
+    self->ball_center.x = round(self->ball_all.w/2.0)-1;
+
 	int first_gradient = round(limit * 0.25); /*First gradiant from the centerline to 25% up*/
 	int first_gradiant_stop = limit - first_gradient;
 	Uint32 color;
@@ -218,10 +225,13 @@ static void attitude_indicator_draw_ball(AttitudeIndicator *self)
         }
     }
     SDL_UnlockSurface(surface);
+
+    return surface;
 }
 
-static void attitude_indicator_create_scale(AttitudeIndicator *self, int size, int font_size)
+SDL_Surface *attitude_indicator_draw_ruler(AttitudeIndicator *self, int size, int font_size)
 {
+    SDL_Surface *rv;
 	Uint32 *pixels;
 	int width, height;
 	int x, y;
@@ -240,15 +250,15 @@ static void attitude_indicator_create_scale(AttitudeIndicator *self, int size, i
 	self->ruler_center.x = middle_x;
 	self->ruler_center.y = middle_y;
 
-	self->ruler = SDL_CreateRGBSurfaceWithFormat(0, width, height, 32, SDL_PIXELFORMAT_RGBA32);
-	SDL_SetColorKey(self->ruler, SDL_TRUE, SDL_UCKEY(self->ruler));
-	SDL_FillRect(self->ruler, NULL, SDL_UCKEY(self->ruler));
+	rv = SDL_CreateRGBSurfaceWithFormat(0, width, height, 32, SDL_PIXELFORMAT_RGBA32);
+	SDL_SetColorKey(rv, SDL_TRUE, SDL_UCKEY(rv));
+	SDL_FillRect(rv, NULL, SDL_UCKEY(rv));
 
 
-    SDL_LockSurface(self->ruler);
-    pixels = self->ruler->pixels;
-    Uint32 color = SDL_UWHITE(self->ruler);
-    Uint32 mcolor = SDL_URED(self->ruler);
+    SDL_LockSurface(rv);
+    pixels = rv->pixels;
+    Uint32 color = SDL_UWHITE(rv);
+    Uint32 mcolor = SDL_URED(rv);
 
 	int grad_level;
 	int grad_sizes[] = {57,11,25,11};
@@ -261,29 +271,29 @@ static void attitude_indicator_create_scale(AttitudeIndicator *self, int size, i
 			end_x = middle_x + (grad_sizes[grad_level]-1)/2;
 
 			for( x = start_x; x <= end_x; x++){
-                pixels[y * self->ruler->w + x] = color;
+                pixels[y * rv->w + x] = color;
 			}
-            pixels[y * self->ruler->w + middle_x] = mcolor;
+            pixels[y * rv->w + middle_x] = mcolor;
 
 			grad_level = (grad_level < 3) ? grad_level + 1 : 0;
 		}
 	}
 	/*Go downwards*/
 	grad_level = 0;
-	for(y = middle_y; y < self->ruler->h-yoffset; y++){
+	for(y = middle_y; y < rv->h-yoffset; y++){
 		if( (y-middle_y) % 9 == 0){
 			start_x = middle_x - (grad_sizes[grad_level]-1)/2;
 			end_x = middle_x + (grad_sizes[grad_level]-1)/2;
 
 			for( x = start_x; x <= end_x; x++){
-                pixels[y * self->ruler->w + x] = color;
+                pixels[y * rv->w + x] = color;
 			}
-            pixels[y * self->ruler->w + middle_x] = mcolor;
+            pixels[y * rv->w + middle_x] = mcolor;
 
 			grad_level = (grad_level < 3) ? grad_level + 1 : 0;
 		}
 	}
-    SDL_UnlockSurface(self->ruler);
+    SDL_UnlockSurface(rv);
 
 	TTF_Font *font;
     SDL_Surface *text;
@@ -308,8 +318,8 @@ static void attitude_indicator_create_scale(AttitudeIndicator *self, int size, i
 				left.y = y - round(text->h/2.0);
 				right.y = left.y;
 
-				SDL_BlitSurface(text, NULL, self->ruler, &left);
-				SDL_BlitSurface(text, NULL, self->ruler, &right);
+				SDL_BlitSurface(text, NULL, rv, &left);
+				SDL_BlitSurface(text, NULL, rv, &right);
 				SDL_FreeSurface(text);
 			}
 
@@ -319,7 +329,7 @@ static void attitude_indicator_create_scale(AttitudeIndicator *self, int size, i
 
 	/*Go downwards*/
 	current_grad = 0;
-	for(y = middle_y; y < self->ruler->h-yoffset; y++){
+	for(y = middle_y; y < rv->h-yoffset; y++){
 		if((y-middle_y) % 36 == 0){ // 10 graduation
 			if(current_grad > 0){
 				snprintf(number, 4, "%d", current_grad);
@@ -330,14 +340,16 @@ static void attitude_indicator_create_scale(AttitudeIndicator *self, int size, i
 				left.y = y - round(text->h/2.0);
 				right.y = left.y;
 
-				SDL_BlitSurface(text, NULL, self->ruler, &left);
-				SDL_BlitSurface(text, NULL, self->ruler, &right);
+				SDL_BlitSurface(text, NULL, rv, &left);
+				SDL_BlitSurface(text, NULL, rv, &right);
 				SDL_FreeSurface(text);
 			}
 			current_grad += 10;
 		}
 	}
 	TTF_CloseFont(font);
+
+    return rv;
 }
 
 
@@ -363,14 +375,45 @@ int attitude_indicator_resolve_value(AttitudeIndicator *self, float value)
 	return self->common_center.y + sign(value) * round((ngrads * 9.0));
 }
 
+/*TODO: This might go in a Ruler class*/
 
-static SDL_Surface *attitude_indicator_get_ball_buffer(AttitudeIndicator *self)
+/* Returns a y increment from the position where the ball horizon is aligned with
+ * the view "rubis".
+ * */
+int attitude_indicator_resolve_increment(AttitudeIndicator *self, float value)
 {
-	if(!self->ball_buffer){
+	float aval;
+	float ngrads;
+
+	aval = fabs(value);
+	if(aval == 0){
+		ngrads = 0;
+	}else if(!fmod(aval, 2.5)){
+		ngrads = aval/2.5;
+	}else if(!fmod(aval, 5.0)){
+		ngrads = aval/5;
+	}else if(!fmod(aval, 10)){
+		ngrads = aval/10;
+	}else {
+		ngrads = aval/2.5;
+	}
+
+	return sign(value) * round((ngrads * 9.0));
+}
+
+
+
+static SDL_Surface *attitude_indicator_get_etched_ball(AttitudeIndicator *self)
+{
+	if(!self->etched_ball){
+        SDL_Surface *ball, *ruler;
 		SDL_Rect ball_pos;
 		SDL_Rect ruler_pos;
 
-		self->ball_buffer = SDL_CreateRGBSurfaceWithFormat(0, self->parent.view->w, self->parent.view->h, 32, SDL_PIXELFORMAT_RGBA32);
+        ball = attitude_indicator_draw_ball(self);
+        ruler = attitude_indicator_draw_ruler(self, self->size, 12);
+
+		self->etched_ball = SDL_CreateRGBSurfaceWithFormat(0, self->ball_all.w, self->ball_all.h, 32, SDL_PIXELFORMAT_RGBA32);
 
 		//int common_y = attitude_indicator_resolve_value(self, value);
 		int common_y = attitude_indicator_resolve_value(self, 0);
@@ -379,16 +422,17 @@ static SDL_Surface *attitude_indicator_get_ball_buffer(AttitudeIndicator *self)
 		 * the same line as the "middle" of the ball. They both need to have the same y coordinate
 		 * on screen.
 		 * */
-		ball_pos.x = 0;
-		ball_pos.y = common_y - self->ball_horizon;
-		SDL_BlitSurface(self->ball, NULL, self->ball_buffer, &ball_pos);
+		SDL_BlitSurface(ball, NULL, self->etched_ball, NULL);
 
-		ruler_pos.x = self->common_center.x - self->ruler_center.x;
-		ruler_pos.y = common_y - self->ruler_center.y;
-		SDL_BlitSurface(self->ruler, NULL, self->ball_buffer, &ruler_pos);
+		ruler_pos.x = round(self->ball_all.w/2.0) - self->ruler_center.x;
+		ruler_pos.y = self->ball_horizon - self->ruler_center.y;
+		SDL_BlitSurface(ruler, NULL, self->etched_ball, &ruler_pos);
+
+        SDL_FreeSurface(ball);
+        SDL_FreeSurface(ruler);
 	}
 
-	return self->ball_buffer;
+	return self->etched_ball;
 }
 
 static void attitude_indicator_render_value(AttitudeIndicator *self, float value)
@@ -402,29 +446,37 @@ static void attitude_indicator_render_value(AttitudeIndicator *self, float value
 	value = (value < self->size*-10) ? self->size*-10 - 5: value;
 
 	SDL_FillRect(self->parent.view, NULL, SDL_MapRGBA(self->parent.view->format, 0, 0, 0, SDL_ALPHA_TRANSPARENT));
-	surface = self->tmp_hz;
 
-	int common_y = attitude_indicator_resolve_value(self, value);
-
-	ball_pos.x = 0;
-	ball_pos.y = common_y - self->ball_horizon;
-	SDL_BlitSurface(attitude_indicator_get_ball_buffer(self), NULL, surface, &ball_pos);
-
-	/*Place the roll indicator*/
-	SDL_BlitSurface(self->rollslip->parent.view, NULL, surface, &self->locations[ROLL_SLIP]);
-
+    /*First find out a view-sized window into the larger ball buffer for a 0deg pitch*/
+    SDL_Rect win = {
+        .x = self->ball_center.x - (round(self->parent.view->w/2.0) -1), /*Is ball_window useless?*/
+        .y = self->ball_center.y - (round(self->parent.view->h*0.4) -1),
+        .w = self->parent.view->w,
+        .h = self->parent.view->h
+    };
+    /*Then apply to correct y offset to account for pitch*/
+    win.y += attitude_indicator_resolve_increment(self, value);
+    /* Now that we have the correct window, rotate it to account for roll
+     * The rotation center must be 40% of the height and middle width
+     * */
+    SDL_Point rcenter = {
+        .x = win.x + (round(win.w/2.0)-1),
+        .y = win.y + (round(win.h*0.4)-1)
+    };
+    surface = attitude_indicator_get_etched_ball(self); /*TODO: Change to etched ball*/
 	if(self->rollslip->parent.value != 0){
-        SDL_Point center_point = {self->common_center.x, self->common_center.y};
         SDL_Texture *tex = SDL_CreateTextureFromSurface(self->renderer, surface);
-        SDL_RenderCopyEx(self->renderer, tex, NULL, NULL, self->rollslip->parent.value, &center_point, SDL_FLIP_NONE);
+        SDL_RenderCopyEx(self->renderer, tex, NULL, NULL, self->rollslip->parent.value, &rcenter, SDL_FLIP_NONE);
 		SDL_DestroyTexture(tex);
         surface = self->buffer;
 	}
-	SDL_BlitSurface(surface, NULL, self->parent.view, NULL);
+	SDL_BlitSurface(surface, &win, self->parent.view, NULL);
+
+	/*Place the roll indicator*/
+	SDL_BlitSurface(self->rollslip->parent.view, NULL, self->parent.view, &self->locations[ROLL_SLIP]);
 
 	/*Then place markers in the middle of the *screen* markers don't move*/
 	SDL_BlitSurface(self->markers[MARKER_LEFT], NULL, self->parent.view, &self->locations[MARKER_LEFT]);
 	SDL_BlitSurface(self->markers[MARKER_RIGHT], NULL, self->parent.view, &self->locations[MARKER_RIGHT]);
 	SDL_BlitSurface(self->markers[MARKER_CENTER], NULL, self->parent.view, &self->locations[MARKER_CENTER]);
-
 }

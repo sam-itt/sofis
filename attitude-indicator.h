@@ -22,10 +22,11 @@ typedef struct{
 
 	int size; /*number of 10s markings*/
 
-	SDL_Surface *ball;
+    SDL_Rect ball_window; /*Visible portion*/
+    SDL_Rect ball_all; /*Visible portion plus extended area*/
 	int ball_horizon;
+    SDL_Point ball_center;
 
-    SDL_Surface *ruler;
 	Point2D ruler_center;
 	int ruler_middle;
 	int ruler_middlex;
@@ -37,10 +38,8 @@ typedef struct{
 	SDL_Surface *buffer;
 	SDL_Renderer *renderer;
 	SDL_Texture *horizon;
-	SDL_Surface *tmp_hz; /*To be deleted and replaced by the above texture*/
 
-
-    SDL_Surface *ball_buffer;
+    SDL_Surface *etched_ball;
 
 }AttitudeIndicator;
 
