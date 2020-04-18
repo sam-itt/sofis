@@ -3,6 +3,8 @@
 #include <stdbool.h>
 #include <stdarg.h>
 
+#include "SDL_surface.h"
+#include "animated-gauge.h"
 #include "sdl-colors.h"
 #include "odo-gauge.h"
 
@@ -11,6 +13,7 @@
 
 
 void odo_gauge_render_value(OdoGauge *self, float value);
+void odo_gauge_render_value_to(OdoGauge *self, float value, SDL_Surface *destination, SDL_Rect *location);
 
 /**
  * Creates a new odometer-like gauge.
@@ -97,7 +100,11 @@ OdoGauge *odo_gauge_vainit(OdoGauge *self, int rubis, int nbarrels, va_list ap)
         pwr += number_digits(VERTICAL_STRIP(self->barrels[i])->end);
     }
 
+    /*TODO: Put that (surface creation, w and h init + colorkey) into Animated Gauge Init*/
     ANIMATED_GAUGE(self)->view = SDL_CreateRGBSurface(0, width, max_height, 32, 0, 0, 0, 0);
+    ANIMATED_GAUGE(self)->w = width;
+    ANIMATED_GAUGE(self)->h = max_height;
+
     if(!ANIMATED_GAUGE(self)->view){
         free(self->barrels);
         return NULL;
@@ -109,6 +116,7 @@ OdoGauge *odo_gauge_vainit(OdoGauge *self, int rubis, int nbarrels, va_list ap)
         self->rubis = round(ANIMATED_GAUGE(self)->view->h/2.0);
     ANIMATED_GAUGE(self)->damaged = true;
     ANIMATED_GAUGE(self)->renderer = (ValueRenderFunc)odo_gauge_render_value;
+    ANIMATED_GAUGE(self)->renderer_to = (ValueRenderToFunc)odo_gauge_render_value_to;
 
     return self;
 }
@@ -157,6 +165,28 @@ static void odo_gauge_draw_rubis(OdoGauge *self)
             pixels[self->rubis * gauge->w + x] = color;
     }
     SDL_UnlockSurface(gauge);
+}
+
+static void odo_gauge_draw_rubis_to(OdoGauge *self, SDL_Surface *destination, SDL_Rect *location)
+{
+    Uint32 *pixels;
+    Uint32 color;
+    int empty_pixels, stop_idx, restart_idx;
+    int finish_idx;
+
+    empty_pixels = ANIMATED_GAUGE(self)->w / 2;
+    stop_idx = location->x + round(empty_pixels/2.0);
+    restart_idx = location->x + round(ANIMATED_GAUGE(self)->w - empty_pixels/2.0);
+    finish_idx = location->x + (ANIMATED_GAUGE(self)->w-1);
+
+    color = SDL_URED(destination);
+    SDL_LockSurface(destination);
+    pixels = destination->pixels;
+    for(int x = location->x; x < finish_idx; x++){
+        if(!empty_pixels || x < stop_idx || x >= restart_idx)
+            pixels[(location->y+self->rubis) * destination->w + x] = color;
+    }
+    SDL_UnlockSurface(destination);
 }
 
 
@@ -217,5 +247,73 @@ void odo_gauge_render_value(OdoGauge *self, float value)
         SDL_FillRect(gauge, &cursor, SDL_UBLACK(gauge));
     }
     odo_gauge_draw_rubis(self);
+}
+
+
+void odo_gauge_render_value_to(OdoGauge *self, float value, SDL_Surface *destination, SDL_Rect *location)
+{
+    float vparts[6]; /*up to 999.999 ft*/
+    int nparts;
+    int current_part = 0;
+    int current_rotor = 0;
+    int current_rotor_rank = 0;
+    float current_val;
+    int next_part;
+    int i;
+    int rcenter;
+    SDL_Rect cursor;
+
+
+    /* This is the graphic cursor that controls the drawing
+     * we start at the end of the gauge (rightmost) and draw
+     * each barrel in turn
+     */
+    cursor = (SDL_Rect){
+        location->x + (ANIMATED_GAUGE(self)->w-1),
+        location->y,
+        /* We don't really care about w/h right now, we will in a
+         * couple of lines, when we start drawing
+         */
+        ANIMATED_GAUGE(self)->w,
+        ANIMATED_GAUGE(self)->h
+    };
+
+    /*Clear the area before drawing. TODO, move upper in animated_gauge ?*/
+//    SDL_FillRect(destination, &(SDL_Rect){location->x,location->y,ANIMATED_GAUGE(self)->w,ANIMATED_GAUGE(self)->h}, SDL_UFBLUE(destination));
+    nparts = number_split(value, vparts, 6);
+    do{
+        current_rotor_rank += floor(log10(VERTICAL_STRIP(self->barrels[current_rotor])->end));
+        if(current_part == current_rotor_rank){
+            current_val = vparts[current_part];
+            next_part = current_part + 1;
+        }else{
+            current_val = 0;
+            for(i = current_part; i <= current_rotor_rank && i < nparts ; i++)
+                current_val += vparts[i] * powf(10.0, i);
+            next_part = i;
+        }
+        cursor.x -= VERTICAL_STRIP(self->barrels[current_rotor])->ruler->w;
+        cursor.h = self->heights[current_rotor];
+        rcenter = (ANIMATED_GAUGE(self)->h/2 - cursor.h/2); /*This is the rotor center relative to the whole gauge size*/
+        cursor.y = location->y + rcenter;
+        cursor.w = VERTICAL_STRIP(self->barrels[current_rotor])->ruler->w;
+        digit_barrel_render_value_to(self->barrels[current_rotor], current_val, destination, &cursor, self->rubis - (ANIMATED_GAUGE(self)->h/2 - cursor.h/2));
+
+        //next part, next rotor
+        current_part = next_part;
+        current_rotor++;
+        current_rotor_rank++;
+    }while(current_part < nparts);
+
+    /*Place holders for rotors that didn't render any value*/
+    for(; current_rotor < self->nbarrels; current_rotor++){
+        cursor.x -= VERTICAL_STRIP(self->barrels[current_rotor])->ruler->w;
+        cursor.h = self->heights[current_rotor];
+        cursor.y = location->y + ANIMATED_GAUGE(self)->h/2 - cursor.h/2;
+        cursor.w = VERTICAL_STRIP(self->barrels[current_rotor])->ruler->w;
+
+        SDL_FillRect(destination, &cursor, SDL_UBLACK(destination));
+    }
+    odo_gauge_draw_rubis_to(self, destination, location);
 }
 

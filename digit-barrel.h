@@ -24,4 +24,5 @@ void digit_barrel_draw_etch_marks(DigitBarrel *self);
 float digit_barrel_resolve_value(DigitBarrel *self, float value);
 
 void digit_barrel_render_value(DigitBarrel *self, float value, SDL_Surface *dst, SDL_Rect *region, float rubis);
+void digit_barrel_render_value_to(DigitBarrel *self, float value, SDL_Surface *dst, SDL_Rect *region, float rubis);
 #endif /* DIGIT_BARREL_H */

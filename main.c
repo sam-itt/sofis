@@ -5,6 +5,7 @@
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_ttf.h>
 
+#include "SDL_rect.h"
 #include "animated-gauge.h"
 #include "basic-hud.h"
 #include "flightgear-connector.h"
@@ -193,6 +194,8 @@ int main(int argc, char **argv)
     flightgear_connector_set_nonblocking(fglink);
     FlightgearPacket packet;
 
+    SDL_FillRect(screenSurface, NULL, colors[i]);
+    SDL_Rect whole = {0,0,0,0};
     do{
         ticks = SDL_GetTicks();
         elapsed = ticks - last_ticks;
@@ -209,9 +212,8 @@ int main(int argc, char **argv)
             );
         }
 
-        SDL_FillRect(screenSurface, NULL, colors[i]);
-
-        basic_hud_render(hud, elapsed, screenSurface);
+        basic_hud_render_to(hud, elapsed, screenSurface, &whole);
+//        basic_hud_render(hud, elapsed, screenSurface);
         SDL_UpdateWindowSurface(window);
 
         if(elapsed < 200){

@@ -11,6 +11,7 @@
 
 typedef struct{
     SDL_Surface *view;
+    int w,h;
 
     LadderGauge *ladder;
     OdoGauge *odo;
@@ -25,6 +26,7 @@ AirspeedIndicator *airspeed_indicator_init(AirspeedIndicator *self, speed_t v_so
 
 bool airspeed_indicator_set_value(AirspeedIndicator *self, float value);
 SDL_Surface *airspeed_indicator_render(AirspeedIndicator *self, Uint32 dt);
+void airspeed_indicator_render_to(AirspeedIndicator *self, Uint32 dt, SDL_Surface *destination, SDL_Rect *location);
 
 
 void airspeed_indicator_dispose(AirspeedIndicator *self);

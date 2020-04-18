@@ -184,6 +184,52 @@ void digit_barrel_render_value(DigitBarrel *self, float value, SDL_Surface *dst,
     }
 }
 
+void digit_barrel_render_value_to(DigitBarrel *self, float value, SDL_Surface *dst, SDL_Rect *region, float rubis)
+{
+    float y;
+    SDL_Rect dst_region = {region->x,region->y,region->w,region->h};
+    VerticalStrip *strip;
+    strip = VERTICAL_STRIP(self);
+
+    /*translate @param value to an index in the spinner texture*/
+    y = digit_barrel_resolve_value(self, value);
+    rubis = (rubis < 0) ? region->h / 2.0 : rubis;
+    SDL_Rect portion = {
+        .x = 0,
+        .y = round(y - rubis),
+        .w = strip->ruler->w,
+        .h = region->h
+    };
+
+    if(portion.y < 0){ //Fill top
+        SDL_Rect patch = {
+            .x = 0,
+            .y = strip->ruler->h + portion.y, //means - portion.y as portion.y < 0 here
+            .w = strip->ruler->w,
+            .h = strip->ruler->h - patch.y
+        };
+        SDL_BlitSurface(strip->ruler, &patch, dst, &dst_region);
+        dst_region.y += patch.h;
+        portion.y = 0;
+        portion.h -= patch.h;
+    }
+    SDL_BlitSurface(strip->ruler, &portion, dst, &dst_region);
+    if(portion.y + region->h > strip->ruler->h){// fill bottom
+        float taken = strip->ruler->h - portion.y; //number of pixels taken from the bottom of values pict
+        float delta = region->h - taken;
+        dst_region.y += taken;
+        SDL_Rect patch = {
+            .x = 0,
+            .y = 0,
+            .w = strip->ruler->w,
+            .h = delta
+        };
+        SDL_BlitSurface(strip->ruler, &patch, dst, &dst_region);
+    }
+}
+
+
+
 void digit_barrel_draw_etch_marks(DigitBarrel *self)
 {
     int iy;

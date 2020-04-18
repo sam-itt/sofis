@@ -38,3 +38,15 @@ SDL_Surface *animated_gauge_render(AnimatedGauge *self, Uint32 dt)
     }
     return self->view;
 }
+
+void animated_gauge_render_to(AnimatedGauge *self, Uint32 dt, SDL_Surface *destination, SDL_Rect *location)
+{
+    float _current;
+
+//    if(animated_gauge_moving(self)){
+        _current = basic_animation_loop(&self->animation, dt);
+
+        self->renderer_to(self, _current, destination, location);
+        self->damaged = false;
+//    }
+}

@@ -52,7 +52,23 @@ void basic_hud_free(BasicHud *self)
     free(self);
 }
 
-void basic_hud_set(BasicHud *self, uintf8_t nvalues, ...)
+#if 0
+void basic_hud_damage_all(BasicHud *self)
+{
+    self->airspeed->odo->parent.damaged = true;
+    self->airspeed->ladder->parent.damaged = true;
+
+    self->altgroup->altimeter->ladder->parent.damaged = true;
+    self->altgroup->altimeter->odo->parent.damaged = true;
+    self->altgroup->vsi->parent.damaged = true;
+
+    self->attitude->parent.damaged = true;
+    self->attitude->rollslip->parent.damaged = true;
+
+}
+#endif
+
+void basic_hud_set(BasicHud *self, int nvalues, ...)
 {
     va_list args;
 
@@ -82,9 +98,11 @@ void basic_hud_set_values(BasicHud *self, uintf8_t nvalues, va_list ap)
             break;
           case PITCH:
             animated_gauge_set_value(ANIMATED_GAUGE(self->attitude), val);
+//            basic_hud_damage_all(self);
             break;
           case ROLL:
             attitude_indicator_set_roll(self->attitude, -1.0*val);
+//            basic_hud_damage_all(self);
             break;
         }
     }
@@ -121,4 +139,28 @@ void basic_hud_render(BasicHud *self, Uint32 dt, SDL_Surface *destination)
 
     alt_group_render_at(self->altgroup, dt, destination, &self->locations[ALT_GROUP]);
     SDL_BlitSurface(airspeed_indicator_render(self->airspeed, dt), NULL, destination, &self->locations[SPEED]);
+}
+
+
+void basic_hud_render_to(BasicHud *self, Uint32 dt, SDL_Surface *destination, SDL_Rect *location)
+{
+    SDL_Rect arec, srec;
+
+    arec = (SDL_Rect){
+        location->x + self->locations[ALT_GROUP].x,
+        location->y + self->locations[ALT_GROUP].y,
+        0,0
+    };
+
+    srec = (SDL_Rect){
+        location->x + self->locations[SPEED].x,
+        location->y + self->locations[SPEED].y,
+        0,0
+    };
+
+
+    attitude_indicator_render_to(self->attitude, dt, destination, location);
+    alt_group_render_to(self->altgroup, dt, destination, &arec);
+    airspeed_indicator_render_to(self->airspeed, dt, destination, &srec);
+
 }

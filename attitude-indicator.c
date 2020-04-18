@@ -18,6 +18,7 @@
 
 static void attitude_indicator_render_value(AttitudeIndicator *self, float value);
 static SDL_Surface *attitude_indicator_get_etched_ball(AttitudeIndicator *self);
+static void attitude_indicator_render_value_to(AttitudeIndicator *self, float value, SDL_Surface *destination, SDL_Rect *location);
 
 AttitudeIndicator *attitude_indicator_new(int width, int height)
 {
@@ -40,8 +41,11 @@ AttitudeIndicator *attitude_indicator_init(AttitudeIndicator *self, int width, i
 
     parent = ANIMATED_GAUGE(self);
     parent->view = SDL_CreateRGBSurfaceWithFormat(0, width, height, 32, SDL_PIXELFORMAT_RGBA32);
+    parent->w = width;
+    parent->h = height;
     parent->damaged = true;
     parent->renderer = (ValueRenderFunc)attitude_indicator_render_value;
+    parent->renderer_to = (ValueRenderToFunc)attitude_indicator_render_value_to;
 
 	self->common_center.x = round((parent->view->w)/2.0);
 	self->common_center.y = round(parent->view->h*0.4);
@@ -56,7 +60,7 @@ AttitudeIndicator *attitude_indicator_init(AttitudeIndicator *self, int width, i
 	self->locations[MARKER_LEFT] = (SDL_Rect){
 	/*The left marker has its arrow pointing right and the arrow X is at marker->w-1*/
 		self->common_center.x - 78 - (self->markers[0]->w-1),
-		round(parent->view->h*0.4) - round(self->markers[0]->h/2.0) +1,
+		round(parent->h*0.4) - round(self->markers[0]->h/2.0) +1,
 		0,0
 	};
 	self->locations[MARKER_RIGHT] = (SDL_Rect){
@@ -71,7 +75,7 @@ AttitudeIndicator *attitude_indicator_init(AttitudeIndicator *self, int width, i
 	};
 
 	self->locations[ROLL_SLIP] = (SDL_Rect){
-		self->common_center.x - round((self->rollslip->parent.view->w-1)/2.0),
+		self->common_center.x - round((self->rollslip->parent.w-1)/2.0),
 		7,
 		0,0
 	};
@@ -481,4 +485,79 @@ static void attitude_indicator_render_value(AttitudeIndicator *self, float value
 	SDL_BlitSurface(self->markers[MARKER_LEFT], NULL, self->parent.view, &self->locations[MARKER_LEFT]);
 	SDL_BlitSurface(self->markers[MARKER_RIGHT], NULL, self->parent.view, &self->locations[MARKER_RIGHT]);
 	SDL_BlitSurface(self->markers[MARKER_CENTER], NULL, self->parent.view, &self->locations[MARKER_CENTER]);
+}
+
+
+static void attitude_indicator_render_value_to(AttitudeIndicator *self, float value, SDL_Surface *destination, SDL_Rect *location)
+{
+	SDL_Surface *surface;
+	SDL_Rect ball_pos;
+
+//	printf("Attitude indicator rendering value %0.2f\n",value);
+
+	value = (value > self->size*10) ? self->size*10 + 5 : value;
+	value = (value < self->size*-10) ? self->size*-10 - 5: value;
+
+    value = value * -1.0;
+
+    /*Clear the area before drawing. TODO, move upper in animated_gauge ?*/
+    SDL_FillRect(destination, &(SDL_Rect){location->x,location->y,ANIMATED_GAUGE(self)->w,ANIMATED_GAUGE(self)->h}, SDL_UFBLUE(destination));
+
+//	SDL_FillRect(self->parent.view, NULL, SDL_MapRGBA(self->parent.view->format, 0, 0, 0, SDL_ALPHA_TRANSPARENT));
+
+    /*First find out a view-sized window into the larger ball buffer for a 0deg pitch*/
+    SDL_Rect win = {
+        .x = self->ball_center.x - (round(self->parent.w/2.0) -1), /*Is ball_window useless?*/
+        .y = self->ball_center.y - (round(self->parent.h*0.4) -1),
+        .w = self->parent.w,
+        .h = self->parent.h
+    };
+    /*Then apply to correct y offset to account for pitch*/
+    win.y += attitude_indicator_resolve_increment(self, value);
+    /* Now that we have the correct window, rotate it to account for roll
+     * The rotation center must be 40% of the height and middle width
+     * */
+    SDL_Point rcenter = {
+        .x = win.x + (round(win.w/2.0)-1),
+        .y = win.y + (round(win.h*0.4)-1)
+    };
+    surface = attitude_indicator_get_etched_ball(self); /*TODO: Change to etched ball*/
+	if(self->rollslip->parent.value != 0){
+        SDL_Texture *tex = SDL_CreateTextureFromSurface(self->renderer, surface);
+        SDL_RenderCopyEx(self->renderer, tex, NULL, NULL, self->rollslip->parent.value, &rcenter, SDL_FLIP_NONE);
+		SDL_DestroyTexture(tex);
+        surface = self->buffer;
+	}
+//	SDL_BlitSurface(surface, &win, self->parent.view, NULL);
+	SDL_BlitSurface(surface, &win, destination, location);
+#if 0
+	/*Place the roll indicator*/
+    SDL_Rect rsl = {location->x + self->locations[ROLL_SLIP].x, location->y + self->locations[ROLL_SLIP].y, 0,0};
+    ANIMATED_GAUGE(self->rollslip)->renderer_to(
+        ANIMATED_GAUGE(self->rollslip),
+        ANIMATED_GAUGE(self->rollslip)->value,
+        destination, &rsl
+    );
+   // animated_gauge_render_to(ANIMATED_GAUGE(self->rollslip), dt, destination, &rsl);
+#endif
+	/*Then place markers in the middle of the *screen* markers don't move*/
+    SDL_Rect lm = {location->x + self->locations[MARKER_LEFT].x, location->y + self->locations[MARKER_LEFT].y, 0,0};
+    SDL_Rect rm = {location->x + self->locations[MARKER_RIGHT].x, location->y + self->locations[MARKER_RIGHT].y, 0,0};
+    SDL_Rect cm = {location->x + self->locations[MARKER_CENTER].x, location->y + self->locations[MARKER_CENTER].y, 0,0};
+	SDL_BlitSurface(self->markers[MARKER_LEFT], NULL, destination, &lm);
+	SDL_BlitSurface(self->markers[MARKER_RIGHT], NULL, destination, &rm);
+	SDL_BlitSurface(self->markers[MARKER_CENTER], NULL, destination, &cm);
+}
+
+void attitude_indicator_render_to(AttitudeIndicator *self, Uint32 dt, SDL_Surface *destination, SDL_Rect *location)
+{
+    SDL_Rect rsl = {
+        location->x + self->locations[ROLL_SLIP].x,
+        location->y + self->locations[ROLL_SLIP].y,
+        0,0
+    };
+    /*If we are here, self is damaed, damaged the rollslip indicator too*/
+    self->rollslip->parent.damaged = true;
+    animated_gauge_render_to(ANIMATED_GAUGE(self), dt, destination, location);
+    animated_gauge_render_to(ANIMATED_GAUGE(self->rollslip), dt, destination, &rsl);
 }

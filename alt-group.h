@@ -7,7 +7,6 @@
 typedef struct{
     AltIndicator *altimeter;
     VerticalStair *vsi;
-
 }AltGroup;
 
 AltGroup *alt_group_new(void);
@@ -20,4 +19,5 @@ void alt_group_set_vertical_speed(AltGroup *self, float value);
 void alt_group_set_values(AltGroup *self, float alt, float vs);
 
 void alt_group_render_at(AltGroup *self, Uint32 dt, SDL_Surface *destination, SDL_Rect *location);
+void alt_group_render_to(AltGroup *self, Uint32 dt, SDL_Surface *destination, SDL_Rect *location);
 #endif /* ALT_GROUP_H */

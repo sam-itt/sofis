@@ -12,9 +12,10 @@
 #define SDL_UWHITE(surface) (SDL_MapRGB((surface)->format, 255, 255,255))
 #define SDL_UYELLOW(surface) (SDL_MapRGB((surface)->format, 255, 255,0))
 #define SDL_UGREY(surface) (SDL_MapRGB((surface)->format, 205, 205,205))
-
+#define SDL_UFBLUE(surface) (SDL_MapRGB((surface)->format, 0x11, 0x56, 0xFF)) //Fancy blue
 
 #define SDL_UCKEY(surface) (SDL_MapRGB((surface)->format, 255, 0,255))
+#define SDL_UTRANSPARENT(surface) (SDL_MapRGBA((surface)->format, 0, 0, 0, SDL_ALPHA_TRANSPARENT))
 
 
 #endif /* SDL_COLORS_H */

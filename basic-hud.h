@@ -38,8 +38,9 @@ void basic_hud_dispose(BasicHud *self);
 void basic_hud_free(BasicHud *self);
 
 float basic_hud_get(BasicHud *self, HudValue hv);
-void basic_hud_set(BasicHud *self, uintf8_t nvalues, ...);
+void basic_hud_set(BasicHud *self, int nvalues, ...);
 void basic_hud_set_values(BasicHud *self, uintf8_t nvalues, va_list ap);
 
 void basic_hud_render(BasicHud *self, Uint32 dt, SDL_Surface *destination);
+void basic_hud_render_to(BasicHud *self, Uint32 dt, SDL_Surface *destination, SDL_Rect *location);
 #endif /* BASIC_HUD_H */

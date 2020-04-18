@@ -14,6 +14,7 @@
 #define sign(x) (((x) > 0) - ((x) < 0))
 
 static void roll_slip_gauge_render_value(RollSlipGauge *self, float value);
+static void roll_slip_gauge_render_value_to(RollSlipGauge *self, float value, SDL_Surface *destination, SDL_Rect *location);
 
 
 RollSlipGauge *roll_slip_gauge_new(void)
@@ -33,7 +34,10 @@ RollSlipGauge *roll_slip_gauge_new(void)
 RollSlipGauge *roll_slip_gauge_init(RollSlipGauge *self)
 {
 	self->parent.view = SDL_CreateRGBSurfaceWithFormat(0, 175, 184, 32, SDL_PIXELFORMAT_RGBA32);
+    self->parent.w = 175;
+    self->parent.h = 184;
 	self->parent.renderer = (ValueRenderFunc)roll_slip_gauge_render_value;
+	self->parent.renderer_to = (ValueRenderToFunc)roll_slip_gauge_render_value_to;
 	self->parent.damaged = true;
 
 	self->arc = IMG_Load("roll-indicator.png");
@@ -86,4 +90,41 @@ static void roll_slip_gauge_render_value(RollSlipGauge *self, float value)
 	center.y = 90; /*Radius 94.5 or 92.725*/
 
 	SDL_RenderCopyEx(self->renderer, self->arrow, NULL,&rect, value, &center, SDL_FLIP_NONE);
+}
+
+static void roll_slip_gauge_render_value_to(RollSlipGauge *self, float value, SDL_Surface *destination, SDL_Rect *location)
+{
+	SDL_Rect rect;
+	SDL_Point center;
+
+	if(value > 60.0 || value < -60.0)
+		value = sign(value)*65;
+
+	value *= -1.0;
+
+    /*Clear the area before drawing. TODO, move upper in animated_gauge ?*/
+//    SDL_FillRect(destination, &(SDL_Rect){location->x,location->y,ANIMATED_GAUGE(self)->w,ANIMATED_GAUGE(self)->h}, SDL_UFBLUE(destination));
+//    SDL_FillRect(destination, &(SDL_Rect){location->x,location->y,ANIMATED_GAUGE(self)->w,ANIMATED_GAUGE(self)->h}, SDL_UTRANSPARENT(destination));
+
+	SDL_BlitSurface(self->arc,NULL, destination, location);
+
+	//Arc 0°: 86/10
+//	rect.x = 86 - round(self->arrow->w/2.0);
+	rect.x = 87 - 6;
+	rect.y = 10;
+	rect.h = 103;
+	rect.w = 13;
+
+	center.x = rect.x;
+	center.y = rect.y - 94;
+
+	center.x = rect.w/2;
+	center.y = 90; /*Radius 94.5 or 92.725*/
+
+    /*We are using parent view as a rotation buffer only. Consider using a local buffer when deactivating parent view*/
+	SDL_FillRect(self->parent.view, NULL, SDL_MapRGBA(self->parent.view->format, 0, 0, 0, SDL_ALPHA_TRANSPARENT));
+	SDL_RenderCopyEx(self->renderer, self->arrow, NULL,&rect, value, &center, SDL_FLIP_NONE);
+
+	SDL_BlitSurface(self->parent.view, NULL, destination, location);
+
 }

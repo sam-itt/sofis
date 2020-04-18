@@ -4,11 +4,15 @@
 #include <SDL2/SDL_image.h>
 #include <SDL2/SDL_ttf.h>
 
+#include "SDL_rect.h"
+#include "SDL_surface.h"
+#include "animated-gauge.h"
 #include "vertical-stair.h"
 #include "sdl-colors.h"
 
 
 static void vertical_stair_render_value(VerticalStair *self, float value);
+static void vertical_stair_render_value_to(VerticalStair *self, float value, SDL_Surface *destination, SDL_Rect *location);
 
 VerticalStairCursor *vertical_stair_cursor_init(VerticalStairCursor *self, const char *filename, int font_size)
 {
@@ -68,10 +72,11 @@ VerticalStair *vertical_stair_new(const char *bg_img, const char *cursor_img, in
     return self;
 }
 
-
+/*TODO: Decouple VerticalStair to VerticalSpeedIndicator*/
 VerticalStair *vertical_stair_init(VerticalStair *self, const char *bg_img, const char *cursor_img, int cfont_size)
 {
     ANIMATED_GAUGE(self)->renderer = (ValueRenderFunc)vertical_stair_render_value;
+    ANIMATED_GAUGE(self)->renderer_to = (ValueRenderToFunc)vertical_stair_render_value_to;
     ANIMATED_GAUGE(self)->damaged = true;
 
     self->scale.ruler = IMG_Load(bg_img);
@@ -80,7 +85,10 @@ VerticalStair *vertical_stair_init(VerticalStair *self, const char *bg_img, cons
     self->scale.end = 2279;
 
     vertical_stair_cursor_init(&self->cursor, cursor_img, cfont_size);
-    ANIMATED_GAUGE(self)->view = SDL_CreateRGBSurface(0, self->cursor.bg->w, self->scale.ruler->h, 32,0,0,0,0);
+    /*TODO: Move that init code to BaseGauge class*/
+    ANIMATED_GAUGE(self)->w = self->cursor.bg->w+1; /*One pixel wider because we offset the cursor one pixel from the left side*/
+    ANIMATED_GAUGE(self)->h = self->scale.ruler->h + (2 * self->cursor.bg->h/2.0); /*The cursor can bottom down or top up half its width*/
+    ANIMATED_GAUGE(self)->view = SDL_CreateRGBSurface(0, self->cursor.bg->w+1, self->scale.ruler->h, 32,0,0,0,0);
     SDL_SetColorKey(ANIMATED_GAUGE(self)->view, SDL_TRUE, SDL_UCKEY(ANIMATED_GAUGE(self)->view));
 
     return self;
@@ -108,4 +116,52 @@ static void vertical_stair_render_value(VerticalStair *self, float value)
 
     SDL_BlitSurface(self->cursor.bg, NULL, ANIMATED_GAUGE(self)->view, &(SDL_Rect){1, y,0,0});
 
+}
+
+static void vertical_stair_render_value_to(VerticalStair *self, float value, SDL_Surface *destination, SDL_Rect *location)
+{
+    float y;
+    SDL_Rect cloc, rloc, area;
+    int y_offset;
+
+    y_offset = round(self->cursor.bg->h/2.0);
+
+    rloc = (SDL_Rect){
+        .x = location->x,
+        .y = location->y + y_offset,
+        /*These two are ignored but let's have the
+         * code ready for SDL_Renderer transition*/
+        /* VerticalStair as wide enough to accomodate the stair AND
+         * the cursor which protudes to the right. We don't want the
+         * ruler to be widened to keep the width the same as the image
+         * */
+        .w = self->scale.ruler->w,
+        .h = ANIMATED_GAUGE(self)->h
+    };
+
+    area = (SDL_Rect){
+        location->x, location->y,
+        ANIMATED_GAUGE(self)->w,ANIMATED_GAUGE(self)->h
+    };
+
+    vertical_stair_cursor_set_value(&self->cursor, value);
+    vertical_strip_clip_value(&self->scale, &value);
+
+    /*Clear the area before drawing. TODO, move upper in animated_gauge ?*/
+    //SDL_FillRect(destination, &area, SDL_UFBLUE(destination));
+
+    SDL_BlitSurface(self->scale.ruler, NULL, destination, &rloc);
+
+    y = vertical_strip_resolve_value(&self->scale, value, true);
+    y = round(round(y) - self->cursor.bg->h/2.0);
+    y += y_offset;
+
+    cloc = (SDL_Rect){
+        .x = location->x + 1,
+        .y = location->y + y,
+        .w = 0,
+        .h = 0
+    };
+
+    SDL_BlitSurface(self->cursor.bg, NULL, destination, &cloc);
 }

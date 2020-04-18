@@ -53,4 +53,5 @@ void attitude_indicator_set_roll(AttitudeIndicator *self, float value);
 
 AttitudeIndicator *attitude_indicator_init(AttitudeIndicator *self, int width, int height);
 
+void attitude_indicator_render_to(AttitudeIndicator *self, Uint32 dt, SDL_Surface *destination, SDL_Rect *location);
 #endif /* ATTITUDE_INDICATOR_H */
