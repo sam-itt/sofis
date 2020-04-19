@@ -23,6 +23,7 @@ typedef struct{
 }AltIndicator;
 
 AltIndicator *alt_indicator_new(void);
+AltIndicator *alt_indicator_init(AltIndicator *self);
 void alt_indicator_free(AltIndicator *self);
 
 bool alt_indicator_set_value(AltIndicator *self, float value);

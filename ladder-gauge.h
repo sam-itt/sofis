@@ -22,6 +22,7 @@ typedef struct{
 
 
 LadderGauge *ladder_gauge_new(LadderPageDescriptor *descriptor, int rubis);
+LadderGauge *ladder_gauge_init(LadderGauge *self, LadderPageDescriptor *descriptor, int rubis);
 void ladder_gauge_free(LadderGauge *self);
 
 #endif /* LADDER_GAUGE_H */

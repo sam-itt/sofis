@@ -19,18 +19,27 @@ LadderGauge *ladder_gauge_new(LadderPageDescriptor *descriptor, int rubis)
 
     self = calloc(1, sizeof(LadderGauge));
     if(self){
-        animated_gauge_init(ANIMATED_GAUGE(self), ANIMATED_GAUGE_OPS(&ladder_gauge_ops), 68, 240);
-
-        self->descriptor = descriptor;
-
-        if(rubis > 0)
-            self->rubis = rubis;
-        else
-            self->rubis = round(BASE_GAUGE(self)->h/2.0);
+        if(!ladder_gauge_init(self, descriptor,rubis)){
+            free(self);
+            return NULL;
+        }
     }
-
     return self;
 }
+
+
+LadderGauge *ladder_gauge_init(LadderGauge *self, LadderPageDescriptor *descriptor, int rubis)
+{
+    animated_gauge_init(ANIMATED_GAUGE(self), ANIMATED_GAUGE_OPS(&ladder_gauge_ops), 68, 240);
+
+    self->descriptor = descriptor;
+    if(rubis > 0)
+        self->rubis = rubis;
+    else
+        self->rubis = round(BASE_GAUGE(self)->h/2.0);
+    return self;
+}
+
 
 void ladder_gauge_free(LadderGauge *self)
 {

@@ -17,32 +17,42 @@ AltIndicator *alt_indicator_new(void)
     AltIndicator *self;
     self = calloc(1, sizeof(AltIndicator));
     if(self){
-        self->ladder = ladder_gauge_new((LadderPageDescriptor *)alt_ladder_page_descriptor_new(), -1);
-
-        DigitBarrel *db = digit_barrel_new(18, 0, 9.999, 1);
-        DigitBarrel *db2 = digit_barrel_new(18, 0, 99, 10);
-        self->odo = odo_gauge_new_multiple(-1, 4,
-                -1, db2,
-                -2, db,
-                -2, db,
-                -2, db
-        );
-        base_gauge_init(
-            BASE_GAUGE(self),
-            &alt_indicator_ops,
-            BASE_GAUGE(self->ladder)->w,
-            BASE_GAUGE(self->ladder)->h + 20 * 2
-        );
-
-        self->view = SDL_CreateRGBSurfaceWithFormat(0,
-            BASE_GAUGE(self)->w,
-            BASE_GAUGE(self)->h,
-            32, SDL_PIXELFORMAT_RGBA32
-        );
-        SDL_SetColorKey(self->view, SDL_TRUE, SDL_UCKEY(self->view));
-        SDL_FillRect(self->view, NULL, SDL_UCKEY(self->view));
-        self->font  = TTF_OpenFont("TerminusTTF-4.47.0.ttf", 16);
+        if(!alt_indicator_init(self)){
+            free(self);
+            return NULL;
+        }
     }
+    return self;
+}
+
+AltIndicator *alt_indicator_init(AltIndicator *self)
+{
+    self->ladder = ladder_gauge_new((LadderPageDescriptor *)alt_ladder_page_descriptor_new(), -1);
+
+    DigitBarrel *db = digit_barrel_new(18, 0, 9.999, 1);
+    DigitBarrel *db2 = digit_barrel_new(18, 0, 99, 10);
+    self->odo = odo_gauge_new_multiple(-1, 4,
+            -1, db2,
+            -2, db,
+            -2, db,
+            -2, db
+    );
+    base_gauge_init(
+        BASE_GAUGE(self),
+        &alt_indicator_ops,
+        BASE_GAUGE(self->ladder)->w,
+        BASE_GAUGE(self->ladder)->h + 20 * 2
+    );
+
+    self->view = SDL_CreateRGBSurfaceWithFormat(0,
+        BASE_GAUGE(self)->w,
+        BASE_GAUGE(self)->h,
+        32, SDL_PIXELFORMAT_RGBA32
+    );
+    SDL_SetColorKey(self->view, SDL_TRUE, SDL_UCKEY(self->view));
+    SDL_FillRect(self->view, NULL, SDL_UCKEY(self->view));
+    self->font  = TTF_OpenFont("TerminusTTF-4.47.0.ttf", 16);
+
     return self;
 }
 
