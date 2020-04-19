@@ -2,6 +2,7 @@
 #include <stdlib.h>
 
 #include "alt-group.h"
+#include "base-gauge.h"
 
 
 AltGroup *alt_group_new(void)
@@ -55,7 +56,7 @@ void alt_group_render_at(AltGroup *self, Uint32 dt, SDL_Surface *destination, SD
 {
     SDL_Rect offset = {0,0,0,0};
 
-    SDL_BlitSurface(alt_indicator_render(self->altimeter, dt) , NULL, destination, location);
+    SDL_BlitSurface(base_gauge_render(BASE_GAUGE(self->altimeter), dt) , NULL, destination, location);
     offset.x = location->x + alt_indicator_get_width(self->altimeter);
     offset.y = location->y +  round(alt_indicator_get_height(self->altimeter)/2.0) - round((ANIMATED_GAUGE(self->vsi)->view->h)/2.0);
     SDL_BlitSurface(base_gauge_render(BASE_GAUGE(self->vsi), dt) , NULL, destination, &offset);

@@ -3,7 +3,14 @@
 
 #include "alt-indicator.h"
 #include "alt-ladder-page-descriptor.h"
+#include "base-gauge.h"
 #include "sdl-colors.h"
+
+static SDL_Surface *alt_indicator_render(AltIndicator *self, Uint32 dt);
+static BaseGaugeOps alt_indicator_ops = {
+    .render = (RenderFunc)alt_indicator_render
+};
+
 
 AltIndicator *alt_indicator_new(void)
 {
@@ -20,10 +27,16 @@ AltIndicator *alt_indicator_new(void)
                 -2, db,
                 -2, db
         );
+        base_gauge_init(
+            BASE_GAUGE(self),
+            &alt_indicator_ops,
+            BASE_GAUGE(self->ladder)->w,
+            BASE_GAUGE(self->ladder)->h + 20 * 2
+        );
 
         self->view = SDL_CreateRGBSurfaceWithFormat(0,
-            ANIMATED_GAUGE(self->ladder)->view->w,
-            ANIMATED_GAUGE(self->ladder)->view->h + 20 * 2,
+            BASE_GAUGE(self)->w,
+            BASE_GAUGE(self)->h,
             32, SDL_PIXELFORMAT_RGBA32
         );
         SDL_SetColorKey(self->view, SDL_TRUE, SDL_UCKEY(self->view));
@@ -156,7 +169,7 @@ static void alt_indicator_draw_target_altitude(AltIndicator *self)
 
 
 
-SDL_Surface *alt_indicator_render(AltIndicator *self, Uint32 dt)
+static SDL_Surface *alt_indicator_render(AltIndicator *self, Uint32 dt)
 {
     SDL_Surface *lad;
     SDL_Surface *odo;

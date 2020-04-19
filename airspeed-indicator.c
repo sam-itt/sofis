@@ -3,7 +3,13 @@
 
 #include "airspeed-indicator.h"
 #include "airspeed-page-descriptor.h"
+#include "base-gauge.h"
 #include "sdl-colors.h"
+
+static SDL_Surface *airspeed_indicator_render(AirspeedIndicator *self, Uint32 dt);
+static BaseGaugeOps airspeed_indicator_ops = {
+    .render = (RenderFunc)airspeed_indicator_render
+};
 
 
 AirspeedIndicator *airspeed_indicator_new(speed_t v_so, speed_t v_s1, speed_t v_fe, speed_t v_no, speed_t v_ne)
@@ -36,9 +42,16 @@ AirspeedIndicator *airspeed_indicator_init(AirspeedIndicator *self, speed_t v_so
             -2, db
     );
 
+    base_gauge_init(
+        BASE_GAUGE(self),
+        &airspeed_indicator_ops,
+        BASE_GAUGE(self->ladder)->w,
+        BASE_GAUGE(self->ladder)->h + 20
+    );
+
     self->view = SDL_CreateRGBSurfaceWithFormat(0,
-        ANIMATED_GAUGE(self->ladder)->view->w,
-        ANIMATED_GAUGE(self->ladder)->view->h + 20,
+        BASE_GAUGE(self)->w,
+        BASE_GAUGE(self)->h,
         32, SDL_PIXELFORMAT_RGBA32
     );
     SDL_SetColorKey(self->view, SDL_TRUE, SDL_UCKEY(self->view));
@@ -140,7 +153,7 @@ static void airspeed_indicator_draw_tas(AirspeedIndicator *self)
 }
 
 
-SDL_Surface *airspeed_indicator_render(AirspeedIndicator *self, Uint32 dt)
+static SDL_Surface *airspeed_indicator_render(AirspeedIndicator *self, Uint32 dt)
 {
     SDL_Surface *lad;
     SDL_Surface *odo;

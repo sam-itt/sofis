@@ -3,6 +3,7 @@
 
 #include <SDL2/SDL_ttf.h>
 
+#include "base-gauge.h"
 #include "ladder-gauge.h"
 #include "airspeed-page-descriptor.h"
 #include "odo-gauge.h"
@@ -10,6 +11,8 @@
 #define RHO_0 1.225 /* kg/m3, Sea level ISA */
 
 typedef struct{
+    BaseGauge parent;
+
     SDL_Surface *view;
 
     LadderGauge *ladder;
@@ -24,8 +27,6 @@ AirspeedIndicator *airspeed_indicator_new(speed_t v_so, speed_t v_s1,speed_t v_f
 AirspeedIndicator *airspeed_indicator_init(AirspeedIndicator *self, speed_t v_so, speed_t v_s1,speed_t v_fe,speed_t v_no,speed_t v_ne);
 
 bool airspeed_indicator_set_value(AirspeedIndicator *self, float value);
-SDL_Surface *airspeed_indicator_render(AirspeedIndicator *self, Uint32 dt);
-
 
 void airspeed_indicator_dispose(AirspeedIndicator *self);
 void airspeed_indicator_free(AirspeedIndicator *self);

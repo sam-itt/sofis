@@ -7,6 +7,7 @@
 #include "alt-group.h"
 #include "animated-gauge.h"
 #include "attitude-indicator.h"
+#include "base-gauge.h"
 #include "basic-hud.h"
 #include "misc.h"
 
@@ -120,5 +121,5 @@ void basic_hud_render(BasicHud *self, Uint32 dt, SDL_Surface *destination)
     SDL_BlitSurface(base_gauge_render(BASE_GAUGE(self->attitude), dt) , NULL, destination, NULL);
 
     alt_group_render_at(self->altgroup, dt, destination, &self->locations[ALT_GROUP]);
-    SDL_BlitSurface(airspeed_indicator_render(self->airspeed, dt), NULL, destination, &self->locations[SPEED]);
+    SDL_BlitSurface(base_gauge_render(BASE_GAUGE(self->airspeed), dt), NULL, destination, &self->locations[SPEED]);
 }
