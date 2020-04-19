@@ -11,6 +11,7 @@
 #include "SDL_surface.h"
 #include "animated-gauge.h"
 #include "attitude-indicator.h"
+#include "base-gauge.h"
 #include "misc.h"
 #include "sdl-colors.h"
 
@@ -19,6 +20,10 @@
 static void attitude_indicator_render_value(AttitudeIndicator *self, float value);
 static SDL_Surface *attitude_indicator_get_etched_ball(AttitudeIndicator *self);
 static void attitude_indicator_render_value_to(AttitudeIndicator *self, float value, SDL_Surface *destination, SDL_Rect *location);
+static AnimatedGaugeOps attitude_indicator_ops = {
+    .render_value = (ValueRenderFunc)attitude_indicator_render_value,
+    .render_value_to = (ValueRenderToFunc)attitude_indicator_render_value_to
+};
 
 AttitudeIndicator *attitude_indicator_new(int width, int height)
 {
@@ -37,18 +42,10 @@ AttitudeIndicator *attitude_indicator_new(int width, int height)
 
 AttitudeIndicator *attitude_indicator_init(AttitudeIndicator *self, int width, int height)
 {
-    AnimatedGauge *parent;
+    animated_gauge_init(ANIMATED_GAUGE(self), ANIMATED_GAUGE_OPS(&attitude_indicator_ops), width, height);
 
-    parent = ANIMATED_GAUGE(self);
-    parent->view = SDL_CreateRGBSurfaceWithFormat(0, width, height, 32, SDL_PIXELFORMAT_RGBA32);
-    parent->w = width;
-    parent->h = height;
-    parent->damaged = true;
-    parent->renderer = (ValueRenderFunc)attitude_indicator_render_value;
-    parent->renderer_to = (ValueRenderToFunc)attitude_indicator_render_value_to;
-
-	self->common_center.x = round((parent->view->w)/2.0);
-	self->common_center.y = round(parent->view->h*0.4);
+	self->common_center.x = round((BASE_GAUGE(self)->w)/2.0);
+	self->common_center.y = round(BASE_GAUGE(self)->h*0.4);
 	self->size = 2; /*In tens of degrees, here 20deg (+/-)*/
 
 	self->markers[MARKER_LEFT] = IMG_Load("left-marker.png");
@@ -60,7 +57,7 @@ AttitudeIndicator *attitude_indicator_init(AttitudeIndicator *self, int width, i
 	self->locations[MARKER_LEFT] = (SDL_Rect){
 	/*The left marker has its arrow pointing right and the arrow X is at marker->w-1*/
 		self->common_center.x - 78 - (self->markers[0]->w-1),
-		round(parent->h*0.4) - round(self->markers[0]->h/2.0) +1,
+		round(BASE_GAUGE(self)->h*0.4) - round(self->markers[0]->h/2.0) +1,
 		0,0
 	};
 	self->locations[MARKER_RIGHT] = (SDL_Rect){
@@ -70,12 +67,12 @@ AttitudeIndicator *attitude_indicator_init(AttitudeIndicator *self, int width, i
 	};
 	self->locations[MARKER_CENTER] = (SDL_Rect){
 		self->common_center.x - round((self->markers[2]->w-1)/2.0),
-		round(parent->view->h*0.4) +1,
+		round(BASE_GAUGE(self)->h*0.4) +1,
 		0,0
 	};
 
 	self->locations[ROLL_SLIP] = (SDL_Rect){
-		self->common_center.x - round((self->rollslip->parent.w-1)/2.0),
+		self->common_center.x - round((BASE_GAUGE(self->rollslip)->w-1)/2.0),
 		7,
 		0,0
 	};
@@ -162,8 +159,8 @@ SDL_Surface *attitude_indicator_draw_ball(AttitudeIndicator *self)
 
     self->ball_window = (SDL_Rect){
         .x = 0, .y = 0,
-        .w = ANIMATED_GAUGE(self)->view->w,
-        .h = ANIMATED_GAUGE(self)->view->h
+        .w = BASE_GAUGE(self)->w,
+        .h = BASE_GAUGE(self)->h
     };
 
     self->ball_all = (SDL_Rect){
@@ -501,16 +498,16 @@ static void attitude_indicator_render_value_to(AttitudeIndicator *self, float va
     value = value * -1.0;
 
     /*Clear the area before drawing. TODO, move upper in animated_gauge ?*/
-    SDL_FillRect(destination, &(SDL_Rect){location->x,location->y,ANIMATED_GAUGE(self)->w,ANIMATED_GAUGE(self)->h}, SDL_UFBLUE(destination));
+    SDL_FillRect(destination, &(SDL_Rect){location->x,location->y,BASE_GAUGE(self)->w,BASE_GAUGE(self)->h}, SDL_UFBLUE(destination));
 
 //	SDL_FillRect(self->parent.view, NULL, SDL_MapRGBA(self->parent.view->format, 0, 0, 0, SDL_ALPHA_TRANSPARENT));
 
     /*First find out a view-sized window into the larger ball buffer for a 0deg pitch*/
     SDL_Rect win = {
-        .x = self->ball_center.x - (round(self->parent.w/2.0) -1), /*Is ball_window useless?*/
-        .y = self->ball_center.y - (round(self->parent.h*0.4) -1),
-        .w = self->parent.w,
-        .h = self->parent.h
+        .x = self->ball_center.x - (round(BASE_GAUGE(self)->w/2.0) -1), /*Is ball_window useless?*/
+        .y = self->ball_center.y - (round(BASE_GAUGE(self)->h*0.4) -1),
+        .w = BASE_GAUGE(self)->w,
+        .h = BASE_GAUGE(self)->h
     };
     /*Then apply to correct y offset to account for pitch*/
     win.y += attitude_indicator_resolve_increment(self, value);
@@ -558,6 +555,6 @@ void attitude_indicator_render_to(AttitudeIndicator *self, Uint32 dt, SDL_Surfac
     };
     /*If we are here, self is damaed, damaged the rollslip indicator too*/
     self->rollslip->parent.damaged = true;
-    animated_gauge_render_to(ANIMATED_GAUGE(self), dt, destination, location);
-    animated_gauge_render_to(ANIMATED_GAUGE(self->rollslip), dt, destination, &rsl);
+    base_gauge_render_to(BASE_GAUGE(self), dt, destination, location);
+    base_gauge_render_to(BASE_GAUGE(self->rollslip), dt, destination, &rsl);
 }

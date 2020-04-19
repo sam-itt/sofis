@@ -2,8 +2,7 @@
 #include <stdlib.h>
 
 #include "alt-group.h"
-#include "alt-indicator.h"
-#include "animated-gauge.h"
+#include "base-gauge.h"
 
 
 AltGroup *alt_group_new(void)
@@ -57,19 +56,18 @@ void alt_group_render_at(AltGroup *self, Uint32 dt, SDL_Surface *destination, SD
 {
     SDL_Rect offset = {0,0,0,0};
 
-    SDL_BlitSurface(alt_indicator_render(self->altimeter, dt) , NULL, destination, location);
-    offset.x = location->x + alt_indicator_get_width(self->altimeter);
-    offset.y = location->y +  round(alt_indicator_get_height(self->altimeter)/2.0) - round((ANIMATED_GAUGE(self->vsi)->view->h)/2.0);
-    SDL_BlitSurface(animated_gauge_render(ANIMATED_GAUGE(self->vsi), dt) , NULL, destination, &offset);
+    SDL_BlitSurface(base_gauge_render(BASE_GAUGE(self->altimeter), dt) , NULL, destination, location);
+    offset.x = location->x + BASE_GAUGE(self->altimeter)->w;
+    offset.y = location->y +  round(BASE_GAUGE(self->altimeter)->h/2.0) - round((BASE_GAUGE(self->vsi)->h)/2.0);
+    SDL_BlitSurface(base_gauge_render(BASE_GAUGE(self->vsi), dt) , NULL, destination, &offset);
 }
 
 void alt_group_render_to(AltGroup *self, Uint32 dt, SDL_Surface *destination, SDL_Rect *location)
 {
     SDL_Rect offset = {0,0,0,0};
-    offset.x = location->x + alt_indicator_get_width(self->altimeter);
-    offset.y = location->y +  round(alt_indicator_get_height(self->altimeter)/2.0) - round((ANIMATED_GAUGE(self->vsi)->h)/2.0);
+    offset.x = location->x + BASE_GAUGE(self->altimeter)->w;
+    offset.y = location->y +  round(BASE_GAUGE(self->altimeter)->h/2.0) - round((BASE_GAUGE(self->vsi)->h)/2.0);
 
-    alt_indicator_render_to(self->altimeter, dt, destination, location);
-    animated_gauge_render_to(ANIMATED_GAUGE(self->vsi), dt, destination, &offset);
-
+    base_gauge_render_to(BASE_GAUGE(self->altimeter), dt, destination, location);
+    base_gauge_render_to(BASE_GAUGE(self->vsi), dt, destination, &offset);
 }

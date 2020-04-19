@@ -15,6 +15,10 @@
 
 static void roll_slip_gauge_render_value(RollSlipGauge *self, float value);
 static void roll_slip_gauge_render_value_to(RollSlipGauge *self, float value, SDL_Surface *destination, SDL_Rect *location);
+static AnimatedGaugeOps roll_slip_gauge_ops = {
+    .render_value = (ValueRenderFunc)roll_slip_gauge_render_value,
+    .render_value_to = (ValueRenderToFunc)roll_slip_gauge_render_value_to
+};
 
 
 RollSlipGauge *roll_slip_gauge_new(void)
@@ -33,12 +37,7 @@ RollSlipGauge *roll_slip_gauge_new(void)
 
 RollSlipGauge *roll_slip_gauge_init(RollSlipGauge *self)
 {
-	self->parent.view = SDL_CreateRGBSurfaceWithFormat(0, 175, 184, 32, SDL_PIXELFORMAT_RGBA32);
-    self->parent.w = 175;
-    self->parent.h = 184;
-	self->parent.renderer = (ValueRenderFunc)roll_slip_gauge_render_value;
-	self->parent.renderer_to = (ValueRenderToFunc)roll_slip_gauge_render_value_to;
-	self->parent.damaged = true;
+    animated_gauge_init(ANIMATED_GAUGE(self), ANIMATED_GAUGE_OPS(&roll_slip_gauge_ops), 175, 184);
 
 	self->arc = IMG_Load("roll-indicator.png");
 	SDL_Surface *tmp = IMG_Load("arrow-needleless.png");

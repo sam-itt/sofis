@@ -1,9 +1,41 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <assert.h>
 
+#include "SDL_pixels.h"
+#include "SDL_rect.h"
 #include "animated-gauge.h"
+#include "base-gauge.h"
+#include "sdl-colors.h"
 
 #define SPIN_DURATION 1000 /*ms*/
+
+static SDL_Surface *animated_gauge_render(AnimatedGauge *self, Uint32 dt);
+static void animated_gauge_render_to(AnimatedGauge *self, Uint32 dt, SDL_Surface *destination, SDL_Rect *location);
+
+static AnimatedGaugeOps animated_gauge_ops = {
+    .parent = {
+        .render = (RenderFunc)animated_gauge_render,
+        .render_to = (RenderToFunc)animated_gauge_render_to
+    },
+   .render_value = NULL,
+   .render_value_to = NULL
+};
+
+
+AnimatedGauge *animated_gauge_init(AnimatedGauge *self, AnimatedGaugeOps *ops, int w, int h)
+{
+    ops->parent = animated_gauge_ops.parent; /*Take care of the chain-up here so caller only needs to set .render_value*/
+
+    base_gauge_init(BASE_GAUGE(self), BASE_GAUGE_OPS(ops), w, h);
+    self->view = SDL_CreateRGBSurfaceWithFormat(0, BASE_GAUGE(self)->w,  BASE_GAUGE(self)->h, 32, SDL_PIXELFORMAT_RGBA32);
+//    self->view = SDL_CreateRGBSurface(0, BASE_GAUGE(self)->w, BASE_GAUGE(self)->h, 32, 0, 0, 0, 0);
+    if(!self->view)
+        return NULL;
+    SDL_SetColorKey(self->view, SDL_TRUE, SDL_UCKEY(self->view));
+    self->damaged = true;
+    return self;
+}
 
 void animated_gauge_dispose(AnimatedGauge *self)
 {
@@ -17,36 +49,42 @@ void animated_gauge_set_value(AnimatedGauge *self, float value)
     self->value = value;
 }
 
+
+
 /**
- * Gives a drawing representing the current gauge state. Return
+ * Gives a drawing representing the current gauge state. animated_gauge_opsReturn
  * value must not be freed by the caller.
  *
- * @param dt time elapsed since the previous call (miliseconds)
- * @return pointer to a SDL_Surface representing the current gauge
+ * @param dt time elapsed since the previous call (miliseanimated_gauge_opsconds)
+ * @return pointer to a SDL_Surface representing the curranimated_gauge_opsent gauge
  * state. Object-owned, do not free
  *
  */
-SDL_Surface *animated_gauge_render(AnimatedGauge *self, Uint32 dt)
+static SDL_Surface *animated_gauge_render(AnimatedGauge *self, Uint32 dt)
 {
     float _current;
+    AnimatedGaugeOps *ops;
 
     if(animated_gauge_moving(self)){
         _current = basic_animation_loop(&self->animation, dt);
 
-        self->renderer(self, _current);
+        ops = ANIMATED_GAUGE_OPS(BASE_GAUGE(self)->ops);
+        ops->render_value(self, _current);
         self->damaged = false;
     }
     return self->view;
 }
 
-void animated_gauge_render_to(AnimatedGauge *self, Uint32 dt, SDL_Surface *destination, SDL_Rect *location)
+static void animated_gauge_render_to(AnimatedGauge *self, Uint32 dt, SDL_Surface *destination, SDL_Rect *location)
 {
     float _current;
+    AnimatedGaugeOps *ops;
 
 //    if(animated_gauge_moving(self)){
         _current = basic_animation_loop(&self->animation, dt);
 
-        self->renderer_to(self, _current, destination, location);
+        ops = ANIMATED_GAUGE_OPS(BASE_GAUGE(self)->ops);
+        ops->render_value_to(self, _current, destination, location);
         self->damaged = false;
 //    }
 }

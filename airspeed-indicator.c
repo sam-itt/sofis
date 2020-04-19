@@ -4,8 +4,16 @@
 #include "SDL_surface.h"
 #include "airspeed-indicator.h"
 #include "airspeed-page-descriptor.h"
-#include "animated-gauge.h"
+#include "base-gauge.h"
 #include "sdl-colors.h"
+#include "view.h"
+
+static SDL_Surface *airspeed_indicator_render(AirspeedIndicator *self, Uint32 dt);
+static void airspeed_indicator_render_to(AirspeedIndicator *self, Uint32 dt, SDL_Surface *destination, SDL_Rect *location);
+static BaseGaugeOps airspeed_indicator_ops = {
+    .render = (RenderFunc)airspeed_indicator_render,
+    .render_to = (RenderToFunc)airspeed_indicator_render_to
+};
 
 
 AirspeedIndicator *airspeed_indicator_new(speed_t v_so, speed_t v_s1, speed_t v_fe, speed_t v_no, speed_t v_ne)
@@ -38,9 +46,16 @@ AirspeedIndicator *airspeed_indicator_init(AirspeedIndicator *self, speed_t v_so
             -2, db
     );
 
+    base_gauge_init(
+        BASE_GAUGE(self),
+        &airspeed_indicator_ops,
+        BASE_GAUGE(self->ladder)->w,
+        BASE_GAUGE(self->ladder)->h + 20
+    );
+
     self->view = SDL_CreateRGBSurfaceWithFormat(0,
-        ANIMATED_GAUGE(self->ladder)->view->w,
-        ANIMATED_GAUGE(self->ladder)->view->h + 20,
+        BASE_GAUGE(self)->w,
+        BASE_GAUGE(self)->h,
         32, SDL_PIXELFORMAT_RGBA32
     );
     SDL_SetColorKey(self->view, SDL_TRUE, SDL_UCKEY(self->view));
@@ -78,73 +93,32 @@ bool airspeed_indicator_set_value(AirspeedIndicator *self, float value)
     return odo_gauge_set_value(self->odo, value);
 }
 
-static void airspeed_indicator_draw_outline(AirspeedIndicator *self)
-{
-    int x,y;
-    SDL_Surface *gauge;
-
-    gauge = self->view;
-
-    SDL_LockSurface(gauge);
-    Uint32 *pixels = gauge->pixels;
-    Uint32 color = SDL_UWHITE(gauge);
-    y = 0;
-    for(x = 0; x < gauge->w; x++){
-        pixels[y * gauge->w + x] = color;
-    }
-    y = gauge->h-1 - 20;
-    for(x = 0; x < gauge->w; x++){
-        pixels[y * gauge->w + x] = color;
-    }
-    y = gauge->h - 1;
-    for(x = 0; x < gauge->w; x++){
-        pixels[y * gauge->w + x] = color;
-    }
-    x = gauge->w - 1;
-    for(y = 0; y < gauge->h; y++){
-        pixels[y * gauge->w + x] = color;
-    }
-    x = 0;
-    for(y = 0; y < gauge->h; y++){
-        pixels[y * gauge->w + x] = color;
-    }
-
-    SDL_UnlockSurface(gauge);
-}
-
-
-
-static void airspeed_indicator_draw_text(AirspeedIndicator *self, const char *string, SDL_Rect *location, SDL_Color *color)
-{
-    SDL_Surface *text;
-
-    SDL_FillRect(self->view, location, SDL_UBLACK(self->view));
-
-    text = TTF_RenderText_Solid(self->font, string, *color);
-
-    location->x = round(location->w/2.0) - round(text->w/2.0);
-    location->y += round(location->h/2.0) - round(text->h/2.0);
-    SDL_BlitSurface(text, NULL, self->view, location);
-    SDL_FreeSurface(text);
-}
-
-
 static void airspeed_indicator_draw_tas(AirspeedIndicator *self)
 {
     char number[10]; //TAS XXXKT plus \0
-    SDL_Rect location;
+    SDL_Rect location, oloc;
 
-    location.x = 1;
-    location.y = self->view->h-1 - 20;
-    location.h = 20;
-    location.w = self->view->w-2; //-2 to account for the outline ?
+    oloc = (SDL_Rect){
+        .x = 0,
+        .y = BASE_GAUGE(self)->h - 20 - 1,
+        .h = 20,
+        .w = BASE_GAUGE(self)->w
+    };
+
+    view_draw_outline(self->view, &(SDL_WHITE), &oloc);
+
+
+    location.x = oloc.x + 1;
+    location.y = oloc.y + 1;
+    location.h = oloc.h;
+    location.w = oloc.w-2;
 
     snprintf(number, 10, "TAS %03dKT", self->tas);
-    airspeed_indicator_draw_text(self, number, &location, &SDL_WHITE);
+    view_draw_text(self->view, &location, number, self->font, &SDL_WHITE, &SDL_BLACK);
 }
 
 
-SDL_Surface *airspeed_indicator_render(AirspeedIndicator *self, Uint32 dt)
+static SDL_Surface *airspeed_indicator_render(AirspeedIndicator *self, Uint32 dt)
 {
     SDL_Surface *lad;
     SDL_Surface *odo;
@@ -154,13 +128,12 @@ SDL_Surface *airspeed_indicator_render(AirspeedIndicator *self, Uint32 dt)
         memset(placement, 0, sizeof(SDL_Rect)*2);
         placement[0].y = 0;
 
-        SDL_FillRect(self->view, NULL, SDL_UCKEY(self->view));
-
+        view_clear(self->view);
         airspeed_indicator_draw_tas(self);
-        airspeed_indicator_draw_outline(self);
+        view_draw_outline(self->view, &(SDL_WHITE), NULL);
 
-        lad = animated_gauge_render(ANIMATED_GAUGE(self->ladder), dt);
-        odo = animated_gauge_render(ANIMATED_GAUGE(self->odo), dt);
+        lad = base_gauge_render(BASE_GAUGE(self->ladder), dt);
+        odo = base_gauge_render(BASE_GAUGE(self->odo), dt);
         SDL_BlitSurface(lad, NULL, self->view, &placement[0]);
 
         placement[1].y = placement[0].y + (lad->h-1)/2.0 - odo->h/2.0 +1;
@@ -170,87 +143,31 @@ SDL_Surface *airspeed_indicator_render(AirspeedIndicator *self, Uint32 dt)
     return self->view;
 }
 
-static void airspeed_indicator_draw_outline_to(AirspeedIndicator *self, SDL_Surface *destination, SDL_Rect *location)
-{
-    int x,y;
-    Uint32 *pixels;
-    Uint32 color;
-    int startx,starty;
-    int endx, endy;
-
-
-    SDL_LockSurface(destination);
-    pixels = destination->pixels;
-    color = SDL_UWHITE(destination);
-
-    startx = location->x;
-    endx = location->x + self->w;
-    starty = location->y;
-    endy = location->y + self->h;
-
-
-    y = starty;
-    for(x = startx; x < endx; x++){
-        pixels[y * destination->w + x] = color;
-    }
-    y = endy - 20;
-    for(x = startx; x < endx; x++){
-        pixels[y * destination->w + x] = color;
-    }
-    y = endy - 1;
-    for(x = startx; x < endx; x++){
-        pixels[y * destination->w + x] = color;
-    }
-    x = endx - 1;
-    for(y = starty; y < endy; y++){
-        pixels[y * destination->w + x] = color;
-    }
-    x = startx;
-    for(y = starty; y < endy; y++){
-        pixels[y * destination->w + x] = color;
-    }
-
-    SDL_UnlockSurface(destination);
-}
-
-
-static void airspeed_indicator_draw_text_to(AirspeedIndicator *self, const char *string, SDL_Surface *destination, SDL_Rect *location, SDL_Color *color)
-{
-    SDL_Surface *text;
-    SDL_Rect tloc = {
-        location->x,
-        location->y,
-        location->w,
-        location->h
-    };
-
-    SDL_FillRect(destination, &tloc, SDL_UBLACK(self->view));
-
-    text = TTF_RenderText_Solid(self->font, string, *color);
-
-    tloc.x += round(location->w/2.0) - round(text->w/2.0);
-    tloc.y += round(location->h/2.0) - round(text->h/2.0);
-    SDL_BlitSurface(text, NULL, destination, &tloc);
-    SDL_FreeSurface(text);
-}
-
-
 static void airspeed_indicator_draw_tas_to(AirspeedIndicator *self, SDL_Surface *destination, SDL_Rect *location)
 {
     char number[10]; //TAS XXXKT plus \0
-    SDL_Rect loc;
+    SDL_Rect tloc, oloc;
 
-    loc.x = location->x + 1;
-    loc.y = location->y + self->h-1 - 20;
-    loc.h = 20;
-    loc.w = self->w-2; //-2 to account for the outline ?
+    oloc = (SDL_Rect){
+        .x = location->x,
+        .y = location->y + BASE_GAUGE(self)->h - 20 - 1,
+        .h = 20,
+        .w = BASE_GAUGE(self)->w
+    };
+
+    view_draw_outline(destination, &(SDL_WHITE), &oloc);
+
+    tloc.x = oloc.x + 1;
+    tloc.y = oloc.y + 1;
+    tloc.h = oloc.h;
+    tloc.w = oloc.w-2;
 
     snprintf(number, 10, "TAS %03dKT", self->tas);
-    airspeed_indicator_draw_text_to(self, number, destination, &loc, &SDL_WHITE);
+    view_draw_text(destination, &tloc, number, self->font, &SDL_WHITE, &SDL_BLACK);
 }
 
 
-void airspeed_indicator_render_to(AirspeedIndicator *self, Uint32 dt, SDL_Surface *destination, SDL_Rect *location)
+static void airspeed_indicator_render_to(AirspeedIndicator *self, Uint32 dt, SDL_Surface *destination, SDL_Rect *location)
 {
     SDL_Rect placement[2];
 
@@ -261,15 +178,18 @@ void airspeed_indicator_render_to(AirspeedIndicator *self, Uint32 dt, SDL_Surfac
 
         /*Clear the area before drawing. TODO, move upper in animated_gauge ?*/
 //        SDL_FillRect(destination, &(SDL_Rect){location->x,location->y,self->w,self->h}, SDL_UFBLUE(destination));
-
+        SDL_Rect area = {
+            location->x, location->y,
+            BASE_GAUGE(self)->w,BASE_GAUGE(self)->h
+        };
         airspeed_indicator_draw_tas_to(self, destination, location);
-        airspeed_indicator_draw_outline_to(self, destination, location);
+        view_draw_outline(destination, &(SDL_WHITE), &area);
 
-        animated_gauge_render_to(ANIMATED_GAUGE(self->ladder), dt, destination, &placement[0]);
+        base_gauge_render_to(BASE_GAUGE(self->ladder), dt, destination, &placement[0]);
 
-        placement[1].y = placement[0].y + (ANIMATED_GAUGE(self->ladder)->h-1)/2.0 - ANIMATED_GAUGE(self->odo)->h/2.0 +1;
+        placement[1].y = placement[0].y + (BASE_GAUGE(self->ladder)->h-1)/2.0 - BASE_GAUGE(self->odo)->h/2.0 +1;
         placement[1].x = location->x + 25;// (lad->w - odo->w-1) -1; /*The last -1 in there to prevent eating the border*/
 
-        animated_gauge_render_to(ANIMATED_GAUGE(self->odo), dt, destination, &placement[1]);
+        base_gauge_render_to(BASE_GAUGE(self->odo), dt, destination, &placement[1]);
 //    }
 }
