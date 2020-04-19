@@ -6,6 +6,7 @@
 #include <SDL2/SDL_ttf.h>
 
 #include "animated-gauge.h"
+#include "basic-hud.h"
 #include "ladder-gauge.h"
 #include "alt-ladder-page-descriptor.h"
 
@@ -25,6 +26,7 @@
 
 #define N_COLORS 4
 
+BasicHud *hud = NULL;
 OdoGauge *gauge = NULL;
 LadderGauge *ladder = NULL;
 OdoGauge *wheel = NULL;
@@ -85,12 +87,14 @@ bool handle_keyboard(SDL_KeyboardEvent *event, Uint32 elapsed)
             if(event->state == SDL_PRESSED){
                 ias += IAS_INC;
                 airspeed_indicator_set_value(asi, ias);
+                basic_hud_set(hud, 1, AIRSPEED, ias);
             }
             break;
         case SDLK_z:
             if(event->state == SDL_PRESSED){
                 ias -= IAS_INC;
                 airspeed_indicator_set_value(asi, ias);
+                basic_hud_set(hud, 1, AIRSPEED, ias);
             }
             break;
         case SDLK_UP:
@@ -102,6 +106,7 @@ bool handle_keyboard(SDL_KeyboardEvent *event, Uint32 elapsed)
                 alt_indicator_set_value(alt_ind, alt);
                 //alt_group_set_altitude(group, alt);
                 alt_group_set_values(group, alt, vs);
+                basic_hud_set(hud, 1, ALTITUDE, alt);
             }
             break;
         case SDLK_DOWN:
@@ -113,6 +118,7 @@ bool handle_keyboard(SDL_KeyboardEvent *event, Uint32 elapsed)
                 alt_indicator_set_value(alt_ind, alt);
                 //alt_group_set_altitude(group, alt);
                 alt_group_set_values(group, alt, vs);
+                basic_hud_set(hud, 1, ALTITUDE, alt);
             }
             break;
         case SDLK_l:
@@ -142,6 +148,7 @@ bool handle_keyboard(SDL_KeyboardEvent *event, Uint32 elapsed)
                     vs += VARIO_INC;
                 animated_gauge_set_value(ANIMATED_GAUGE(stair), vs);
                 alt_group_set_vertical_speed(group, vs);
+                basic_hud_set(hud, 1, VERTICAL_SPEED, vs);
             }
             break;
         case SDLK_m:
@@ -150,18 +157,21 @@ bool handle_keyboard(SDL_KeyboardEvent *event, Uint32 elapsed)
                     vs -= VARIO_INC;
                 animated_gauge_set_value(ANIMATED_GAUGE(stair), vs);
                 alt_group_set_vertical_speed(group, vs);
+                basic_hud_set(hud, 1, VERTICAL_SPEED, vs);
             }
             break;
         case SDLK_x:
             if(event->state == SDL_PRESSED){
                     pitch -= PITCH_INC;
                 animated_gauge_set_value(ANIMATED_GAUGE(ai), pitch);
+                basic_hud_set(hud, 1, PITCH, pitch);
             }
             break;
         case SDLK_s:
             if(event->state == SDL_PRESSED){
                     pitch += PITCH_INC;
                 animated_gauge_set_value(ANIMATED_GAUGE(ai), pitch);
+                basic_hud_set(hud, 1, PITCH, pitch);
             }
             break;
         case SDLK_c:
@@ -169,6 +179,7 @@ bool handle_keyboard(SDL_KeyboardEvent *event, Uint32 elapsed)
                 roll -= ROLL_INC;
                 attitude_indicator_set_roll(ai, roll);
                 animated_gauge_set_value(ANIMATED_GAUGE(rsg), roll);
+                basic_hud_set(hud, 1, ROLL, roll);
             }
             break;
         case SDLK_d:
@@ -176,6 +187,7 @@ bool handle_keyboard(SDL_KeyboardEvent *event, Uint32 elapsed)
                 roll += ROLL_INC;
                 attitude_indicator_set_roll(ai, roll);
                 animated_gauge_set_value(ANIMATED_GAUGE(rsg), roll);
+                basic_hud_set(hud, 1, ROLL, roll);
             }
             break;
 
@@ -319,6 +331,8 @@ int main(int argc, char **argv)
     rsg = roll_slip_gauge_new();
     animated_gauge_set_value(ANIMATED_GAUGE(rsg), roll);
 
+    hud = basic_hud_new();
+
     SDL_Rect airect = {439,50,0,0};
     SDL_Rect vrect = {96,70,0,0};
 
@@ -346,6 +360,7 @@ int main(int argc, char **argv)
 //        animated_gauge_render(ANIMATED_GAUGE(ai->rollslip), elapsed);
 //        SDL_BlitSurface(animated_gauge_render(ANIMATED_GAUGE(ai), elapsed) , NULL, screenSurface, NULL);
 
+        basic_hud_render(hud, elapsed, screenSurface);
         SDL_UpdateWindowSurface(window);
 
         if(elapsed < 200){
@@ -397,6 +412,7 @@ int main(int argc, char **argv)
     vertical_stair_free(stair);
     roll_slip_gauge_free(rsg);
     attitude_indicator_free(ai);
+    basic_hud_free(hud);
     SDL_DestroyWindow(window);
     TTF_Quit();
     SDL_Quit();
