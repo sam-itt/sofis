@@ -1,6 +1,9 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <assert.h>
 
+#include "SDL_pixels.h"
+#include "SDL_rect.h"
 #include "animated-gauge.h"
 #include "base-gauge.h"
 #include "sdl-colors.h"
@@ -37,17 +40,13 @@ void animated_gauge_dispose(AnimatedGauge *self)
         SDL_FreeSurface(self->view);
 }
 
-
-void animated_gauge_clear(AnimatedGauge *self)
-{
-    SDL_FillRect(self->view, NULL, SDL_UCKEY(self->view));
-}
-
 void animated_gauge_set_value(AnimatedGauge *self, float value)
 {
     basic_animation_start(&self->animation, self->value, value, SPIN_DURATION);
     self->value = value;
 }
+
+
 
 /**
  * Gives a drawing representing the current gauge state. animated_gauge_opsReturn

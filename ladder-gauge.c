@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include "animated-gauge.h"
 #include "ladder-gauge.h"
 #include "ladder-page-factory.h"
 #include "sdl-colors.h"
@@ -118,37 +119,6 @@ LadderPage *ladder_gauge_get_page_for(LadderGauge *self, float value)
     return ladder_gauge_get_page(self, page_idx);
 }
 
-void ladder_gauge_draw_outline(LadderGauge *self)
-{
-    int x,y;
-    SDL_Surface *gauge;
-
-    gauge = ANIMATED_GAUGE(self)->view;
-
-    SDL_LockSurface(gauge);
-    Uint32 *pixels = gauge->pixels;
-    Uint32 color = SDL_UWHITE(gauge);
-    y = 0;
-    for(x = 0; x < gauge->w; x++){
-        pixels[y * gauge->w + x] = color;
-    }
-    y = gauge->h - 1;
-    for(x = 0; x < gauge->w; x++){
-        pixels[y * gauge->w + x] = color;
-    }
-    x = gauge->w - 1;
-    for(y = 0; y < gauge->h; y++){
-        pixels[y * gauge->w + x] = color;
-    }
-    /*TODO: don't draw left side if current value > page 1 limit*/
-    x = 0;
-    for(y = 0; y < gauge->h; y++){
-        pixels[y * gauge->w + x] = color;
-    }
-
-    SDL_UnlockSurface(gauge);
-}
-
 static void ladder_gauge_render_value(LadderGauge *self, float value)
 {
     float y;
@@ -159,8 +129,8 @@ static void ladder_gauge_render_value(LadderGauge *self, float value)
 
     gauge = ANIMATED_GAUGE(self)->view;
 
-    SDL_FillRect(gauge, NULL, SDL_UCKEY(gauge));
-    ladder_gauge_draw_outline(self);
+    animated_gauge_clear(ANIMATED_GAUGE(self));
+    view_draw_outline(ANIMATED_GAUGE(self)->view, &(SDL_WHITE), NULL);
 
     value = value >= 0 ? value : 0.0f;
 

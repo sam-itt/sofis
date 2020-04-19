@@ -353,7 +353,7 @@ int main(int argc, char **argv)
 //        SDL_BlitSurface(base_gauge_render(BASE_GAUGE(wheel), elapsed) , NULL, screenSurface, &wheelrect);
 //        SDL_BlitSurface(base_gauge_render(BASE_GAUGE(odo), elapsed) , NULL, screenSurface, &odorect);
 
-//        SDL_BlitSurface(base_gauge_render(BASE_GAUGE(alt_ind), elapsed) , NULL, screenSurface, &airect);
+        SDL_BlitSurface(base_gauge_render(BASE_GAUGE(alt_ind), elapsed) , NULL, screenSurface, &airect);
 //        SDL_BlitSurface(base_gauge_render(BASE_GAUGE(stair), elapsed) , NULL, screenSurface, &vrect);
 
 //        alt_group_render_at(group, elapsed, screenSurface, &airect);
