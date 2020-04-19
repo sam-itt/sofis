@@ -173,8 +173,8 @@ SDL_Surface *alt_indicator_render(AltIndicator *self, Uint32 dt)
         alt_indicator_draw_target_altitude(self);
         alt_indicator_draw_outline(self);
 
-        lad = animated_gauge_render(ANIMATED_GAUGE(self->ladder), dt);
-        odo = animated_gauge_render(ANIMATED_GAUGE(self->odo), dt);
+        lad = base_gauge_render(BASE_GAUGE(self->ladder), dt);
+        odo = base_gauge_render(BASE_GAUGE(self->odo), dt);
         SDL_BlitSurface(lad, NULL, self->view, &placement[0]);
 
         placement[1].y = placement[0].y + (lad->h-1)/2.0 - odo->h/2.0 +1;

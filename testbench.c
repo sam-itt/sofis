@@ -344,21 +344,25 @@ int main(int argc, char **argv)
 
         done = handle_events(elapsed);
 
-//        SDL_BlitSurface(animated_gauge_render(ANIMATED_GAUGE(ladder), elapsed) , NULL, screenSurface, &lrect);
-//        SDL_BlitSurface(animated_gauge_render(ANIMATED_GAUGE(gauge), elapsed) , NULL, screenSurface, &dst);
-//        SDL_BlitSurface(animated_gauge_render(ANIMATED_GAUGE(wheel), elapsed) , NULL, screenSurface, &wheelrect);
-//        SDL_BlitSurface(animated_gauge_render(ANIMATED_GAUGE(odo), elapsed) , NULL, screenSurface, &odorect);
+        /* Not having this in the loop breaks ladder-gauge display
+         * TODO: Check why and fix
+         * */
+        SDL_FillRect(screenSurface, NULL, SDL_UFBLUE(screenSurface));
+//        SDL_BlitSurface(base_gauge_render(BASE_GAUGE(ladder), elapsed) , NULL, screenSurface, &lrect);
+//        SDL_BlitSurface(base_gauge_render(BASE_GAUGE(gauge), elapsed) , NULL, screenSurface, &dst);
+//        SDL_BlitSurface(base_gauge_render(BASE_GAUGE(wheel), elapsed) , NULL, screenSurface, &wheelrect);
+//        SDL_BlitSurface(base_gauge_render(BASE_GAUGE(odo), elapsed) , NULL, screenSurface, &odorect);
 
 //        SDL_BlitSurface(alt_indicator_render(alt_ind, elapsed) , NULL, screenSurface, &airect);
-//        SDL_BlitSurface(animated_gauge_render(ANIMATED_GAUGE(stair), elapsed) , NULL, screenSurface, &vrect);
+//        SDL_BlitSurface(base_gauge_render(BASE_GAUGE(stair), elapsed) , NULL, screenSurface, &vrect);
 
 //        alt_group_render_at(group, elapsed, screenSurface, &airect);
 //        SDL_BlitSurface(airspeed_indicator_render(asi, elapsed), NULL, screenSurface, &vrect);
 //
 
-//        SDL_BlitSurface(animated_gauge_render(ANIMATED_GAUGE(rsg), elapsed) , NULL, screenSurface, &dst);
-//        animated_gauge_render(ANIMATED_GAUGE(ai->rollslip), elapsed);
-//        SDL_BlitSurface(animated_gauge_render(ANIMATED_GAUGE(ai), elapsed) , NULL, screenSurface, NULL);
+//        SDL_BlitSurface(base_gauge_render(BASE_GAUGE(rsg), elapsed) , NULL, screenSurface, &dst);
+//        base_gauge_render(BASE_GAUGE(ai->rollslip), elapsed);
+//        SDL_BlitSurface(base_gauge_render(BASE_GAUGE(ai), elapsed) , NULL, screenSurface, NULL);
 
         basic_hud_render(hud, elapsed, screenSurface);
         SDL_UpdateWindowSurface(window);

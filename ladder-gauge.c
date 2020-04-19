@@ -8,6 +8,10 @@
 static void ladder_gauge_render_value(LadderGauge *self, float value);
 static void ladder_gauge_draw_rubis(LadderGauge *self);
 
+static AnimatedGaugeOps ladder_gauge_ops = {
+   .render_value = (ValueRenderFunc)ladder_gauge_render_value
+};
+
 
 LadderGauge *ladder_gauge_new(LadderPageDescriptor *descriptor, int rubis)
 {
@@ -15,17 +19,14 @@ LadderGauge *ladder_gauge_new(LadderPageDescriptor *descriptor, int rubis)
 
     self = calloc(1, sizeof(LadderGauge));
     if(self){
-        ANIMATED_GAUGE(self)->view = SDL_CreateRGBSurface(0, 68, 240, 32, 0, 0, 0, 0);
-        SDL_SetColorKey(ANIMATED_GAUGE(self)->view, SDL_TRUE, SDL_UCKEY(ANIMATED_GAUGE(self)->view));
-        ANIMATED_GAUGE(self)->damaged = true;
-        ANIMATED_GAUGE(self)->renderer = (ValueRenderFunc)ladder_gauge_render_value;
+        animated_gauge_init(ANIMATED_GAUGE(self), ANIMATED_GAUGE_OPS(&ladder_gauge_ops), 68, 240);
 
         self->descriptor = descriptor;
 
         if(rubis > 0)
             self->rubis = rubis;
         else
-            self->rubis = round(ANIMATED_GAUGE(self)->view->h/2.0);
+            self->rubis = round(BASE_GAUGE(self)->h/2.0);
     }
 
     return self;

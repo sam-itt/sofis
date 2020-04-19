@@ -11,6 +11,7 @@
 #include "SDL_surface.h"
 #include "animated-gauge.h"
 #include "attitude-indicator.h"
+#include "base-gauge.h"
 #include "misc.h"
 #include "sdl-colors.h"
 
@@ -18,6 +19,11 @@
 
 static void attitude_indicator_render_value(AttitudeIndicator *self, float value);
 static SDL_Surface *attitude_indicator_get_etched_ball(AttitudeIndicator *self);
+static AnimatedGaugeOps attitude_indicator_ops = {
+   .render_value = (ValueRenderFunc)attitude_indicator_render_value
+};
+
+
 
 AttitudeIndicator *attitude_indicator_new(int width, int height)
 {
@@ -36,15 +42,10 @@ AttitudeIndicator *attitude_indicator_new(int width, int height)
 
 AttitudeIndicator *attitude_indicator_init(AttitudeIndicator *self, int width, int height)
 {
-    AnimatedGauge *parent;
+    animated_gauge_init(ANIMATED_GAUGE(self), ANIMATED_GAUGE_OPS(&attitude_indicator_ops), width, height);
 
-    parent = ANIMATED_GAUGE(self);
-    parent->view = SDL_CreateRGBSurfaceWithFormat(0, width, height, 32, SDL_PIXELFORMAT_RGBA32);
-    parent->damaged = true;
-    parent->renderer = (ValueRenderFunc)attitude_indicator_render_value;
-
-	self->common_center.x = round((parent->view->w)/2.0);
-	self->common_center.y = round(parent->view->h*0.4);
+	self->common_center.x = round((BASE_GAUGE(self)->w)/2.0);
+	self->common_center.y = round(BASE_GAUGE(self)->h*0.4);
 	self->size = 2; /*In tens of degrees, here 20deg (+/-)*/
 
 	self->markers[MARKER_LEFT] = IMG_Load("left-marker.png");
@@ -56,7 +57,7 @@ AttitudeIndicator *attitude_indicator_init(AttitudeIndicator *self, int width, i
 	self->locations[MARKER_LEFT] = (SDL_Rect){
 	/*The left marker has its arrow pointing right and the arrow X is at marker->w-1*/
 		self->common_center.x - 78 - (self->markers[0]->w-1),
-		round(parent->view->h*0.4) - round(self->markers[0]->h/2.0) +1,
+		round(BASE_GAUGE(self)->h*0.4) - round(self->markers[0]->h/2.0) +1,
 		0,0
 	};
 	self->locations[MARKER_RIGHT] = (SDL_Rect){
@@ -66,12 +67,12 @@ AttitudeIndicator *attitude_indicator_init(AttitudeIndicator *self, int width, i
 	};
 	self->locations[MARKER_CENTER] = (SDL_Rect){
 		self->common_center.x - round((self->markers[2]->w-1)/2.0),
-		round(parent->view->h*0.4) +1,
+		round(BASE_GAUGE(self)->h*0.4) +1,
 		0,0
 	};
 
 	self->locations[ROLL_SLIP] = (SDL_Rect){
-		self->common_center.x - round((self->rollslip->parent.view->w-1)/2.0),
+		self->common_center.x - round((BASE_GAUGE(self->rollslip)->w-1)/2.0),
 		7,
 		0,0
 	};

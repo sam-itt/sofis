@@ -155,8 +155,8 @@ SDL_Surface *airspeed_indicator_render(AirspeedIndicator *self, Uint32 dt)
         airspeed_indicator_draw_tas(self);
         airspeed_indicator_draw_outline(self);
 
-        lad = animated_gauge_render(ANIMATED_GAUGE(self->ladder), dt);
-        odo = animated_gauge_render(ANIMATED_GAUGE(self->odo), dt);
+        lad = base_gauge_render(BASE_GAUGE(self->ladder), dt);
+        odo = base_gauge_render(BASE_GAUGE(self->odo), dt);
         SDL_BlitSurface(lad, NULL, self->view, &placement[0]);
 
         placement[1].y = placement[0].y + (lad->h-1)/2.0 - odo->h/2.0 +1;

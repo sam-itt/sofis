@@ -4,11 +4,17 @@
 #include <SDL2/SDL_image.h>
 #include <SDL2/SDL_ttf.h>
 
+#include "animated-gauge.h"
 #include "vertical-stair.h"
 #include "sdl-colors.h"
 
 
 static void vertical_stair_render_value(VerticalStair *self, float value);
+static AnimatedGaugeOps vertical_stair_ops = {
+   .render_value = (ValueRenderFunc)vertical_stair_render_value
+};
+
+
 
 VerticalStairCursor *vertical_stair_cursor_init(VerticalStairCursor *self, const char *filename, int font_size)
 {
@@ -71,8 +77,6 @@ VerticalStair *vertical_stair_new(const char *bg_img, const char *cursor_img, in
 
 VerticalStair *vertical_stair_init(VerticalStair *self, const char *bg_img, const char *cursor_img, int cfont_size)
 {
-    ANIMATED_GAUGE(self)->renderer = (ValueRenderFunc)vertical_stair_render_value;
-    ANIMATED_GAUGE(self)->damaged = true;
 
     self->scale.ruler = IMG_Load(bg_img);
     self->scale.ppv = 43.0/1000.0; /*0.0426*/
@@ -80,8 +84,7 @@ VerticalStair *vertical_stair_init(VerticalStair *self, const char *bg_img, cons
     self->scale.end = 2279;
 
     vertical_stair_cursor_init(&self->cursor, cursor_img, cfont_size);
-    ANIMATED_GAUGE(self)->view = SDL_CreateRGBSurface(0, self->cursor.bg->w, self->scale.ruler->h, 32,0,0,0,0);
-    SDL_SetColorKey(ANIMATED_GAUGE(self)->view, SDL_TRUE, SDL_UCKEY(ANIMATED_GAUGE(self)->view));
+    animated_gauge_init(ANIMATED_GAUGE(self), ANIMATED_GAUGE_OPS(&vertical_stair_ops), self->cursor.bg->w, self->scale.ruler->h);
 
     return self;
 }

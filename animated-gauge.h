@@ -5,10 +5,18 @@
 #include <SDL2/SDL.h>
 
 #include "basic-animation.h"
+#include "base-gauge.h"
 
 typedef void (*ValueRenderFunc)(void *self, float value);
 
+typedef struct {
+    BaseGaugeOps parent;
+    ValueRenderFunc render_value;
+}AnimatedGaugeOps;
+
 typedef struct{
+    BaseGauge parent;
+
     SDL_Surface *view;
     float value;
     BasicAnimation animation;
@@ -18,10 +26,13 @@ typedef struct{
 }AnimatedGauge;
 
 #define ANIMATED_GAUGE(self) ((AnimatedGauge *)(self))
+#define ANIMATED_GAUGE_OPS(self) ((AnimatedGaugeOps *)(self))
 
 #define animated_gauge_moving(self) ((self)->animation.current != (self)->value || (self)->damaged)
+
+AnimatedGauge *animated_gauge_init(AnimatedGauge *self, AnimatedGaugeOps *ops, int w, int h);
 void animated_gauge_dispose(AnimatedGauge *self);
 
+void animated_gauge_clear(AnimatedGauge *self);
 void animated_gauge_set_value(AnimatedGauge *self, float value);
-SDL_Surface *animated_gauge_render(AnimatedGauge *self, Uint32 dt);
 #endif /* ANIMATED_GAUGE_H */

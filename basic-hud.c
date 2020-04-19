@@ -116,8 +116,8 @@ float basic_hud_get(BasicHud *self, HudValue hv)
 
 void basic_hud_render(BasicHud *self, Uint32 dt, SDL_Surface *destination)
 {
-    animated_gauge_render(ANIMATED_GAUGE(self->attitude->rollslip), dt);
-    SDL_BlitSurface(animated_gauge_render(ANIMATED_GAUGE(self->attitude), dt) , NULL, destination, NULL);
+    base_gauge_render(BASE_GAUGE(self->attitude->rollslip), dt);
+    SDL_BlitSurface(base_gauge_render(BASE_GAUGE(self->attitude), dt) , NULL, destination, NULL);
 
     alt_group_render_at(self->altgroup, dt, destination, &self->locations[ALT_GROUP]);
     SDL_BlitSurface(airspeed_indicator_render(self->airspeed, dt), NULL, destination, &self->locations[SPEED]);

@@ -3,6 +3,7 @@
 #include <stdbool.h>
 #include <stdarg.h>
 
+#include "animated-gauge.h"
 #include "sdl-colors.h"
 #include "odo-gauge.h"
 
@@ -11,6 +12,11 @@
 
 
 void odo_gauge_render_value(OdoGauge *self, float value);
+
+static AnimatedGaugeOps odo_gauge_ops = {
+   .render_value = (ValueRenderFunc)odo_gauge_render_value
+};
+
 
 /**
  * Creates a new odometer-like gauge.
@@ -56,7 +62,6 @@ OdoGauge *odo_gauge_new_multiple(int rubis, int nbarrels, ...)
 }
 
 
-
 OdoGauge *odo_gauge_init(OdoGauge *self, int rubis, int nbarrels, ...)
 {
     OdoGauge *rv;
@@ -97,18 +102,15 @@ OdoGauge *odo_gauge_vainit(OdoGauge *self, int rubis, int nbarrels, va_list ap)
         pwr += number_digits(VERTICAL_STRIP(self->barrels[i])->end);
     }
 
-    ANIMATED_GAUGE(self)->view = SDL_CreateRGBSurface(0, width, max_height, 32, 0, 0, 0, 0);
-    if(!ANIMATED_GAUGE(self)->view){
+    void *rv = animated_gauge_init(ANIMATED_GAUGE(self), ANIMATED_GAUGE_OPS(&odo_gauge_ops), width, max_height);
+    if(!rv){
         free(self->barrels);
         return NULL;
     }
-    SDL_SetColorKey(ANIMATED_GAUGE(self)->view, SDL_TRUE, SDL_UCKEY(ANIMATED_GAUGE(self)->view));
     if(rubis > 0)
         self->rubis = rubis;
     else
-        self->rubis = round(ANIMATED_GAUGE(self)->view->h/2.0);
-    ANIMATED_GAUGE(self)->damaged = true;
-    ANIMATED_GAUGE(self)->renderer = (ValueRenderFunc)odo_gauge_render_value;
+        self->rubis = round(BASE_GAUGE(self)->h/2.0);
 
     return self;
 }
@@ -177,7 +179,9 @@ void odo_gauge_render_value(OdoGauge *self, float value)
 
     cursor = (SDL_Rect){gauge->w,0,gauge->w,gauge->h};
 
-    SDL_FillRect(gauge, NULL, SDL_UCKEY(gauge));
+    //SDL_FillRect(gauge, NULL, SDL_UCKEY(gauge));
+    animated_gauge_clear(ANIMATED_GAUGE(self));
+
     nparts = number_split(value, vparts, 6);
 //    printf("doing value %f, splitted in to %d parts\n",value,nparts);
     do{
