@@ -173,6 +173,7 @@ void odo_gauge_render_value(OdoGauge *self, float value)
     int next_part;
     int i;
     SDL_Surface *gauge;
+    int rcenter;
     SDL_Rect cursor;
 
     gauge = ANIMATED_GAUGE(self)->view;
@@ -199,9 +200,10 @@ void odo_gauge_render_value(OdoGauge *self, float value)
         }
         cursor.x -= VERTICAL_STRIP(self->barrels[current_rotor])->ruler->w;
         cursor.h = self->heights[current_rotor];
-        cursor.y = 0 + gauge->h/2 - cursor.h/2;
+        rcenter = (BASE_GAUGE(self)->h/2 - cursor.h/2); /*This is the rotor center relative to the whole gauge size*/
+        cursor.y = 0 + rcenter;
         cursor.w = VERTICAL_STRIP(self->barrels[current_rotor])->ruler->w;
-        digit_barrel_render_value(self->barrels[current_rotor], current_val, gauge, &cursor, self->rubis);
+        digit_barrel_render_value(self->barrels[current_rotor], current_val, gauge, &cursor, self->rubis - rcenter);
 //        printf("setting rotor %d to %f\n",current_rotor, current_val);
         //render that value
         //next part, next rotor

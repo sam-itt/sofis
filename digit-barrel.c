@@ -149,7 +149,6 @@ void digit_barrel_render_value(DigitBarrel *self, float value, SDL_Surface *dst,
     /*translate @param value to an index in the spinner texture*/
     y = digit_barrel_resolve_value(self, value);
     rubis = (rubis < 0) ? region->h / 2.0 : rubis;
-    rubis -= region->y;
     SDL_Rect portion = {
         .x = 0,
         .y = round(y - rubis),
