@@ -5,7 +5,7 @@
 #include "fb-page-descriptor.h"
 
 typedef struct{
-    FBPageDescriptor parent;
+    FBPageDescriptor super;
 }AltLadderPageDescriptor;
 
 

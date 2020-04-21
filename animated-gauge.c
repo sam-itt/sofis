@@ -14,7 +14,7 @@
 static void animated_gauge_render(AnimatedGauge *self, Uint32 dt, SDL_Surface *destination, SDL_Rect *location);
 
 static AnimatedGaugeOps animated_gauge_ops = {
-    .parent = {
+    .super = {
         .render = (RenderFunc)animated_gauge_render
     },
    .render_value = NULL
@@ -23,7 +23,7 @@ static AnimatedGaugeOps animated_gauge_ops = {
 
 AnimatedGauge *animated_gauge_init(AnimatedGauge *self, AnimatedGaugeOps *ops, int w, int h)
 {
-    ops->parent = animated_gauge_ops.parent; /*Take care of the chain-up here so caller only needs to set .render_value*/
+    ops->super = animated_gauge_ops.super; /*Take care of the chain-up here so caller only needs to set .render_value*/
 
     base_gauge_init(BASE_GAUGE(self), BASE_GAUGE_OPS(ops), w, h);
     self->view = SDL_CreateRGBSurfaceWithFormat(0, BASE_GAUGE(self)->w,  BASE_GAUGE(self)->h, 32, SDL_PIXELFORMAT_RGBA32);

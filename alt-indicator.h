@@ -9,7 +9,7 @@
 typedef enum {ALT_SRC_GPS,ALT_SRC_BARO} AltSource;
 
 typedef struct{
-    BaseGauge parent;
+    BaseGauge super;
 
     SDL_Surface *view;
     TTF_Font *font;

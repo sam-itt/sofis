@@ -81,7 +81,7 @@ typedef struct{
  *
  */
 struct _LadderPage{
-    VerticalStrip parent;
+    VerticalStrip super;
 
 //    const LadderPageDescriptor *descriptor;
     LadderPageDescriptor *descriptor;

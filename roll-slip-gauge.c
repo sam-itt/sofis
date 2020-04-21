@@ -40,7 +40,7 @@ RollSlipGauge *roll_slip_gauge_init(RollSlipGauge *self)
 	self->arc = IMG_Load("roll-indicator.png");
 	SDL_Surface *tmp = IMG_Load("arrow-needleless.png");
 
-	self->renderer = SDL_CreateSoftwareRenderer(self->parent.view);
+	self->renderer = SDL_CreateSoftwareRenderer(self->super.view);
 	self->arrow = SDL_CreateTextureFromSurface(self->renderer, tmp);
 	SDL_FreeSurface(tmp);
 
@@ -70,8 +70,8 @@ static void roll_slip_gauge_render_value(RollSlipGauge *self, float value)
 
 	value *= -1.0;
 
-	SDL_FillRect(self->parent.view, NULL, SDL_MapRGBA(self->parent.view->format, 0, 0, 0, SDL_ALPHA_TRANSPARENT));
-	SDL_BlitSurface(self->arc,NULL, self->parent.view, NULL);
+	SDL_FillRect(self->super.view, NULL, SDL_MapRGBA(self->super.view->format, 0, 0, 0, SDL_ALPHA_TRANSPARENT));
+	SDL_BlitSurface(self->arc,NULL, self->super.view, NULL);
 
 	//Arc 0°: 86/10
 //	rect.x = 86 - round(self->arrow->w/2.0);

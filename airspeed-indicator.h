@@ -11,7 +11,7 @@
 #define RHO_0 1.225 /* kg/m3, Sea level ISA */
 
 typedef struct{
-    BaseGauge parent;
+    BaseGauge super;
 
     SDL_Surface *view;
 

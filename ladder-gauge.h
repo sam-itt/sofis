@@ -10,7 +10,7 @@
 
 
 typedef struct{
-    AnimatedGauge parent;
+    AnimatedGauge super;
 
     int rubis;
 

@@ -96,19 +96,19 @@ float basic_hud_get(BasicHud *self, HudValue hv)
 
     switch(hv){
       case ALTITUDE:
-        return self->altgroup->altimeter->ladder->parent.value;
+        return self->altgroup->altimeter->ladder->super.value;
         break;
       case VERTICAL_SPEED:
-        return self->altgroup->vsi->parent.value;
+        return self->altgroup->vsi->super.value;
         break;
       case AIRSPEED:
-        return self->airspeed->ladder->parent.value;
+        return self->airspeed->ladder->super.value;
         break;
       case PITCH:
-        return self->attitude->parent.value;
+        return self->attitude->super.value;
         break;
       case ROLL:
-        return self->attitude->rollslip->parent.value;
+        return self->attitude->rollslip->super.value;
         break;
     }
     return NAN;

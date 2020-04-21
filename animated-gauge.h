@@ -11,12 +11,12 @@
 typedef void (*ValueRenderFunc)(void *self, float value);
 
 typedef struct {
-    BaseGaugeOps parent;
+    BaseGaugeOps super;
     ValueRenderFunc render_value;
 }AnimatedGaugeOps;
 
 typedef struct{
-    BaseGauge parent;
+    BaseGauge super;
 
     SDL_Surface *view;
     bool damaged;

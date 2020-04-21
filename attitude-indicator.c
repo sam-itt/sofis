@@ -109,7 +109,7 @@ void attitude_indicator_free(AttitudeIndicator *self)
 void attitude_indicator_set_roll(AttitudeIndicator *self, float value)
 {
 	animated_gauge_set_value(ANIMATED_GAUGE(self->rollslip), value);
-	self->parent.damaged = true;
+	self->super.damaged = true;
 }
 
 Uint32 interpolate_color_p(const SDL_PixelFormat *format, Uint32 from, Uint32 to, float progress)
@@ -448,7 +448,7 @@ static void attitude_indicator_render_value(AttitudeIndicator *self, float value
 
     value = value * -1.0;
 
-	SDL_FillRect(self->parent.view, NULL, SDL_MapRGBA(self->parent.view->format, 0, 0, 0, SDL_ALPHA_TRANSPARENT));
+	SDL_FillRect(self->super.view, NULL, SDL_MapRGBA(self->super.view->format, 0, 0, 0, SDL_ALPHA_TRANSPARENT));
 
     /*First find out a view-sized window into the larger ball buffer for a 0deg pitch*/
     SDL_Rect win = {
@@ -467,13 +467,13 @@ static void attitude_indicator_render_value(AttitudeIndicator *self, float value
         .y = win.y + (round(win.h*0.4)-1)
     };
     surface = attitude_indicator_get_etched_ball(self); /*TODO: Change to etched ball*/
-	if(self->rollslip->parent.value != 0){
+	if(self->rollslip->super.value != 0){
         SDL_Texture *tex = SDL_CreateTextureFromSurface(self->renderer, surface);
-        SDL_RenderCopyEx(self->renderer, tex, NULL, NULL, self->rollslip->parent.value, &rcenter, SDL_FLIP_NONE);
+        SDL_RenderCopyEx(self->renderer, tex, NULL, NULL, self->rollslip->super.value, &rcenter, SDL_FLIP_NONE);
 		SDL_DestroyTexture(tex);
         surface = self->buffer;
 	}
-	SDL_BlitSurface(surface, &win, self->parent.view, NULL);
+	SDL_BlitSurface(surface, &win, self->super.view, NULL);
 
 	/*Place the roll indicator*/
     /* Temp fix, the function triggering the rendering of AttitudeIndicator must also manually render self->rollslip
@@ -482,10 +482,10 @@ static void attitude_indicator_render_value(AttitudeIndicator *self, float value
      * TODO: Either compose AttitudeIndicator with the two gauges artifical horizon and rollslip gauge, or
      * extract rollslip from attitudeindicator, or something else
      * */
-//	SDL_BlitSurface(self->rollslip->parent.view, NULL, self->parent.view, &self->locations[ROLL_SLIP]);
+//	SDL_BlitSurface(self->rollslip->super.view, NULL, self->super.view, &self->locations[ROLL_SLIP]);
 
 	/*Then place markers in the middle of the *screen* markers don't move*/
-	SDL_BlitSurface(self->markers[MARKER_LEFT], NULL, self->parent.view, &self->locations[MARKER_LEFT]);
-	SDL_BlitSurface(self->markers[MARKER_RIGHT], NULL, self->parent.view, &self->locations[MARKER_RIGHT]);
-	SDL_BlitSurface(self->markers[MARKER_CENTER], NULL, self->parent.view, &self->locations[MARKER_CENTER]);
+	SDL_BlitSurface(self->markers[MARKER_LEFT], NULL, self->super.view, &self->locations[MARKER_LEFT]);
+	SDL_BlitSurface(self->markers[MARKER_RIGHT], NULL, self->super.view, &self->locations[MARKER_RIGHT]);
+	SDL_BlitSurface(self->markers[MARKER_CENTER], NULL, self->super.view, &self->locations[MARKER_CENTER]);
 }

@@ -10,7 +10,7 @@ typedef uint_fast8_t speed_t;
 
 
 typedef struct{
-    FBPageDescriptor parent;
+    FBPageDescriptor super;
 
     speed_t v_so; /*white arc begin*/
     speed_t v_s1; /*green arc begin*/

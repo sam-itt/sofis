@@ -23,8 +23,8 @@ AltLadderPageDescriptor *alt_ladder_page_descriptor_new(void)
             free(self);
             return NULL;
         }
-        self->parent.parent.init_page = alt_ladder_page_init;
-        self->parent.parent.fei = 227;
+        self->super.super.init_page = alt_ladder_page_init;
+        self->super.super.fei = 227;
     }
     return self;
 }

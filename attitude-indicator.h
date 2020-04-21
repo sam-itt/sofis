@@ -15,7 +15,7 @@ typedef struct{
 }Point2D;
 
 typedef struct{
-    AnimatedGauge parent;
+    AnimatedGauge super;
 	Point2D common_center;
 
 	RollSlipGauge *rollslip;

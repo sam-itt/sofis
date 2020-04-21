@@ -7,7 +7,7 @@
 #include "animated-gauge.h"
 
 typedef struct{
-	AnimatedGauge parent;
+	AnimatedGauge super;
 
 	SDL_Surface *arc;
 	SDL_Texture *arrow;

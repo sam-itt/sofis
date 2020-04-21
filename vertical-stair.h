@@ -14,7 +14,7 @@ typedef struct{
 
 
 typedef struct{
-    AnimatedGauge parent;
+    AnimatedGauge super;
 
     VerticalStrip scale;
     VerticalStairCursor cursor;

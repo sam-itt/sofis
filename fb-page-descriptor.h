@@ -4,7 +4,7 @@
 #include "ladder-page.h"
 
 typedef struct{
-    LadderPageDescriptor parent;
+    LadderPageDescriptor super;
 
     char *filename;
 }FBPageDescriptor;

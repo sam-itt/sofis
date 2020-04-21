@@ -7,7 +7,7 @@
 #include "misc.h"
 
 typedef struct{
-    VerticalStrip parent;
+    VerticalStrip super;
 
     float symbol_h;
     float fei;

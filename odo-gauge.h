@@ -9,7 +9,7 @@
 #include "digit-barrel.h"
 
 typedef struct{
-    AnimatedGauge parent;
+    AnimatedGauge super;
 
     DigitBarrel **barrels;
     int *heights;

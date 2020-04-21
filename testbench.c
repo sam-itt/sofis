@@ -394,9 +394,9 @@ int main(int argc, char **argv)
                 oldv[4] = ANIMATED_GAUGE(rsg)->value;
             }
 #else
-            if(ai->rollslip->parent.value != oldv[4]){
-                printf("Attitude roll: %0.2f\n", ai->rollslip->parent.value);
-                oldv[4] = ai->rollslip->parent.value;
+            if(ai->rollslip->super.value != oldv[4]){
+                printf("Attitude roll: %0.2f\n", ai->rollslip->super.value);
+                oldv[4] = ai->rollslip->super.value;
             }
 #endif
 
