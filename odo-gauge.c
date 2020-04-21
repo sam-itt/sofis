@@ -4,6 +4,7 @@
 #include <stdarg.h>
 
 #include "animated-gauge.h"
+#include "base-gauge.h"
 #include "sdl-colors.h"
 #include "odo-gauge.h"
 
@@ -141,27 +142,6 @@ bool odo_gauge_set_value(OdoGauge *self, float value)
 }
 
 
-static void odo_gauge_draw_rubis(OdoGauge *self)
-{
-    SDL_Surface *gauge;
-
-    gauge = ANIMATED_GAUGE(self)->view;
-
-    SDL_LockSurface(gauge);
-
-    Uint32 *pixels = gauge->pixels;
-    Uint32 color = SDL_URED(gauge);
-    int empty_pixels = gauge->w / 2;
-    int stop_idx = round(empty_pixels/2.0);
-    int restart_idx = round(gauge->w - empty_pixels/2.0);
-    for(int x = 0; x < gauge->w; x++){
-        if(!empty_pixels || x < stop_idx || x >= restart_idx)
-            pixels[self->rubis * gauge->w + x] = color;
-    }
-    SDL_UnlockSurface(gauge);
-}
-
-
 void odo_gauge_render_value(OdoGauge *self, float value)
 {
     float vparts[6]; /*up to 999.999 ft*/
@@ -222,6 +202,6 @@ void odo_gauge_render_value(OdoGauge *self, float value)
 
         SDL_FillRect(gauge, &cursor, SDL_UBLACK(gauge));
     }
-    odo_gauge_draw_rubis(self);
+    view_draw_rubis(ANIMATED_GAUGE(self)->view, self->rubis, &SDL_RED, round(BASE_GAUGE(self)->w/2.0), NULL);
 }
 

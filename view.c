@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <assert.h>
 
+#include "SDL_surface.h"
 #include "view.h"
 #include "sdl-colors.h"
 
@@ -108,4 +109,49 @@ void view_draw_text(SDL_Surface *destination, SDL_Rect *location, const char *st
     SDL_FreeSurface(text);
 }
 
+/**
+ * Draw a "rubis" (the location where to current value
+ * aligns on the gauge. Akin to a centerline, but not
+ * necessarily located at then center)
+ *
+ * @param surface the surface to draw on
+ * @param y the line (relative to clip, if any, otherwise relative to surface)
+ * @param color color of the line
+ * @param pskip number of pixels to skip in the middle of the line. 0 for a full uninterrupted
+ * line
+ * @param clip optional clipping rectangle within surface. If not NULL, the function will consider
+ * only the portion of the surface encompassed by clip i.e: if surface is 640x480 and clip is
+ * {.x=40,.y=40,.w=20,.h=200} a call to view_draw_rubis with y = 10 will draw a line from
+ * {.x=50,.y=50} to {.x=50,.y=69} in surface.
+ */
+void view_draw_rubis(SDL_Surface *surface, int y, SDL_Color *color, int pskip, SDL_Rect *clip)
+{
+    Uint32 *pixels;
+    Uint32 col;
+    int startx, stopx;
+    int restartx, endx;
+    int liney;
 
+    /* Warning: end[xy] are not usable coordinates
+     * last usable coordinate: end[xy]-1
+     */
+    if(clip){
+        startx = clip->x;
+        endx = clip->x + clip->w;
+        liney = y + clip->y;
+    }else{
+        startx = 0;
+        endx = surface->w;
+        liney = y;
+    }
+    stopx = startx + round(pskip/2.0);
+    restartx = endx - stopx;
+    col = SDL_MapRGBA(surface->format, color->r, color->g, color->b, color->a);
+    SDL_LockSurface(surface);
+    pixels = surface->pixels;
+    for(int x = startx; x < endx; x++){
+        if(!pskip || x < stopx || x >= restartx)
+            pixels[liney * surface->w + x] = col;
+    }
+    SDL_UnlockSurface(surface);
+}

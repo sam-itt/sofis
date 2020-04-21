@@ -7,8 +7,6 @@
 #include "sdl-colors.h"
 
 static void ladder_gauge_render_value(LadderGauge *self, float value);
-static void ladder_gauge_draw_rubis(LadderGauge *self);
-
 static AnimatedGaugeOps ladder_gauge_ops = {
    .render_value = (ValueRenderFunc)ladder_gauge_render_value
 };
@@ -202,24 +200,5 @@ static void ladder_gauge_render_value(LadderGauge *self, float value)
             }
         }
     }
-    ladder_gauge_draw_rubis(self);
-}
-
-static void ladder_gauge_draw_rubis(LadderGauge *self)
-{
-    SDL_Surface *gauge;
-
-    gauge = ANIMATED_GAUGE(self)->view;
-
-    SDL_LockSurface(gauge);
-    Uint32 *pixels = gauge->pixels;
-    Uint32 color = SDL_URED(gauge);
-    int empty_pixels = gauge->w / 2;
-    int stop_idx = round(empty_pixels/2.0);
-    int restart_idx = round(gauge->w - empty_pixels/2.0);
-    for(int x = 0; x < gauge->w; x++){
-        if(!empty_pixels || x < stop_idx || x >= restart_idx)
-            pixels[self->rubis * gauge->w + x] = color;
-    }
-    SDL_UnlockSurface(gauge);
+    view_draw_rubis(ANIMATED_GAUGE(self)->view, self->rubis, &SDL_RED, round(BASE_GAUGE(self)->w/2.0), NULL);
 }
