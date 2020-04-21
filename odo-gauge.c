@@ -152,11 +152,11 @@ void odo_gauge_render_value(OdoGauge *self, float value)
     float current_val;
     int next_part;
     int i;
-    SDL_Surface *gauge;
+    SDL_Surface *tview;
     int rcenter;
     SDL_Rect cursor;
 
-    gauge = BUFFERED_GAUGE(self)->view;
+    tview = buffered_gauge_get_view(BUFFERED_GAUGE(self));
 
     cursor = (SDL_Rect){BASE_GAUGE(self)->w,0,BASE_GAUGE(self)->w,BASE_GAUGE(self)->h};
 
@@ -183,7 +183,7 @@ void odo_gauge_render_value(OdoGauge *self, float value)
         rcenter = (BASE_GAUGE(self)->h/2 - cursor.h/2); /*This is the rotor center relative to the whole gauge size*/
         cursor.y = 0 + rcenter;
         cursor.w = VERTICAL_STRIP(self->barrels[current_rotor])->ruler->w;
-        digit_barrel_render_value(self->barrels[current_rotor], current_val, gauge, &cursor, self->rubis - rcenter);
+        digit_barrel_render_value(self->barrels[current_rotor], current_val, tview, &cursor, self->rubis - rcenter);
 //        printf("setting rotor %d to %f\n",current_rotor, current_val);
         //render that value
         //next part, next rotor
@@ -200,8 +200,8 @@ void odo_gauge_render_value(OdoGauge *self, float value)
         cursor.y = 0 + BASE_GAUGE(self)->h/2 - cursor.h/2;
         cursor.w = VERTICAL_STRIP(self->barrels[current_rotor])->ruler->w;
 
-        SDL_FillRect(gauge, &cursor, SDL_UBLACK(gauge));
+        SDL_FillRect(tview, &cursor, SDL_UBLACK(tview));
     }
-    view_draw_rubis(BUFFERED_GAUGE(self)->view, self->rubis, &SDL_RED, round(BASE_GAUGE(self)->w/2.0), NULL);
+    view_draw_rubis(tview, self->rubis, &SDL_RED, round(BASE_GAUGE(self)->w/2.0), NULL);
 }
 

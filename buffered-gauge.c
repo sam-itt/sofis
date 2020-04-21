@@ -25,10 +25,6 @@ BufferedGauge *buffered_gauge_init(BufferedGauge *self, BufferedGaugeOps *ops, i
     ops->super = buffered_gauge_ops.super; /*Take care of the chain-up here so caller only needs to set .render*/
     base_gauge_init(BASE_GAUGE(self), BASE_GAUGE_OPS(ops), w, h);
 
-    self->view = SDL_CreateRGBSurfaceWithFormat(0, BASE_GAUGE(self)->w,  BASE_GAUGE(self)->h, 32, SDL_PIXELFORMAT_RGBA32);
-    if(!self->view)
-        return NULL;
-    SDL_SetColorKey(self->view, SDL_TRUE, SDL_UCKEY(self->view));
     self->damaged = true;
 
     return self;
@@ -39,6 +35,17 @@ void buffered_gauge_dispose(BufferedGauge *self)
     if(self->view)
         SDL_FreeSurface(self->view);
 }
+
+
+SDL_Surface *buffer_gauge_build_view(BufferedGauge *self)
+{
+    if(!self->view){
+        self->view = SDL_CreateRGBSurfaceWithFormat(0, BASE_GAUGE(self)->w,  BASE_GAUGE(self)->h, 32, SDL_PIXELFORMAT_RGBA32);
+        SDL_SetColorKey(self->view, SDL_TRUE, SDL_UCKEY(self->view));
+    }
+    return self->view;
+}
+
 
 void buffered_gauge_render(BufferedGauge *self, Uint32 dt, SDL_Surface *destination, SDL_Rect *location)
 {

@@ -2,6 +2,7 @@
 #include <stdlib.h>
 
 #include "animated-gauge.h"
+#include "buffered-gauge.h"
 #include "ladder-gauge.h"
 #include "ladder-page-factory.h"
 #include "sdl-colors.h"
@@ -123,12 +124,12 @@ static void ladder_gauge_render_value(LadderGauge *self, float value)
     float rubis;
     LadderPage *page, *page2;
     SDL_Rect dst_region = {0,0,0,0};
-    SDL_Surface *gauge;
+    SDL_Surface *tview;
 
-    gauge = BUFFERED_GAUGE(self)->view;
+    tview = buffered_gauge_get_view(BUFFERED_GAUGE(self));
 
     buffered_gauge_clear(BUFFERED_GAUGE(self));
-    view_draw_outline(BUFFERED_GAUGE(self)->view, &(SDL_WHITE), NULL);
+    view_draw_outline(tview, &(SDL_WHITE), NULL);
 
     value = value >= 0 ? value : 0.0f;
 
@@ -157,14 +158,14 @@ static void ladder_gauge_render_value(LadderGauge *self, float value)
             int pidx = ladder_page_get_index(page);
             if(pidx > 0){
                 page2 = ladder_gauge_get_page(self, pidx - 1);
-                SDL_BlitSurface(VERTICAL_STRIP(page2)->ruler, &patch, gauge, &dst_region);
+                SDL_BlitSurface(VERTICAL_STRIP(page2)->ruler, &patch, tview, &dst_region);
             }
         }else{
             /* 0 at the bottom, 100 is upwards. We need to fill the top with values after the end
              * of the current page, i.e get the next page */
             int pidx = ladder_page_get_index(page);
             page2 = ladder_gauge_get_page(self, pidx + 1);
-            SDL_BlitSurface(VERTICAL_STRIP(page2)->ruler, &patch, gauge, &dst_region);
+            SDL_BlitSurface(VERTICAL_STRIP(page2)->ruler, &patch, tview, &dst_region);
 
         }
         dst_region.y = patch.h;
@@ -172,7 +173,7 @@ static void ladder_gauge_render_value(LadderGauge *self, float value)
         portion.h -= patch.h;
     }
 
-    SDL_BlitSurface(VERTICAL_STRIP(page)->ruler, &portion, gauge, &dst_region);
+    SDL_BlitSurface(VERTICAL_STRIP(page)->ruler, &portion, tview, &dst_region);
 
     if(portion.y + BASE_GAUGE(self)->h > VERTICAL_STRIP(page)->ruler->h){// fill bottom
         float taken = VERTICAL_STRIP(page)->ruler->h - portion.y; //number of pixels taken from the bottom of values pict
@@ -189,16 +190,16 @@ static void ladder_gauge_render_value(LadderGauge *self, float value)
              * of the current page, i.e get the next page */
             int pidx = ladder_page_get_index(page);
             page2 = ladder_gauge_get_page(self, pidx + 1);
-            SDL_BlitSurface(VERTICAL_STRIP(page2)->ruler, &patch, gauge, &dst_region);
+            SDL_BlitSurface(VERTICAL_STRIP(page2)->ruler, &patch, tview, &dst_region);
         }else{
             /* 0 at the bottom, 100 is upwards. We need to fill the bottom with values that are before the begining
              * of the current page, i.e get the previous page */
             int pidx = ladder_page_get_index(page);
             if(pidx > 0){
                 page2 = ladder_gauge_get_page(self, pidx - 1);
-                SDL_BlitSurface(VERTICAL_STRIP(page2)->ruler, &patch, gauge, &dst_region);
+                SDL_BlitSurface(VERTICAL_STRIP(page2)->ruler, &patch, tview, &dst_region);
             }
         }
     }
-    view_draw_rubis(BUFFERED_GAUGE(self)->view, self->rubis, &SDL_RED, round(BASE_GAUGE(self)->w/2.0), NULL);
+    view_draw_rubis(tview, self->rubis, &SDL_RED, round(BASE_GAUGE(self)->w/2.0), NULL);
 }

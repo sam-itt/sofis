@@ -4,6 +4,7 @@
 #include <SDL2/SDL_image.h>
 #include <SDL2/SDL_ttf.h>
 
+#include "SDL_surface.h"
 #include "animated-gauge.h"
 #include "vertical-stair.h"
 #include "sdl-colors.h"
@@ -100,15 +101,18 @@ void vertical_stair_free(VerticalStair *self)
 static void vertical_stair_render_value(VerticalStair *self, float value)
 {
     float y;
+    SDL_Surface *tview;
+
+    tview = buffered_gauge_get_view(BUFFERED_GAUGE(self));
 
     vertical_stair_cursor_set_value(&self->cursor, value);
     vertical_strip_clip_value(&self->scale, &value);
-    SDL_FillRect(BUFFERED_GAUGE(self)->view, NULL, SDL_UCKEY(BUFFERED_GAUGE(self)->view));
-    SDL_BlitSurface(self->scale.ruler, NULL, BUFFERED_GAUGE(self)->view, NULL);
+    SDL_FillRect(tview, NULL, SDL_UCKEY(tview));
+    SDL_BlitSurface(self->scale.ruler, NULL, tview, NULL);
 
     y = vertical_strip_resolve_value(&self->scale, value, true);
     y = round(round(y) - self->cursor.bg->h/2.0);
 
-    SDL_BlitSurface(self->cursor.bg, NULL, BUFFERED_GAUGE(self)->view, &(SDL_Rect){1, y,0,0});
+    SDL_BlitSurface(self->cursor.bg, NULL, tview, &(SDL_Rect){1, y,0,0});
 
 }
