@@ -476,7 +476,13 @@ static void attitude_indicator_render_value(AttitudeIndicator *self, float value
 	SDL_BlitSurface(surface, &win, self->parent.view, NULL);
 
 	/*Place the roll indicator*/
-	SDL_BlitSurface(self->rollslip->parent.view, NULL, self->parent.view, &self->locations[ROLL_SLIP]);
+    /* Temp fix, the function triggering the rendering of AttitudeIndicator must also manually render self->rollslip
+     * as it needs to animate its value which is not known here.
+     *
+     * TODO: Either compose AttitudeIndicator with the two gauges artifical horizon and rollslip gauge, or
+     * extract rollslip from attitudeindicator, or something else
+     * */
+//	SDL_BlitSurface(self->rollslip->parent.view, NULL, self->parent.view, &self->locations[ROLL_SLIP]);
 
 	/*Then place markers in the middle of the *screen* markers don't move*/
 	SDL_BlitSurface(self->markers[MARKER_LEFT], NULL, self->parent.view, &self->locations[MARKER_LEFT]);

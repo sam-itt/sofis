@@ -335,6 +335,7 @@ int main(int argc, char **argv)
 
     SDL_Rect airect = {439,50,0,0};
     SDL_Rect vrect = {96,70,0,0};
+    SDL_Rect whole = {0,0,640,480};
 
     SDL_FillRect(screenSurface, NULL, SDL_UFBLUE(screenSurface));
     do{
@@ -348,23 +349,23 @@ int main(int argc, char **argv)
          * TODO: Check why and fix
          * */
         SDL_FillRect(screenSurface, NULL, SDL_UFBLUE(screenSurface));
-//        SDL_BlitSurface(base_gauge_render(BASE_GAUGE(ladder), elapsed) , NULL, screenSurface, &lrect);
-//        SDL_BlitSurface(base_gauge_render(BASE_GAUGE(gauge), elapsed) , NULL, screenSurface, &dst);
-//        SDL_BlitSurface(base_gauge_render(BASE_GAUGE(wheel), elapsed) , NULL, screenSurface, &wheelrect);
-//        SDL_BlitSurface(base_gauge_render(BASE_GAUGE(odo), elapsed) , NULL, screenSurface, &odorect);
+//        base_gauge_render(BASE_GAUGE(ladder), elapsed, screenSurface, &lrect);
+//        base_gauge_render(BASE_GAUGE(gauge), elapsed, screenSurface, &dst);
+//        base_gauge_render(BASE_GAUGE(wheel), elapsed, screenSurface, &wheelrect);
+//        base_gauge_render(BASE_GAUGE(odo), elapsed, screenSurface, &odorect);
 
-        SDL_BlitSurface(base_gauge_render(BASE_GAUGE(alt_ind), elapsed) , NULL, screenSurface, &airect);
-//        SDL_BlitSurface(base_gauge_render(BASE_GAUGE(stair), elapsed) , NULL, screenSurface, &vrect);
+//        base_gauge_render(BASE_GAUGE(alt_ind), elapsed, screenSurface, &airect);
+//        base_gauge_render(BASE_GAUGE(stair), elapsed, screenSurface, &vrect);
 
 //        alt_group_render_at(group, elapsed, screenSurface, &airect);
-        SDL_BlitSurface(base_gauge_render(BASE_GAUGE(asi), elapsed), NULL, screenSurface, &vrect);
+//        base_gauge_render(BASE_GAUGE(asi), elapsed, screenSurface, &vrect);
 //
 
-//        SDL_BlitSurface(base_gauge_render(BASE_GAUGE(rsg), elapsed) , NULL, screenSurface, &dst);
+//        base_gauge_render(BASE_GAUGE(rsg), elapsed, screenSurface, &dst);
 //        base_gauge_render(BASE_GAUGE(ai->rollslip), elapsed);
-//        SDL_BlitSurface(base_gauge_render(BASE_GAUGE(ai), elapsed) , NULL, screenSurface, NULL);
+//        base_gauge_render(BASE_GAUGE(ai), elapsed, screenSurface, NULL);
 
-//        basic_hud_render(hud, elapsed, screenSurface);
+        basic_hud_render(hud, elapsed, screenSurface, &whole);
         SDL_UpdateWindowSurface(window);
 
         if(elapsed < 200){

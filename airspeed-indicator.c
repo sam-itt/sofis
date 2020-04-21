@@ -1,13 +1,14 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include "SDL_surface.h"
 #include "airspeed-indicator.h"
 #include "airspeed-page-descriptor.h"
 #include "base-gauge.h"
 #include "sdl-colors.h"
 #include "view.h"
 
-static SDL_Surface *airspeed_indicator_render(AirspeedIndicator *self, Uint32 dt);
+static void airspeed_indicator_render(AirspeedIndicator *self, Uint32 dt, SDL_Surface *destination, SDL_Rect *location);
 static BaseGaugeOps airspeed_indicator_ops = {
     .render = (RenderFunc)airspeed_indicator_render
 };
@@ -113,10 +114,8 @@ static void airspeed_indicator_draw_tas(AirspeedIndicator *self)
 }
 
 
-static SDL_Surface *airspeed_indicator_render(AirspeedIndicator *self, Uint32 dt)
+static void airspeed_indicator_render(AirspeedIndicator *self, Uint32 dt, SDL_Surface *destination, SDL_Rect *location)
 {
-    SDL_Surface *lad;
-    SDL_Surface *odo;
     SDL_Rect placement[2];
 
     if(animated_gauge_moving(ANIMATED_GAUGE(self->ladder)) || animated_gauge_moving(ANIMATED_GAUGE(self->odo))){
@@ -127,13 +126,11 @@ static SDL_Surface *airspeed_indicator_render(AirspeedIndicator *self, Uint32 dt
         airspeed_indicator_draw_tas(self);
         view_draw_outline(self->view, &(SDL_WHITE), NULL);
 
-        lad = base_gauge_render(BASE_GAUGE(self->ladder), dt);
-        odo = base_gauge_render(BASE_GAUGE(self->odo), dt);
-        SDL_BlitSurface(lad, NULL, self->view, &placement[0]);
+        base_gauge_render(BASE_GAUGE(self->ladder), dt, self->view, &placement[0]);
 
-        placement[1].y = placement[0].y + (lad->h-1)/2.0 - odo->h/2.0 +1;
+        placement[1].y = placement[0].y + (BASE_GAUGE(self->ladder)->h-1)/2.0 - BASE_GAUGE(self->odo)->h/2.0 +1;
         placement[1].x = 25;// (lad->w - odo->w-1) -1; /*The last -1 in there to prevent eating the border*/
-        SDL_BlitSurface(odo, NULL, self->view, &placement[1]);
+        base_gauge_render(BASE_GAUGE(self->odo), dt, self->view, &placement[1]);
     }
-    return self->view;
+    SDL_BlitSurface(self->view, NULL, destination, location);
 }

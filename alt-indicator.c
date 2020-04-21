@@ -8,7 +8,7 @@
 #include "base-gauge.h"
 #include "sdl-colors.h"
 
-static SDL_Surface *alt_indicator_render(AltIndicator *self, Uint32 dt);
+static void alt_indicator_render(AltIndicator *self, Uint32 dt, SDL_Surface *destination, SDL_Rect *location);
 static BaseGaugeOps alt_indicator_ops = {
     .render = (RenderFunc)alt_indicator_render
 };
@@ -145,10 +145,8 @@ static void alt_indicator_draw_target_altitude(AltIndicator *self)
 
 
 
-static SDL_Surface *alt_indicator_render(AltIndicator *self, Uint32 dt)
+static void alt_indicator_render(AltIndicator *self, Uint32 dt, SDL_Surface *destination, SDL_Rect *location)
 {
-    SDL_Surface *lad;
-    SDL_Surface *odo;
     SDL_Rect placement[2];
 
     if(animated_gauge_moving(ANIMATED_GAUGE(self->ladder)) || animated_gauge_moving(ANIMATED_GAUGE(self->odo))){
@@ -160,16 +158,13 @@ static SDL_Surface *alt_indicator_render(AltIndicator *self, Uint32 dt)
         alt_indicator_draw_target_altitude(self);
         view_draw_outline(self->view, &(SDL_WHITE), NULL);
 
+        base_gauge_render(BASE_GAUGE(self->ladder), dt, self->view, &placement[0]);
 
-        lad = base_gauge_render(BASE_GAUGE(self->ladder), dt);
-        odo = base_gauge_render(BASE_GAUGE(self->odo), dt);
-        SDL_BlitSurface(lad, NULL, self->view, &placement[0]);
-
-        placement[1].y = placement[0].y + (lad->h-1)/2.0 - odo->h/2.0 +1;
-        placement[1].x = (lad->w - odo->w-1) -1; /*The last -1 in there to prevent eating the border*/
-        SDL_BlitSurface(odo, NULL, self->view, &placement[1]);
+        placement[1].y = placement[0].y + (BASE_GAUGE(self->ladder)->h-1)/2.0 - BASE_GAUGE(self->odo)->h/2.0 +1;
+        placement[1].x = (BASE_GAUGE(self->ladder)->w - BASE_GAUGE(self->odo)->w-1) -1; /*The last -1 in there to prevent eating the border*/
+        base_gauge_render(BASE_GAUGE(self->odo), dt, self->view, &placement[1]);
     }
-    return self->view;
+    SDL_BlitSurface(self->view, NULL, destination, location);
 }
 
 uint32_t alt_indicator_get_width(AltIndicator *self)

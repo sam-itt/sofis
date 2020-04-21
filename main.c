@@ -179,6 +179,7 @@ int main(int argc, char **argv)
     colors[2] = SDL_MapRGB(screenSurface->format, 0x00, 0xFF, 0x00);
     colors[3] = SDL_MapRGB(screenSurface->format, 0x11, 0x56, 0xFF);
 
+    SDL_Rect whole = {0,0,640,480};
     hud = basic_hud_new();
 
     done = false;
@@ -211,7 +212,7 @@ int main(int argc, char **argv)
 
         SDL_FillRect(screenSurface, NULL, colors[i]);
 
-        basic_hud_render(hud, elapsed, screenSurface);
+        basic_hud_render(hud, elapsed, screenSurface, &whole);
         SDL_UpdateWindowSurface(window);
 
         if(elapsed < 200){

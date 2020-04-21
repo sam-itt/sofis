@@ -3,7 +3,7 @@
 
 #include <SDL2/SDL.h>
 
-typedef SDL_Surface* (*RenderFunc)(void *self, Uint32 dt);
+typedef void (*RenderFunc)(void *self, Uint32 dt, SDL_Surface *destination, SDL_Rect *location);
 
 typedef struct{
     RenderFunc render;
@@ -20,5 +20,5 @@ typedef struct{
 
 BaseGauge *base_gauge_init(BaseGauge *self, BaseGaugeOps *ops, int w, int h);
 
-SDL_Surface *base_gauge_render(BaseGauge *self, Uint32 dt);
+void base_gauge_render(BaseGauge *self, Uint32 dt, SDL_Surface *destination, SDL_Rect *location);
 #endif /* BASE_GAUGE_H */

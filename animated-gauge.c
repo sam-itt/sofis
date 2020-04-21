@@ -4,13 +4,14 @@
 
 #include "SDL_pixels.h"
 #include "SDL_rect.h"
+#include "SDL_surface.h"
 #include "animated-gauge.h"
 #include "base-gauge.h"
 #include "sdl-colors.h"
 
 #define SPIN_DURATION 1000 /*ms*/
 
-static SDL_Surface *animated_gauge_render(AnimatedGauge *self, Uint32 dt);
+static void animated_gauge_render(AnimatedGauge *self, Uint32 dt, SDL_Surface *destination, SDL_Rect *location);
 
 static AnimatedGaugeOps animated_gauge_ops = {
     .parent = {
@@ -49,15 +50,14 @@ void animated_gauge_set_value(AnimatedGauge *self, float value)
 
 
 /**
- * Gives a drawing representing the current gauge state. animated_gauge_opsReturn
- * value must not be freed by the caller.
+ * Draws the gauge current state at the specified location
  *
  * @param dt time elapsed since the previous call (miliseanimated_gauge_opsconds)
- * @return pointer to a SDL_Surface representing the curranimated_gauge_opsent gauge
- * state. Object-owned, do not free
+ * @param destination the SDL_Surface to draw to
+ * @param location offset in the surface
  *
  */
-static SDL_Surface *animated_gauge_render(AnimatedGauge *self, Uint32 dt)
+static void animated_gauge_render(AnimatedGauge *self, Uint32 dt, SDL_Surface *destination, SDL_Rect *location)
 {
     float _current;
     AnimatedGaugeOps *ops;
@@ -69,5 +69,5 @@ static SDL_Surface *animated_gauge_render(AnimatedGauge *self, Uint32 dt)
         ops->render_value(self, _current);
         self->damaged = false;
     }
-    return self->view;
+    SDL_BlitSurface(self->view, NULL, destination, location);
 }

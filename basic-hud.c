@@ -115,11 +115,17 @@ float basic_hud_get(BasicHud *self, HudValue hv)
 }
 
 
-void basic_hud_render(BasicHud *self, Uint32 dt, SDL_Surface *destination)
+void basic_hud_render(BasicHud *self, Uint32 dt, SDL_Surface *destination, SDL_Rect *location)
 {
-    base_gauge_render(BASE_GAUGE(self->attitude->rollslip), dt);
-    SDL_BlitSurface(base_gauge_render(BASE_GAUGE(self->attitude), dt) , NULL, destination, NULL);
+    base_gauge_render(BASE_GAUGE(self->attitude), dt, destination, location);
+    /*Temp fix, see AttitudeIndicator::render*/
+    base_gauge_render(BASE_GAUGE(self->attitude->rollslip), dt, destination, &(SDL_Rect){
+        self->attitude->locations[ROLL_SLIP].x + location->x,
+        self->attitude->locations[ROLL_SLIP].y + location->y,
+        self->attitude->locations[ROLL_SLIP].w,
+        self->attitude->locations[ROLL_SLIP].h,
+    });
 
     alt_group_render_at(self->altgroup, dt, destination, &self->locations[ALT_GROUP]);
-    SDL_BlitSurface(base_gauge_render(BASE_GAUGE(self->airspeed), dt), NULL, destination, &self->locations[SPEED]);
+    base_gauge_render(BASE_GAUGE(self->airspeed), dt, destination, &self->locations[SPEED]);
 }
