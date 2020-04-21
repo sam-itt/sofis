@@ -4,32 +4,29 @@
 #include <stdbool.h>
 #include <SDL2/SDL.h>
 
-#include "basic-animation.h"
 #include "base-gauge.h"
+#include "basic-animation.h"
+#include "buffered-gauge.h"
 #include "view.h"
 
 typedef void (*ValueRenderFunc)(void *self, float value);
 
 typedef struct {
-    BaseGaugeOps super;
+    BufferedGaugeOps super;
     ValueRenderFunc render_value;
 }AnimatedGaugeOps;
 
 typedef struct{
-    BaseGauge super;
+    BufferedGauge super;
 
-    SDL_Surface *view;
-    bool damaged;
     float value;
     BasicAnimation animation;
-
 }AnimatedGauge;
 
 #define ANIMATED_GAUGE(self) ((AnimatedGauge *)(self))
 #define ANIMATED_GAUGE_OPS(self) ((AnimatedGaugeOps *)(self))
 
-#define animated_gauge_moving(self) ((self)->animation.current != (self)->value || (self)->damaged)
-#define animated_gauge_clear(self) view_clear((self)->view)
+#define animated_gauge_moving(self) ((self)->animation.current != (self)->value)
 
 
 AnimatedGauge *animated_gauge_init(AnimatedGauge *self, AnimatedGaugeOps *ops, int w, int h);

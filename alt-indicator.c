@@ -6,6 +6,7 @@
 #include "alt-ladder-page-descriptor.h"
 #include "animated-gauge.h"
 #include "base-gauge.h"
+#include "buffered-gauge.h"
 #include "sdl-colors.h"
 
 static void alt_indicator_render(AltIndicator *self, Uint32 dt, SDL_Surface *destination, SDL_Rect *location);
@@ -81,7 +82,7 @@ void alt_indicator_set_qnh(AltIndicator *self, float value)
      * the gauge by changing the actual value*/
     if(self->qnh != value){
         self->qnh = value;
-        ANIMATED_GAUGE(self->ladder)->damaged = true;
+        BUFFERED_GAUGE(self->ladder)->damaged = true;
     }
 }
 
@@ -148,8 +149,12 @@ static void alt_indicator_draw_target_altitude(AltIndicator *self)
 static void alt_indicator_render(AltIndicator *self, Uint32 dt, SDL_Surface *destination, SDL_Rect *location)
 {
     SDL_Rect placement[2];
+    bool a,b;
 
-    if(animated_gauge_moving(ANIMATED_GAUGE(self->ladder)) || animated_gauge_moving(ANIMATED_GAUGE(self->odo))){
+    a = BUFFERED_GAUGE(self->ladder)->damaged || BUFFERED_GAUGE(self->odo)->damaged;
+    b = animated_gauge_moving(ANIMATED_GAUGE(self->ladder)) || animated_gauge_moving(ANIMATED_GAUGE(self->odo));
+
+    if(a|b){
         memset(placement, 0, sizeof(SDL_Rect)*2);
         placement[0].y = 19;
 

@@ -156,12 +156,12 @@ void odo_gauge_render_value(OdoGauge *self, float value)
     int rcenter;
     SDL_Rect cursor;
 
-    gauge = ANIMATED_GAUGE(self)->view;
+    gauge = BUFFERED_GAUGE(self)->view;
 
     cursor = (SDL_Rect){BASE_GAUGE(self)->w,0,BASE_GAUGE(self)->w,BASE_GAUGE(self)->h};
 
     //SDL_FillRect(gauge, NULL, SDL_UCKEY(gauge));
-    animated_gauge_clear(ANIMATED_GAUGE(self));
+    buffered_gauge_clear(BUFFERED_GAUGE(self));
 
     nparts = number_split(value, vparts, 6);
 //    printf("doing value %f, splitted in to %d parts\n",value,nparts);
@@ -202,6 +202,6 @@ void odo_gauge_render_value(OdoGauge *self, float value)
 
         SDL_FillRect(gauge, &cursor, SDL_UBLACK(gauge));
     }
-    view_draw_rubis(ANIMATED_GAUGE(self)->view, self->rubis, &SDL_RED, round(BASE_GAUGE(self)->w/2.0), NULL);
+    view_draw_rubis(BUFFERED_GAUGE(self)->view, self->rubis, &SDL_RED, round(BASE_GAUGE(self)->w/2.0), NULL);
 }
 

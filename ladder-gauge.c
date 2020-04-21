@@ -125,10 +125,10 @@ static void ladder_gauge_render_value(LadderGauge *self, float value)
     SDL_Rect dst_region = {0,0,0,0};
     SDL_Surface *gauge;
 
-    gauge = ANIMATED_GAUGE(self)->view;
+    gauge = BUFFERED_GAUGE(self)->view;
 
-    animated_gauge_clear(ANIMATED_GAUGE(self));
-    view_draw_outline(ANIMATED_GAUGE(self)->view, &(SDL_WHITE), NULL);
+    buffered_gauge_clear(BUFFERED_GAUGE(self));
+    view_draw_outline(BUFFERED_GAUGE(self)->view, &(SDL_WHITE), NULL);
 
     value = value >= 0 ? value : 0.0f;
 
@@ -200,5 +200,5 @@ static void ladder_gauge_render_value(LadderGauge *self, float value)
             }
         }
     }
-    view_draw_rubis(ANIMATED_GAUGE(self)->view, self->rubis, &SDL_RED, round(BASE_GAUGE(self)->w/2.0), NULL);
+    view_draw_rubis(BUFFERED_GAUGE(self)->view, self->rubis, &SDL_RED, round(BASE_GAUGE(self)->w/2.0), NULL);
 }

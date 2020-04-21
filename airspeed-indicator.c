@@ -117,8 +117,12 @@ static void airspeed_indicator_draw_tas(AirspeedIndicator *self)
 static void airspeed_indicator_render(AirspeedIndicator *self, Uint32 dt, SDL_Surface *destination, SDL_Rect *location)
 {
     SDL_Rect placement[2];
+    bool a,b;
 
-    if(animated_gauge_moving(ANIMATED_GAUGE(self->ladder)) || animated_gauge_moving(ANIMATED_GAUGE(self->odo))){
+    a = BUFFERED_GAUGE(self->ladder)->damaged || BUFFERED_GAUGE(self->odo)->damaged;
+    b = animated_gauge_moving(ANIMATED_GAUGE(self->ladder)) || animated_gauge_moving(ANIMATED_GAUGE(self->odo));
+
+    if(a|b){
         memset(placement, 0, sizeof(SDL_Rect)*2);
         placement[0].y = 0;
 

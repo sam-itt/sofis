@@ -103,12 +103,12 @@ static void vertical_stair_render_value(VerticalStair *self, float value)
 
     vertical_stair_cursor_set_value(&self->cursor, value);
     vertical_strip_clip_value(&self->scale, &value);
-    SDL_FillRect(ANIMATED_GAUGE(self)->view, NULL, SDL_UCKEY(ANIMATED_GAUGE(self)->view));
-    SDL_BlitSurface(self->scale.ruler, NULL, ANIMATED_GAUGE(self)->view, NULL);
+    SDL_FillRect(BUFFERED_GAUGE(self)->view, NULL, SDL_UCKEY(BUFFERED_GAUGE(self)->view));
+    SDL_BlitSurface(self->scale.ruler, NULL, BUFFERED_GAUGE(self)->view, NULL);
 
     y = vertical_strip_resolve_value(&self->scale, value, true);
     y = round(round(y) - self->cursor.bg->h/2.0);
 
-    SDL_BlitSurface(self->cursor.bg, NULL, ANIMATED_GAUGE(self)->view, &(SDL_Rect){1, y,0,0});
+    SDL_BlitSurface(self->cursor.bg, NULL, BUFFERED_GAUGE(self)->view, &(SDL_Rect){1, y,0,0});
 
 }

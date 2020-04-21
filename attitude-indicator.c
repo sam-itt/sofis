@@ -109,7 +109,7 @@ void attitude_indicator_free(AttitudeIndicator *self)
 void attitude_indicator_set_roll(AttitudeIndicator *self, float value)
 {
 	animated_gauge_set_value(ANIMATED_GAUGE(self->rollslip), value);
-	self->super.damaged = true;
+	BUFFERED_GAUGE(self)->damaged = true;
 }
 
 Uint32 interpolate_color_p(const SDL_PixelFormat *format, Uint32 from, Uint32 to, float progress)
@@ -448,7 +448,7 @@ static void attitude_indicator_render_value(AttitudeIndicator *self, float value
 
     value = value * -1.0;
 
-	SDL_FillRect(self->super.view, NULL, SDL_MapRGBA(self->super.view->format, 0, 0, 0, SDL_ALPHA_TRANSPARENT));
+	SDL_FillRect(BUFFERED_GAUGE(self)->view, NULL, SDL_MapRGBA(BUFFERED_GAUGE(self)->view->format, 0, 0, 0, SDL_ALPHA_TRANSPARENT));
 
     /*First find out a view-sized window into the larger ball buffer for a 0deg pitch*/
     SDL_Rect win = {
@@ -473,7 +473,7 @@ static void attitude_indicator_render_value(AttitudeIndicator *self, float value
 		SDL_DestroyTexture(tex);
         surface = self->buffer;
 	}
-	SDL_BlitSurface(surface, &win, self->super.view, NULL);
+	SDL_BlitSurface(surface, &win, BUFFERED_GAUGE(self)->view, NULL);
 
 	/*Place the roll indicator*/
     /* Temp fix, the function triggering the rendering of AttitudeIndicator must also manually render self->rollslip
@@ -482,10 +482,10 @@ static void attitude_indicator_render_value(AttitudeIndicator *self, float value
      * TODO: Either compose AttitudeIndicator with the two gauges artifical horizon and rollslip gauge, or
      * extract rollslip from attitudeindicator, or something else
      * */
-//	SDL_BlitSurface(self->rollslip->super.view, NULL, self->super.view, &self->locations[ROLL_SLIP]);
+//	SDL_BlitSurface(self->rollslip->super.view, NULL, BUFFERED_GAUGE(self)->view, &self->locations[ROLL_SLIP]);
 
 	/*Then place markers in the middle of the *screen* markers don't move*/
-	SDL_BlitSurface(self->markers[MARKER_LEFT], NULL, self->super.view, &self->locations[MARKER_LEFT]);
-	SDL_BlitSurface(self->markers[MARKER_RIGHT], NULL, self->super.view, &self->locations[MARKER_RIGHT]);
-	SDL_BlitSurface(self->markers[MARKER_CENTER], NULL, self->super.view, &self->locations[MARKER_CENTER]);
+	SDL_BlitSurface(self->markers[MARKER_LEFT], NULL, BUFFERED_GAUGE(self)->view, &self->locations[MARKER_LEFT]);
+	SDL_BlitSurface(self->markers[MARKER_RIGHT], NULL, BUFFERED_GAUGE(self)->view, &self->locations[MARKER_RIGHT]);
+	SDL_BlitSurface(self->markers[MARKER_CENTER], NULL, BUFFERED_GAUGE(self)->view, &self->locations[MARKER_CENTER]);
 }
