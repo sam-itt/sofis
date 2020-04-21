@@ -138,12 +138,12 @@ static void ladder_gauge_render_value(LadderGauge *self, float value)
 
     y = ladder_page_resolve_value(page, value);
 //    printf("y = %f for value = %f\n",y,value);
-    rubis = (self->rubis < 0) ? gauge->h / 2.0 : self->rubis;
+    rubis = (self->rubis < 0) ? BASE_GAUGE(self)->h / 2.0 : self->rubis;
     SDL_Rect portion = {
         .x = 0,
         .y = round(y - rubis),
         .w = VERTICAL_STRIP(page)->ruler->w,
-        .h = gauge->h
+        .h = BASE_GAUGE(self)->h
     };
     /*All pages must have the same size*/
     if(portion.y < 0){ //Fill top
@@ -176,9 +176,9 @@ static void ladder_gauge_render_value(LadderGauge *self, float value)
 
     SDL_BlitSurface(VERTICAL_STRIP(page)->ruler, &portion, gauge, &dst_region);
 
-    if(portion.y + gauge->h > VERTICAL_STRIP(page)->ruler->h){// fill bottom
+    if(portion.y + BASE_GAUGE(self)->h > VERTICAL_STRIP(page)->ruler->h){// fill bottom
         float taken = VERTICAL_STRIP(page)->ruler->h - portion.y; //number of pixels taken from the bottom of values pict
-        float delta = gauge->h - taken;
+        float delta = BASE_GAUGE(self)->h - taken;
         dst_region.y += taken;
         SDL_Rect patch = {
             .x = 0,

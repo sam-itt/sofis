@@ -177,7 +177,7 @@ void odo_gauge_render_value(OdoGauge *self, float value)
 
     gauge = ANIMATED_GAUGE(self)->view;
 
-    cursor = (SDL_Rect){gauge->w,0,gauge->w,gauge->h};
+    cursor = (SDL_Rect){BASE_GAUGE(self)->w,0,BASE_GAUGE(self)->w,BASE_GAUGE(self)->h};
 
     //SDL_FillRect(gauge, NULL, SDL_UCKEY(gauge));
     animated_gauge_clear(ANIMATED_GAUGE(self));
@@ -215,7 +215,7 @@ void odo_gauge_render_value(OdoGauge *self, float value)
     for(; current_rotor < self->nbarrels; current_rotor++){
         cursor.x -= VERTICAL_STRIP(self->barrels[current_rotor])->ruler->w;
         cursor.h = self->heights[current_rotor];
-        cursor.y = 0 + gauge->h/2 - cursor.h/2;
+        cursor.y = 0 + BASE_GAUGE(self)->h/2 - cursor.h/2;
         cursor.w = VERTICAL_STRIP(self->barrels[current_rotor])->ruler->w;
 
         SDL_FillRect(gauge, &cursor, SDL_UBLACK(gauge));

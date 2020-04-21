@@ -159,8 +159,8 @@ SDL_Surface *attitude_indicator_draw_ball(AttitudeIndicator *self)
 
     self->ball_window = (SDL_Rect){
         .x = 0, .y = 0,
-        .w = ANIMATED_GAUGE(self)->view->w,
-        .h = ANIMATED_GAUGE(self)->view->h
+        .w = BASE_GAUGE(self)->w,
+        .h = BASE_GAUGE(self)->h
     };
 
     self->ball_all = (SDL_Rect){
@@ -452,10 +452,10 @@ static void attitude_indicator_render_value(AttitudeIndicator *self, float value
 
     /*First find out a view-sized window into the larger ball buffer for a 0deg pitch*/
     SDL_Rect win = {
-        .x = self->ball_center.x - (round(self->parent.view->w/2.0) -1), /*Is ball_window useless?*/
-        .y = self->ball_center.y - (round(self->parent.view->h*0.4) -1),
-        .w = self->parent.view->w,
-        .h = self->parent.view->h
+        .x = self->ball_center.x - (round(BASE_GAUGE(self)->w/2.0) -1), /*Is ball_window useless?*/
+        .y = self->ball_center.y - (round(BASE_GAUGE(self)->h*0.4) -1),
+        .w = BASE_GAUGE(self)->w,
+        .h = BASE_GAUGE(self)->h
     };
     /*Then apply to correct y offset to account for pitch*/
     win.y += attitude_indicator_resolve_increment(self, value);

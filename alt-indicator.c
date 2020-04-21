@@ -166,15 +166,3 @@ static void alt_indicator_render(AltIndicator *self, Uint32 dt, SDL_Surface *des
     }
     SDL_BlitSurface(self->view, NULL, destination, location);
 }
-
-uint32_t alt_indicator_get_width(AltIndicator *self)
-{
-//    return ANIMATED_GAUGE(self->ladder)->view->w;
-    return self->view->w;
-}
-
-uint32_t alt_indicator_get_height(AltIndicator *self)
-{
-    //return ANIMATED_GAUGE(self->ladder)->view->h;
-    return self->view->h;
-}

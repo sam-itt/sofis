@@ -29,6 +29,4 @@ void alt_indicator_free(AltIndicator *self);
 bool alt_indicator_set_value(AltIndicator *self, float value);
 void alt_indicator_set_qnh(AltIndicator *self, float value);
 
-uint32_t alt_indicator_get_width(AltIndicator *self);
-uint32_t alt_indicator_get_height(AltIndicator *self);
 #endif /* ALT_INDICATOR_H */
