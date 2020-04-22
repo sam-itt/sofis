@@ -158,7 +158,11 @@ void odo_gauge_render_value(OdoGauge *self, float value)
 
     cursor = (SDL_Rect){BASE_GAUGE(self)->w,0,BASE_GAUGE(self)->w,BASE_GAUGE(self)->h};
 
-    buffered_gauge_clear(BUFFERED_GAUGE(self), NULL);
+    /* If the buffer is shared, it's up to the "parent"
+     * to clear portions when appropriate
+     * */
+    if(BUFFERED_GAUGE(self)->type == BUFFER_OWN)
+        buffered_gauge_clear(BUFFERED_GAUGE(self), NULL);
 
     nparts = number_split(value, vparts, 6);
 //    printf("doing value %f, splitted in to %d parts\n",value,nparts);
