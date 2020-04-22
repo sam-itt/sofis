@@ -53,7 +53,7 @@ void basic_hud_free(BasicHud *self)
     free(self);
 }
 
-void basic_hud_set(BasicHud *self, uintf8_t nvalues, ...)
+void basic_hud_set(BasicHud *self, int nvalues, ...)
 {
     va_list args;
 
@@ -62,7 +62,7 @@ void basic_hud_set(BasicHud *self, uintf8_t nvalues, ...)
     va_end(args);
 }
 
-void basic_hud_set_values(BasicHud *self, uintf8_t nvalues, va_list ap)
+void basic_hud_set_values(BasicHud *self, int nvalues, va_list ap)
 {
     HudValue hv;
     double val;
