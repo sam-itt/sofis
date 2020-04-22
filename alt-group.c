@@ -4,6 +4,10 @@
 #include "alt-group.h"
 #include "base-gauge.h"
 
+static void alt_group_render(AltGroup *self, Uint32 dt, SDL_Surface *destination, SDL_Rect *location);
+static BaseGaugeOps alt_group_ops = {
+    .render = (RenderFunc)alt_group_render
+};
 
 AltGroup *alt_group_new(void)
 {
@@ -24,9 +28,21 @@ AltGroup *alt_group_init(AltGroup *self)
     self->vsi = vertical_stair_new("vs-bg.png","vs-cursor.png", 16);
 
     if(!self->vsi || !self->altimeter)
-        return NULL;
+        goto bail;
 
+    base_gauge_init(
+        BASE_GAUGE(self),
+        &alt_group_ops,
+        BASE_GAUGE(self->altimeter)->w + BASE_GAUGE(self->vsi)->w,
+        (BASE_GAUGE(self->vsi)->h > BASE_GAUGE(self->altimeter)->h) ?
+            BASE_GAUGE(self->vsi)->h : BASE_GAUGE(self->altimeter)->h
+    );
     return self;
+
+bail:
+    if(self->vsi) free(self->vsi);
+    if(self->altimeter) free(self->altimeter);
+    return NULL;
 }
 
 void alt_group_free(AltGroup *self)
@@ -52,12 +68,12 @@ void alt_group_set_values(AltGroup *self, float alt, float vs)
     alt_group_set_vertical_speed(self, vs);
 }
 
-void alt_group_render_at(AltGroup *self, Uint32 dt, SDL_Surface *destination, SDL_Rect *location)
+static void alt_group_render(AltGroup *self, Uint32 dt, SDL_Surface *destination, SDL_Rect *location)
 {
     SDL_Rect offset = {0,0,0,0};
-
-    base_gauge_render(BASE_GAUGE(self->altimeter), dt, destination, location);
     offset.x = location->x + BASE_GAUGE(self->altimeter)->w;
     offset.y = location->y +  round(BASE_GAUGE(self->altimeter)->h/2.0) - round((BASE_GAUGE(self->vsi)->h)/2.0);
+
+    base_gauge_render(BASE_GAUGE(self->altimeter), dt, destination, location);
     base_gauge_render(BASE_GAUGE(self->vsi), dt, destination, &offset);
 }

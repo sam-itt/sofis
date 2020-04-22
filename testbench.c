@@ -6,6 +6,7 @@
 #include <SDL2/SDL_ttf.h>
 
 #include "animated-gauge.h"
+#include "base-gauge.h"
 #include "basic-hud.h"
 #include "ladder-gauge.h"
 #include "alt-ladder-page-descriptor.h"
@@ -357,7 +358,7 @@ int main(int argc, char **argv)
 //        base_gauge_render(BASE_GAUGE(alt_ind), elapsed, screenSurface, &airect);
 //        base_gauge_render(BASE_GAUGE(stair), elapsed, screenSurface, &vrect);
 
-//        alt_group_render_at(group, elapsed, screenSurface, &airect);
+//        base_gauge_render(BASE_GAUGE(group), elapsed, screenSurface, &airect);
 //        base_gauge_render(BASE_GAUGE(asi), elapsed, screenSurface, &vrect);
 //
 

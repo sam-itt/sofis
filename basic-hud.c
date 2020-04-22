@@ -126,6 +126,6 @@ void basic_hud_render(BasicHud *self, Uint32 dt, SDL_Surface *destination, SDL_R
         self->attitude->locations[ROLL_SLIP].h,
     });
 
-    alt_group_render_at(self->altgroup, dt, destination, &self->locations[ALT_GROUP]);
+    base_gauge_render(BASE_GAUGE(self->altgroup), dt, destination, &self->locations[ALT_GROUP]);
     base_gauge_render(BASE_GAUGE(self->airspeed), dt, destination, &self->locations[SPEED]);
 }
