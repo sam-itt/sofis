@@ -12,10 +12,15 @@ typedef enum{
     BUFFER_SHARED
 }BufferType;
 
+/* BufferedGauge derivative will draw on their assigned buffer.
+ * Therefore there is no need to give them the final on-screen
+ * destination raster and area wherein
+ */
+typedef void (*BufferRenderFunc)(void *self, Uint32 dt);
 typedef struct{
     BaseGaugeOps super;
 
-    RenderFunc render;
+    BufferRenderFunc render;
 }BufferedGaugeOps;
 
 #define BUFFERED_GAUGE_OPS(ops) ((BufferedGaugeOps*)(ops))
@@ -48,6 +53,8 @@ void buffered_gauge_draw_text(BufferedGauge *self, SDL_Rect *location,
                               const char *string, TTF_Font *font,
                               SDL_Color *text_color, SDL_Color *bg_color);
 
+
+void buffered_gauge_paint_buffer(BufferedGauge *self, Uint32 dt);
 
 void buffered_gauge_render(BufferedGauge *self, Uint32 dt, SDL_Surface *destination, SDL_Rect *location);
 

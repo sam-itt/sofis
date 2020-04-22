@@ -55,7 +55,7 @@
  */
 
 static void animated_gauge_base_render(AnimatedGauge *self, Uint32 dt, SDL_Surface *destination, SDL_Rect *location);
-static void animated_gauge_render(AnimatedGauge *self, Uint32 dt, SDL_Surface *destination, SDL_Rect *location);
+static void animated_gauge_render(AnimatedGauge *self, Uint32 dt);
 /*
 static AnimatedGaugeOps animated_gauge_ops = {
     .super = {
@@ -66,7 +66,7 @@ static AnimatedGaugeOps animated_gauge_ops = {
 */
 static AnimatedGaugeOps animated_gauge_ops = {
     .super = {
-       .render = (RenderFunc)animated_gauge_render
+       .render = (BufferRenderFunc)animated_gauge_render
     },
     .render_value = NULL
 };
@@ -96,14 +96,11 @@ void animated_gauge_set_value(AnimatedGauge *self, float value)
 }
 
 /**
- * Draws the gauge current state at the specified location
- *
- * @param dt time elapsed since the previous call (miliseanimated_gauge_opsconds)
- * @param destination the SDL_Surface to draw to
- * @param location offset in the surface
+ * Called by BufferGauge::render to refresh the buffer
+ * when needed
  *
  */
-static void animated_gauge_render(AnimatedGauge *self, Uint32 dt, SDL_Surface *destination, SDL_Rect *location)
+static void animated_gauge_render(AnimatedGauge *self, Uint32 dt)
 {
     float _current;
     AnimatedGaugeOps *ops;
@@ -112,13 +109,27 @@ static void animated_gauge_render(AnimatedGauge *self, Uint32 dt, SDL_Surface *d
 
     ops = ANIMATED_GAUGE_OPS(BASE_GAUGE(self)->ops);
     ops->render_value(self, _current);
-    /*render_value works on the gauge->view so destination and location are
-     * unused at this step. They are be used by the caller buffered_gauge_render*/
 }
 
+/**
+ * Draws the gauge current state at the specified location
+ *
+ * @param dt time elapsed since the previous call (miliseanimated_gauge_opsconds)
+ * @param destination the SDL_Surface to draw to
+ * @param location offset in the surface
+ *
+ */
 static void animated_gauge_base_render(AnimatedGauge *self, Uint32 dt, SDL_Surface *destination, SDL_Rect *location)
 {
-   /*While moving, damage the superclass buffer & chain-up*/
+   /* While moving, damage the superclass buffer & chain-up:
+    * buffered_gauge_render will decide to call animated_gauge_render
+    * (see callgraphs examples at the top of this file) only if the buffer is
+    * damaged, thus we have to damage it before the call while the animation
+    * is still running.
+    *
+    * Otherwise, it will draw the current content of the buffer (generated at the
+    * last rendered animation frame) at the final destination.
+    * */
     if(animated_gauge_moving(self))
         BUFFERED_GAUGE(self)->damaged = true;
     buffered_gauge_render(BUFFERED_GAUGE(self), dt, destination, location);

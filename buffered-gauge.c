@@ -17,7 +17,7 @@ static BufferedGaugeOps buffered_gauge_ops = {
     .super = {
         .render = (RenderFunc)buffered_gauge_render
     },
-   .render = NULL
+   .render = NULL /*This is the BufferRenderFunc that derivative will implement*/
 };
 
 
@@ -171,15 +171,25 @@ SDL_Surface *buffer_gauge_build_view(BufferedGauge *self)
     return self->view;
 }
 
+/**
+ * Refresh the buffer by asking the underlying object to draw in
+ * the buffer
+ */
+void buffered_gauge_paint_buffer(BufferedGauge *self, Uint32 dt)
+{
+    BufferedGaugeOps *ops;
+
+    ops = BUFFERED_GAUGE_OPS(BASE_GAUGE(self)->ops);
+    ops->render(self, dt);
+}
 
 void buffered_gauge_render(BufferedGauge *self, Uint32 dt, SDL_Surface *destination, SDL_Rect *location)
 {
     BufferedGaugeOps *ops;
 
     if(self->damaged){
-        ops = BUFFERED_GAUGE_OPS(BASE_GAUGE(self)->ops);
-        ops->render(self, dt, destination, location);
-        self->damaged = false;
+        self->damaged = false; /*Set it before so that it can be overrided by the gauge*/
+        buffered_gauge_paint_buffer(self, dt);
     }
     SDL_BlitSurface(self->view, NULL, destination, location);
 }
