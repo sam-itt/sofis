@@ -366,7 +366,7 @@ int main(int argc, char **argv)
 //        base_gauge_render(BASE_GAUGE(ai->rollslip), elapsed);
 //        base_gauge_render(BASE_GAUGE(ai), elapsed, screenSurface, NULL);
 
-        basic_hud_render(hud, elapsed, screenSurface, &whole);
+        base_gauge_render(BASE_GAUGE(hud), elapsed, screenSurface, &whole);
         SDL_UpdateWindowSurface(window);
 
         if(elapsed < 200){

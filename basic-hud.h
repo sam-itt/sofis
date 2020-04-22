@@ -1,9 +1,10 @@
 #ifndef BASIC_HUD_H
 #define BASIC_HUD_H
 
-#include "airspeed-indicator.h"
+#include "base-gauge.h"
 #include "alt-group.h"
 #include "attitude-indicator.h"
+#include "airspeed-indicator.h"
 
 typedef enum{
     ALTITUDE,
@@ -24,6 +25,8 @@ enum{
 };
 
 typedef struct{
+    BaseGauge super;
+
     AltGroup *altgroup;
     AirspeedIndicator *airspeed;
     AttitudeIndicator *attitude;

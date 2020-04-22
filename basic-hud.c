@@ -11,6 +11,12 @@
 #include "basic-hud.h"
 #include "misc.h"
 
+static void basic_hud_render(BasicHud *self, Uint32 dt, SDL_Surface *destination, SDL_Rect *location);
+static BaseGaugeOps basic_hud_ops = {
+    .render = (RenderFunc)basic_hud_render
+};
+
+
 BasicHud *basic_hud_new(void)
 {
     BasicHud *self;
@@ -31,11 +37,18 @@ BasicHud *basic_hud_init(BasicHud *self)
     self->altgroup = alt_group_new();
     self->altgroup->altimeter->src = ALT_SRC_GPS;
 
-    self->airspeed = airspeed_indicator_new( 50,60,85,155,200);
+    self->airspeed = airspeed_indicator_new(50,60,85,155,200);
     self->attitude = attitude_indicator_new(640, 480);
 
     self->locations[ALT_GROUP] = (SDL_Rect){460,53,0,0};
     self->locations[SPEED] = (SDL_Rect){96,72,0,0};
+
+    base_gauge_init(
+        BASE_GAUGE(self),
+        &basic_hud_ops,
+        640, /*Fixed for now, should be made dynamic and set through params*/
+        480
+    );
 
     return self;
 }
@@ -114,9 +127,10 @@ float basic_hud_get(BasicHud *self, HudValue hv)
     return NAN;
 }
 
-
-void basic_hud_render(BasicHud *self, Uint32 dt, SDL_Surface *destination, SDL_Rect *location)
+/*Currently the only supported location is 0,0 and width/height is 640x480*/
+static void basic_hud_render(BasicHud *self, Uint32 dt, SDL_Surface *destination, SDL_Rect *location)
 {
+
     base_gauge_render(BASE_GAUGE(self->attitude), dt, destination, location);
     /*Temp fix, see AttitudeIndicator::render*/
     base_gauge_render(BASE_GAUGE(self->attitude->rollslip), dt, destination, &(SDL_Rect){

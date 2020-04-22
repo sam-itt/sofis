@@ -212,7 +212,7 @@ int main(int argc, char **argv)
 
         SDL_FillRect(screenSurface, NULL, colors[i]);
 
-        basic_hud_render(hud, elapsed, screenSurface, &whole);
+        base_gauge_render(BASE_GAUGE(hud), elapsed, screenSurface, &whole);
         SDL_UpdateWindowSurface(window);
 
         if(elapsed < 200){
