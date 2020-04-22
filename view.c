@@ -130,7 +130,7 @@ void view_draw_rubis(SDL_Surface *surface, int y, SDL_Color *color, int pskip, S
     Uint32 col;
     int startx, stopx;
     int restartx, endx;
-    int liney;
+    int liney, half;
 
     /* Warning: end[xy] are not usable coordinates
      * last usable coordinate: end[xy]-1
@@ -144,8 +144,11 @@ void view_draw_rubis(SDL_Surface *surface, int y, SDL_Color *color, int pskip, S
         endx = surface->w;
         liney = y;
     }
-    stopx = startx + round(pskip/2.0);
-    restartx = endx - stopx;
+
+    half = round(pskip/2.0);
+    stopx = startx + half;
+    restartx = endx - half;
+
     col = SDL_MapRGBA(surface->format, color->r, color->g, color->b, color->a);
     SDL_LockSurface(surface);
     pixels = surface->pixels;
