@@ -42,6 +42,9 @@ typedef struct{
 BufferedGauge *buffered_gauge_init(BufferedGauge *self, BufferedGaugeOps *ops, int w, int h);
 void buffered_gauge_dispose(BufferedGauge *self);
 
+
+void buffered_gauge_set_buffer(BufferedGauge *self, SDL_Surface *buffer, int xoffset, int yoffset);
+
 SDL_Surface *buffer_gauge_build_view(BufferedGauge *self);
 
 int buffered_gauge_blit(BufferedGauge *self, SDL_Surface *src, SDL_Rect *srcrect, SDL_Rect *dstrect);

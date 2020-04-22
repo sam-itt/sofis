@@ -37,6 +37,34 @@ void buffered_gauge_dispose(BufferedGauge *self)
         SDL_FreeSurface(self->view);
 }
 
+/**
+ * Enables buffer sharing between gauges: Call buffered_gauge_set_buffer on a
+ * newly-created BufferedGauge (before trying to access it's view using
+ * buffered_gauge_get_view) and it will use that buffer instead of creating
+ * one if its own.
+ *
+ * Useful for sharing a single buffer when combining gauges
+ *
+ * @param buffer The surface to be shared. Get it from the other gauge you want
+ * to share with using buffered_gauge_get_view.
+ * @param xoffset Position in the surface where the gauge will draw itself.
+ * It's like positioning the gauge relative to its parent.
+ * @param yoffset see @param xoffset.
+ */
+
+void buffered_gauge_set_buffer(BufferedGauge *self, SDL_Surface *buffer, int xoffset, int yoffset)
+{
+    if(self->view)
+        SDL_FreeSurface(self->view);
+
+    self->view = buffer;
+    buffer->refcount++;
+    self->type = BUFFER_SHARED;
+    self->offset.x = xoffset;
+    self->offset.y = yoffset;
+}
+
+
 /*TODO: CHECK IF THESE FUNCTIONS CAN BENEFIT FROM SDL_SetClipRect*/
 /* TODO: All of these could be implemented as macros if it weren't for
  * call centralization
