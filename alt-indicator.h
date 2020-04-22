@@ -3,15 +3,15 @@
 
 #include <SDL2/SDL_ttf.h>
 
+#include "buffered-gauge.h"
 #include "ladder-gauge.h"
 #include "odo-gauge.h"
 
 typedef enum {ALT_SRC_GPS,ALT_SRC_BARO} AltSource;
 
 typedef struct{
-    BaseGauge super;
+    BufferedGauge super;
 
-    SDL_Surface *view;
     TTF_Font *font;
 
     LadderGauge *ladder;

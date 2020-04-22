@@ -3,17 +3,15 @@
 
 #include <SDL2/SDL_ttf.h>
 
-#include "base-gauge.h"
+#include "buffered-gauge.h"
 #include "ladder-gauge.h"
-#include "airspeed-page-descriptor.h"
 #include "odo-gauge.h"
+#include "airspeed-page-descriptor.h"
 
 #define RHO_0 1.225 /* kg/m3, Sea level ISA */
 
 typedef struct{
-    BaseGauge super;
-
-    SDL_Surface *view;
+    BufferedGauge super;
 
     LadderGauge *ladder;
     OdoGauge *odo;
