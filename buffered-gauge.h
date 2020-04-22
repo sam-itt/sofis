@@ -32,14 +32,22 @@ typedef struct{
 
 #define BUFFERED_GAUGE(self) ((BufferedGauge*)(self))
 
-#define buffered_gauge_clear(self) view_clear((self)->view)
-
 #define buffered_gauge_get_view(self) ((self)->view ? (self)->view : buffer_gauge_build_view((self)))
 
 BufferedGauge *buffered_gauge_init(BufferedGauge *self, BufferedGaugeOps *ops, int w, int h);
 void buffered_gauge_dispose(BufferedGauge *self);
 
 SDL_Surface *buffer_gauge_build_view(BufferedGauge *self);
+
+int buffered_gauge_blit(BufferedGauge *self, SDL_Surface *src, SDL_Rect *srcrect, SDL_Rect *dstrect);
+void buffered_gauge_draw_rubis(BufferedGauge *self, int y, SDL_Color *color, int pskip);
+void buffered_gauge_draw_outline(BufferedGauge *self, SDL_Color *color, SDL_Rect *area);
+void buffered_gauge_clear(BufferedGauge *self, SDL_Color *color);
+void buffered_gauge_fill(BufferedGauge *self, SDL_Rect *area, SDL_Color *color);
+void buffered_gauge_draw_text(BufferedGauge *self, SDL_Rect *location,
+                              const char *string, TTF_Font *font,
+                              SDL_Color *text_color, SDL_Color *bg_color);
+
 
 void buffered_gauge_render(BufferedGauge *self, Uint32 dt, SDL_Surface *destination, SDL_Rect *location);
 

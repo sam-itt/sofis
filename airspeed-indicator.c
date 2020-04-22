@@ -126,7 +126,7 @@ static void airspeed_indicator_render(AirspeedIndicator *self, Uint32 dt, SDL_Su
         memset(placement, 0, sizeof(SDL_Rect)*2);
         placement[0].y = 0;
 
-        view_clear(self->view);
+        view_clear(self->view, NULL);
         airspeed_indicator_draw_tas(self);
         view_draw_outline(self->view, &(SDL_WHITE), NULL);
 

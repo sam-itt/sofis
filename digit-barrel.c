@@ -1,3 +1,4 @@
+#include "buffered-gauge.h"
 #define _GNU_SOURCE
 #include <stdio.h>
 #include <stdlib.h>
@@ -139,7 +140,7 @@ float digit_barrel_resolve_value(DigitBarrel *self, float value)
  * in the value spinner representing @param value will be aligned with the middle
  *
  */
-void digit_barrel_render_value(DigitBarrel *self, float value, SDL_Surface *dst, SDL_Rect *region, float rubis)
+void digit_barrel_render_value(DigitBarrel *self, float value, BufferedGauge *dst, SDL_Rect *region, float rubis)
 {
     float y;
     SDL_Rect dst_region = {region->x,region->y,region->w,region->h};
@@ -163,12 +164,13 @@ void digit_barrel_render_value(DigitBarrel *self, float value, SDL_Surface *dst,
             .w = strip->ruler->w,
             .h = strip->ruler->h - patch.y
         };
-        SDL_BlitSurface(strip->ruler, &patch, dst, &dst_region);
+        buffered_gauge_blit(dst, strip->ruler, &patch, &dst_region);
         dst_region.y = patch.h;
         portion.y = 0;
         portion.h -= patch.h;
     }
-    SDL_BlitSurface(strip->ruler, &portion, dst, &dst_region);
+    buffered_gauge_blit(dst, strip->ruler, &portion, &dst_region);
+
     if(portion.y + region->h > strip->ruler->h){// fill bottom
         float taken = strip->ruler->h - portion.y; //number of pixels taken from the bottom of values pict
         float delta = region->h - taken;
@@ -179,7 +181,7 @@ void digit_barrel_render_value(DigitBarrel *self, float value, SDL_Surface *dst,
             .w = strip->ruler->w,
             .h = delta
         };
-        SDL_BlitSurface(strip->ruler, &patch, dst, &dst_region);
+        buffered_gauge_blit(dst, strip->ruler, &patch, &dst_region);
     }
 }
 

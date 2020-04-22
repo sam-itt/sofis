@@ -4,6 +4,8 @@
 #define SDL_WHITE (SDL_Color){255, 255, 255, SDL_ALPHA_OPAQUE}
 #define SDL_RED (SDL_Color){255, 0, 0, SDL_ALPHA_OPAQUE}
 #define SDL_BLACK (SDL_Color){0, 0, 0, SDL_ALPHA_OPAQUE}
+#define SDL_TRANSPARENT (SDL_Color){0, 0, 0, SDL_ALPHA_TRANSPARENT}
+
 
 
 #define SDL_UBLACK(surface) (SDL_MapRGB((surface)->format, 0, 0,0))

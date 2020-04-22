@@ -64,16 +64,14 @@ static void roll_slip_gauge_render_value(RollSlipGauge *self, float value)
 {
 	SDL_Rect rect;
 	SDL_Point center;
-    SDL_Surface *tview;
 
 	if(value > 60.0 || value < -60.0)
 		value = sign(value)*65;
 
 	value *= -1.0;
 
-    tview = buffered_gauge_get_view(BUFFERED_GAUGE(self));
-	SDL_FillRect(tview, NULL, SDL_MapRGBA(tview->format, 0, 0, 0, SDL_ALPHA_TRANSPARENT));
-	SDL_BlitSurface(self->arc,NULL, tview, NULL);
+    buffered_gauge_fill(BUFFERED_GAUGE(self), NULL, &SDL_TRANSPARENT);
+    buffered_gauge_blit(BUFFERED_GAUGE(self), self->arc, NULL, NULL);
 
 	//Arc 0°: 86/10
 //	rect.x = 86 - round(self->arrow->w/2.0);

@@ -158,7 +158,7 @@ static void alt_indicator_render(AltIndicator *self, Uint32 dt, SDL_Surface *des
         memset(placement, 0, sizeof(SDL_Rect)*2);
         placement[0].y = 19;
 
-        view_clear(self->view);
+        view_clear(self->view, NULL);
         alt_indicator_draw_qnh(self);
         alt_indicator_draw_target_altitude(self);
         view_draw_outline(self->view, &(SDL_WHITE), NULL);

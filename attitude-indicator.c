@@ -12,6 +12,7 @@
 #include "animated-gauge.h"
 #include "attitude-indicator.h"
 #include "base-gauge.h"
+#include "buffered-gauge.h"
 #include "misc.h"
 #include "sdl-colors.h"
 
@@ -439,18 +440,17 @@ static SDL_Surface *attitude_indicator_get_etched_ball(AttitudeIndicator *self)
 static void attitude_indicator_render_value(AttitudeIndicator *self, float value)
 {
 	SDL_Surface *surface;
-    SDL_Surface *tview;
 	SDL_Rect ball_pos;
 
 
-    tview = buffered_gauge_get_view(BUFFERED_GAUGE(self));
 //	printf("Attitude indicator rendering value %0.2f\n",value);
 
 	value = (value > self->size*10) ? self->size*10 + 5 : value;
 	value = (value < self->size*-10) ? self->size*-10 - 5: value;
 
     value = value * -1.0;
-	SDL_FillRect(tview, NULL, SDL_MapRGBA(tview->format, 0, 0, 0, SDL_ALPHA_TRANSPARENT));
+    buffered_gauge_clear(BUFFERED_GAUGE(self), NULL);
+
 
     /*First find out a view-sized window into the larger ball buffer for a 0deg pitch*/
     SDL_Rect win = {
@@ -475,7 +475,7 @@ static void attitude_indicator_render_value(AttitudeIndicator *self, float value
 		SDL_DestroyTexture(tex);
         surface = self->buffer;
 	}
-	SDL_BlitSurface(surface, &win, tview, NULL);
+    buffered_gauge_blit(BUFFERED_GAUGE(self), surface, &win, NULL);
 
 	/*Place the roll indicator*/
     /* Temp fix, the function triggering the rendering of AttitudeIndicator must also manually render self->rollslip
@@ -487,7 +487,7 @@ static void attitude_indicator_render_value(AttitudeIndicator *self, float value
 //	SDL_BlitSurface(self->rollslip->super.view, NULL, tview, &self->locations[ROLL_SLIP]);
 
 	/*Then place markers in the middle of the *screen* markers don't move*/
-	SDL_BlitSurface(self->markers[MARKER_LEFT], NULL, tview, &self->locations[MARKER_LEFT]);
-	SDL_BlitSurface(self->markers[MARKER_RIGHT], NULL, tview, &self->locations[MARKER_RIGHT]);
-	SDL_BlitSurface(self->markers[MARKER_CENTER], NULL, tview, &self->locations[MARKER_CENTER]);
+    buffered_gauge_blit(BUFFERED_GAUGE(self), self->markers[MARKER_LEFT], NULL, &self->locations[MARKER_LEFT]);
+    buffered_gauge_blit(BUFFERED_GAUGE(self), self->markers[MARKER_RIGHT], NULL, &self->locations[MARKER_RIGHT]);
+    buffered_gauge_blit(BUFFERED_GAUGE(self), self->markers[MARKER_CENTER], NULL, &self->locations[MARKER_CENTER]);
 }

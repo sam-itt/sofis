@@ -5,6 +5,7 @@
 
 #include "animated-gauge.h"
 #include "base-gauge.h"
+#include "buffered-gauge.h"
 #include "sdl-colors.h"
 #include "odo-gauge.h"
 
@@ -152,16 +153,12 @@ void odo_gauge_render_value(OdoGauge *self, float value)
     float current_val;
     int next_part;
     int i;
-    SDL_Surface *tview;
     int rcenter;
     SDL_Rect cursor;
 
-    tview = buffered_gauge_get_view(BUFFERED_GAUGE(self));
-
     cursor = (SDL_Rect){BASE_GAUGE(self)->w,0,BASE_GAUGE(self)->w,BASE_GAUGE(self)->h};
 
-    //SDL_FillRect(gauge, NULL, SDL_UCKEY(gauge));
-    buffered_gauge_clear(BUFFERED_GAUGE(self));
+    buffered_gauge_clear(BUFFERED_GAUGE(self), NULL);
 
     nparts = number_split(value, vparts, 6);
 //    printf("doing value %f, splitted in to %d parts\n",value,nparts);
@@ -183,7 +180,7 @@ void odo_gauge_render_value(OdoGauge *self, float value)
         rcenter = (BASE_GAUGE(self)->h/2 - cursor.h/2); /*This is the rotor center relative to the whole gauge size*/
         cursor.y = 0 + rcenter;
         cursor.w = VERTICAL_STRIP(self->barrels[current_rotor])->ruler->w;
-        digit_barrel_render_value(self->barrels[current_rotor], current_val, tview, &cursor, self->rubis - rcenter);
+        digit_barrel_render_value(self->barrels[current_rotor], current_val, BUFFERED_GAUGE(self), &cursor, self->rubis - rcenter);
 //        printf("setting rotor %d to %f\n",current_rotor, current_val);
         //render that value
         //next part, next rotor
@@ -200,8 +197,8 @@ void odo_gauge_render_value(OdoGauge *self, float value)
         cursor.y = 0 + BASE_GAUGE(self)->h/2 - cursor.h/2;
         cursor.w = VERTICAL_STRIP(self->barrels[current_rotor])->ruler->w;
 
-        SDL_FillRect(tview, &cursor, SDL_UBLACK(tview));
+        buffered_gauge_fill(BUFFERED_GAUGE(self), &cursor, &SDL_BLACK);
     }
-    view_draw_rubis(tview, self->rubis, &SDL_RED, round(BASE_GAUGE(self)->w/2.0), NULL);
+    buffered_gauge_draw_rubis(BUFFERED_GAUGE(self), self->rubis, &SDL_RED, round(BASE_GAUGE(self)->w/2.0));
 }
 

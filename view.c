@@ -6,9 +6,9 @@
 #include "view.h"
 #include "sdl-colors.h"
 
-void view_clear(SDL_Surface *self)
+void view_clear(SDL_Surface *self, SDL_Rect *area)
 {
-    SDL_FillRect(self, NULL, SDL_UCKEY(self));
+    SDL_FillRect(self, area, SDL_UCKEY(self));
 }
 
 /**

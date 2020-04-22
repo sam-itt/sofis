@@ -5,6 +5,7 @@
 
 #include "vertical-strip.h"
 #include "misc.h"
+#include "buffered-gauge.h"
 
 typedef struct{
     VerticalStrip super;
@@ -23,5 +24,5 @@ void digit_barrel_free(DigitBarrel *self);
 void digit_barrel_draw_etch_marks(DigitBarrel *self);
 float digit_barrel_resolve_value(DigitBarrel *self, float value);
 
-void digit_barrel_render_value(DigitBarrel *self, float value, SDL_Surface *dst, SDL_Rect *region, float rubis);
+void digit_barrel_render_value(DigitBarrel *self, float value, BufferedGauge *dst, SDL_Rect *region, float rubis);
 #endif /* DIGIT_BARREL_H */
