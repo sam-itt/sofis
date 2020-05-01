@@ -2,9 +2,9 @@
 #include <stdlib.h>
 
 #include <SDL2/SDL_image.h>
-#include <SDL2/SDL_ttf.h>
 
 #include "airspeed-page-descriptor.h"
+#include "resource-manager.h"
 #include "sdl-colors.h"
 #include "misc.h"
 
@@ -41,7 +41,7 @@ LadderPage *airspeed_ladder_page_init(LadderPage *self)
 {
 
     fb_ladder_page_init(self);
-    ladder_page_etch_markings(self, 16);
+    ladder_page_etch_markings(self, resource_manager_get_font(TERMINUS_16));
 
     airspeed_ladder_page_draw_arcs(self);
 

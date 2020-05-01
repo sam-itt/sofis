@@ -1,10 +1,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include <SDL2/SDL_ttf.h>
-
+#include "SDL_surface.h"
 #include "ladder-page.h"
 #include "sdl-colors.h"
+#include "sdl-pcf/SDL_pcf.h"
 
 
 LadderPageDescriptor *ladder_page_descriptor_init(LadderPageDescriptor *self, ScrollType direction, float page_size, float vstep, float vsubstep, LPInitFunc func)
@@ -97,13 +97,12 @@ float ladder_page_resolve_value(LadderPage *self, float value)
 }
 
 /*Put markings*/
-void ladder_page_etch_markings(LadderPage *self, int font_size)
+void ladder_page_etch_markings(LadderPage *self, PCF_Font *font)
 {
-    SDL_Surface *text;
-    TTF_Font *font;
     SDL_Rect dst;
     char number[6]; //5 digits plus \0
     float y;
+    Uint32 text_w;
 
     VerticalStrip *strip;
     int page_index;
@@ -112,20 +111,28 @@ void ladder_page_etch_markings(LadderPage *self, int font_size)
 
     page_index = ladder_page_get_index(self);
 //    printf("Page %d real range is [%f, %f]\n",page_index, strip->start, strip->end);
-
-
-    font = TTF_OpenFont("TerminusTTF-4.47.0.ttf", font_size);
+//
+    /*TODO: Review and integrate into centereing code in SDL_pcf*/
+    int empty_top_pix = font->xfont.fontPrivate->metrics->metrics.ascent -  font->xfont.fontPrivate->ink_metrics->ascent;
+    int glyph_middle =  empty_top_pix + round(font->xfont.fontPrivate->ink_metrics->ascent/2.0);
 //    printf("Writing indexes on %d starting at %d to %f\n",page_index, page_index*self->descriptor->page_size, strip->end);
+    Uint32 white = SDL_UWHITE(strip->ruler);
     for(int i = page_index*self->descriptor->page_size; i <= strip->end; i += self->descriptor->vstep){
         snprintf(number, 6, "%d", i);
-        text = TTF_RenderText_Solid(font, number, SDL_WHITE);
 
         y = ladder_page_resolve_value(self, i);
-        dst.y = y - text->h/2.0; /*verticaly center text*/
-        dst.x = (strip->ruler->w-1) - 10 - 5 - text->w;
+//        printf("strlen(%s): %d\n",number, strlen(number));
+//        PCF_FontGetSizeRequest(font, number, &text_w, NULL);
+        PCF_FontGetSizeRequest(font, number, &text_w, NULL);
+        /* Currently text is left-aligned which for alt might not be
+         * so good.
+         *
+         * TODO: Centralize text-alignment
+         *
+         * */
+        dst.y = y - glyph_middle; /*verticaly center text*/
+        dst.x = (strip->ruler->w-1) - 10 - 5 - text_w;
 
-        SDL_BlitSurface(text, NULL, strip->ruler, &dst);
-        SDL_FreeSurface(text);
+        PCF_FontWrite(font, number, white, strip->ruler, &dst);
     }
-    TTF_CloseFont(font);
 }

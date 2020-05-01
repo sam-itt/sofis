@@ -2,10 +2,10 @@
 #include <stdlib.h>
 
 #include <SDL2/SDL_image.h>
-#include <SDL2/SDL_ttf.h>
 
 #include "alt-ladder-page-descriptor.h"
 #include "animated-gauge.h"
+#include "resource-manager.h"
 #include "sdl-colors.h"
 
 #define PAGE_SIZE 700 /*number of values per page*/
@@ -32,7 +32,7 @@ AltLadderPageDescriptor *alt_ladder_page_descriptor_new(void)
 LadderPage *alt_ladder_page_init(LadderPage *self)
 {
     fb_ladder_page_init(self);
-    ladder_page_etch_markings(self, 16);
+    ladder_page_etch_markings(self, resource_manager_get_font(TERMINUS_16));
 
     return self;
 }

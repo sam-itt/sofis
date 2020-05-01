@@ -1,6 +1,7 @@
 #ifndef LADDER_PAGE_H
 #define LADDER_PAGE_H
 
+#include "sdl-pcf/SDL_pcf.h"
 #include "vertical-strip.h"
 
 typedef struct _LadderPage LadderPage;
@@ -101,5 +102,5 @@ void ladder_page_free(LadderPage *self);
 
 int ladder_page_get_index(LadderPage *self);
 float ladder_page_resolve_value(LadderPage *self, float value);
-void ladder_page_etch_markings(LadderPage *self, int font_size);
+void ladder_page_etch_markings(LadderPage *self, PCF_Font *font);
 #endif /* LADDER_PAGE_H */
