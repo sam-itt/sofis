@@ -13,6 +13,7 @@
 
 #include "odo-gauge.h"
 #include "alt-indicator.h"
+#include "resource-manager.h"
 #include "sdl-pcf/SDL_pcf.h"
 #include "text-gauge.h"
 #include "vertical-stair.h"
@@ -343,13 +344,7 @@ int main(int argc, char **argv)
     hud = basic_hud_new();
 
     txt = text_gauge_new("HI THERE", true, 300, 30);
-    PCF_Font *font = PCF_OpenFont("ter-x24n.pcf.gz");
-    if(!font){
-        printf("%s\n", SDL_GetError());
-        exit(EXIT_FAILURE);
-    }
-    text_gauge_build_static_font(txt, font, &SDL_WHITE, 2, PCF_ALPHA, PCF_DIGITS);
-    PCF_CloseFont(font);
+    text_gauge_build_static_font(txt, resource_manager_get_font(TERMINUS_24), &SDL_WHITE, 2, PCF_ALPHA, PCF_DIGITS);
 
     text_gauge_set_color(txt, SDL_WHITE, TEXT_COLOR);
     text_gauge_set_color(txt, SDL_BLACK, BACKGROUND_COLOR);
@@ -443,6 +438,7 @@ int main(int argc, char **argv)
     attitude_indicator_free(ai);
     basic_hud_free(hud);
     text_gauge_free(txt);
+    resource_manager_shutdown();
     SDL_DestroyWindow(window);
     TTF_Quit();
     SDL_Quit();

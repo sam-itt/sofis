@@ -17,6 +17,7 @@
 #include "alt-group.h"
 #include "airspeed-indicator.h"
 #include "attitude-indicator.h"
+#include "resource-manager.h"
 
 #include "roll-slip-gauge.h"
 
@@ -261,6 +262,7 @@ int main(int argc, char **argv)
     basic_hud_free(hud);
     flightgear_connector_free(fglink);
 
+    resource_manager_shutdown();
     SDL_DestroyWindow(window);
     TTF_Quit();
     SDL_Quit();

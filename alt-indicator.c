@@ -9,6 +9,7 @@
 #include "base-gauge.h"
 #include "buffered-gauge.h"
 #include "misc.h"
+#include "resource-manager.h"
 #include "sdl-colors.h"
 #include "sdl-pcf/SDL_pcf.h"
 #include "text-gauge.h"
@@ -34,8 +35,6 @@ AltIndicator *alt_indicator_new(void)
 
 AltIndicator *alt_indicator_init(AltIndicator *self)
 {
-    PCF_Font *tmp;
-
     buffered_gauge_init(BUFFERED_GAUGE(self), &alt_indicator_ops, 68, 240+20);
 
     /*TODO: Change size to size - 20, when size becomes a parameter !
@@ -67,11 +66,8 @@ AltIndicator *alt_indicator_init(AltIndicator *self)
 
     buffered_gauge_clear(BUFFERED_GAUGE(self),NULL);
 
-    tmp = PCF_OpenFont("ter-x16n.pcf.gz");
-    if(!tmp) return NULL; //TODO: Free all above allocated resources+find a pattern for that case
-
     self->talt_txt = text_gauge_new(NULL, true, 68, 20);
-    text_gauge_build_static_font(self->talt_txt, tmp, &SDL_WHITE, 1, PCF_DIGITS);
+    text_gauge_build_static_font(self->talt_txt, resource_manager_get_font(TERMINUS_16), &SDL_WHITE, 1, PCF_DIGITS);
     buffered_gauge_set_buffer(BUFFERED_GAUGE(self->talt_txt),
         buffered_gauge_get_view(BUFFERED_GAUGE(self)),
         0,
@@ -100,8 +96,11 @@ AltIndicator *alt_indicator_init(AltIndicator *self)
         buffered_gauge_get_view(BUFFERED_GAUGE(self))->format->Amask
     );
     if(!self->gps_flag) return NULL; //TODO: Free all above allocated resources+find a pattern for that case
-    view_font_draw_text(self->gps_flag, NULL, "GPS", tmp, SDL_URED(self->gps_flag), SDL_UBLACK(self->gps_flag));
-    PCF_CloseFont(tmp);
+    view_font_draw_text(self->gps_flag,
+        NULL, "GPS",
+        resource_manager_get_font(TERMINUS_16),
+        SDL_URED(self->gps_flag), SDL_UBLACK(self->gps_flag)
+    );
 
     return self;
 }

@@ -6,6 +6,7 @@
 #include "airspeed-page-descriptor.h"
 #include "base-gauge.h"
 #include "buffered-gauge.h"
+#include "resource-manager.h"
 #include "sdl-colors.h"
 #include "sdl-pcf/SDL_pcf.h"
 #include "text-gauge.h"
@@ -36,7 +37,6 @@ AirspeedIndicator *airspeed_indicator_init(AirspeedIndicator *self, speed_t v_so
 {
     AirspeedPageDescriptor *descriptor;
     DigitBarrel *db;
-    PCF_Font *tmp;
 
     buffered_gauge_init(BUFFERED_GAUGE(self), &airspeed_indicator_ops, 68, 240+20);
 
@@ -64,18 +64,18 @@ AirspeedIndicator *airspeed_indicator_init(AirspeedIndicator *self, speed_t v_so
 
     buffered_gauge_clear(BUFFERED_GAUGE(self),NULL);
 
-    tmp = PCF_OpenFont("ter-x12n.pcf.gz");
-    if(!tmp) return NULL; //TODO: Free all above allocated resources+find a pattern for that case
-
     self->txt = text_gauge_new(NULL, true, 68, 21);
-    text_gauge_build_static_font(self->txt, tmp, &SDL_WHITE, 2, "TASKT-", PCF_DIGITS);
+    text_gauge_build_static_font(self->txt,
+        resource_manager_get_font(TERMINUS_12),
+        &SDL_WHITE,
+        2, "TASKT-", PCF_DIGITS
+    );
     buffered_gauge_set_buffer(BUFFERED_GAUGE(self->txt),
         buffered_gauge_get_view(BUFFERED_GAUGE(self)),
         0,
         BASE_GAUGE(self)->h - 20 - 1
     );
     text_gauge_set_color(self->txt, SDL_BLACK, BACKGROUND_COLOR);
-    PCF_CloseFont(tmp);
 
     airspeed_indicator_set_value(self, 0.0);
     return self;
