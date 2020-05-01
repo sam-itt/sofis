@@ -3,8 +3,6 @@
 
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_image.h>
-#include <SDL2/SDL_ttf.h>
-#include <SDL2/SDL2_rotozoom.h>
 
 #include "SDL_rect.h"
 #include "SDL_render.h"
@@ -14,7 +12,9 @@
 #include "base-gauge.h"
 #include "buffered-gauge.h"
 #include "misc.h"
+#include "resource-manager.h"
 #include "sdl-colors.h"
+#include "sdl-pcf/SDL_pcf.h"
 
 #define sign(x) (((x) > 0) - ((x) < 0))
 
@@ -231,7 +231,7 @@ SDL_Surface *attitude_indicator_draw_ball(AttitudeIndicator *self)
     return surface;
 }
 
-SDL_Surface *attitude_indicator_draw_ruler(AttitudeIndicator *self, int size, int font_size)
+SDL_Surface *attitude_indicator_draw_ruler(AttitudeIndicator *self, int size, PCF_Font *font)
 {
     SDL_Surface *rv;
 	Uint32 *pixels;
@@ -297,15 +297,20 @@ SDL_Surface *attitude_indicator_draw_ruler(AttitudeIndicator *self, int size, in
 	}
     SDL_UnlockSurface(rv);
 
-	TTF_Font *font;
-    SDL_Surface *text;
 	char number[4]; /*Three digits plus \0*/
 	uintf8_t current_grad;
 	SDL_Rect left, right;
+    Uint32 text_w;
+    Uint32 tcol;
 
-	font  = TTF_OpenFont("TerminusTTF-4.47.0.ttf", font_size);
+    tcol = SDL_UWHITE(rv);
+
 	start_x = middle_x - (57-1)/2;
 	end_x = middle_x + (57-1)/2;
+
+    int empty_top_pix = font->xfont.fontPrivate->metrics->metrics.ascent -  font->xfont.fontPrivate->ink_metrics->ascent;
+    int glyph_middle =  empty_top_pix + round(font->xfont.fontPrivate->ink_metrics->ascent/2.0);
+
 
 	/*Go upwards*/
 	current_grad = 0;
@@ -313,16 +318,15 @@ SDL_Surface *attitude_indicator_draw_ruler(AttitudeIndicator *self, int size, in
 		if((y-middle_y) % 36 == 0){ // 10 graduation
 			if(current_grad > 0){
 				snprintf(number, 4, "%d", current_grad);
-                text = TTF_RenderText_Solid(font, number, SDL_WHITE);
 
-				left.x = middle_x - (57-1)/2 - (text->w + 4);
+                PCF_FontGetSizeRequest(font, number, &text_w, NULL);
+
+				left.x = middle_x - (57-1)/2 - (text_w + 4);
 				right.x = middle_x + (57-1)/2 + (4);
-				left.y = y - round(text->h/2.0);
+				left.y = y - glyph_middle;
 				right.y = left.y;
-
-				SDL_BlitSurface(text, NULL, rv, &left);
-				SDL_BlitSurface(text, NULL, rv, &right);
-				SDL_FreeSurface(text);
+                PCF_FontWrite(font, number, tcol, rv, &left);
+                PCF_FontWrite(font, number, tcol, rv, &right);
 			}
 
 			current_grad += 10;
@@ -335,21 +339,20 @@ SDL_Surface *attitude_indicator_draw_ruler(AttitudeIndicator *self, int size, in
 		if((y-middle_y) % 36 == 0){ // 10 graduation
 			if(current_grad > 0){
 				snprintf(number, 4, "%d", current_grad);
-                text = TTF_RenderText_Solid(font, number, SDL_WHITE);
 
-				left.x = middle_x - (57-1)/2 - (text->w + 4);
+                PCF_FontGetSizeRequest(font, number, &text_w, NULL);
+
+				left.x = middle_x - (57-1)/2 - (text_w + 4);
 				right.x = middle_x + (57-1)/2 + (4);
-				left.y = y - round(text->h/2.0);
+				left.y = y - glyph_middle;
 				right.y = left.y;
 
-				SDL_BlitSurface(text, NULL, rv, &left);
-				SDL_BlitSurface(text, NULL, rv, &right);
-				SDL_FreeSurface(text);
+                PCF_FontWrite(font, number, tcol, rv, &left);
+                PCF_FontWrite(font, number, tcol, rv, &right);
 			}
 			current_grad += 10;
 		}
 	}
-	TTF_CloseFont(font);
 
     return rv;
 }
@@ -413,7 +416,7 @@ static SDL_Surface *attitude_indicator_get_etched_ball(AttitudeIndicator *self)
 		SDL_Rect ruler_pos;
 
         ball = attitude_indicator_draw_ball(self);
-        ruler = attitude_indicator_draw_ruler(self, self->size, 12);
+        ruler = attitude_indicator_draw_ruler(self, self->size, resource_manager_get_font(TERMINUS_12));
 
 		self->etched_ball = SDL_CreateRGBSurfaceWithFormat(0, self->ball_all.w, self->ball_all.h, 32, SDL_PIXELFORMAT_RGBA32);
 
