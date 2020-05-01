@@ -3,7 +3,6 @@
 #include <stdbool.h>
 
 #include <SDL2/SDL.h>
-#include <SDL2/SDL_ttf.h>
 
 #include "animated-gauge.h"
 #include "base-gauge.h"
@@ -253,12 +252,6 @@ int main(int argc, char **argv)
         return 1;
     }
 
-    if( TTF_Init() == -1 ){
-        printf("TTF_Init: %s\n", TTF_GetError());
-        exit(EXIT_FAILURE);
-    }
-
-
     window = SDL_CreateWindow(
                 "hello_sdl2",
                 SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED,
@@ -444,7 +437,6 @@ int main(int argc, char **argv)
     text_gauge_free(txt);
     resource_manager_shutdown();
     SDL_DestroyWindow(window);
-    TTF_Quit();
     SDL_Quit();
     return 0;
 
