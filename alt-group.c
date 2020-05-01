@@ -3,6 +3,7 @@
 
 #include "alt-group.h"
 #include "base-gauge.h"
+#include "resource-manager.h"
 
 static void alt_group_render(AltGroup *self, Uint32 dt, SDL_Surface *destination, SDL_Rect *location);
 static BaseGaugeOps alt_group_ops = {
@@ -25,7 +26,9 @@ AltGroup *alt_group_new(void)
 AltGroup *alt_group_init(AltGroup *self)
 {
     self->altimeter = alt_indicator_new();
-    self->vsi = vertical_stair_new("vs-bg.png","vs-cursor.png", 16);
+    self->vsi = vertical_stair_new("vs-bg.png","vs-cursor.png",
+        resource_manager_get_font(TERMINUS_16)
+    );
 
     if(!self->vsi || !self->altimeter)
         goto bail;

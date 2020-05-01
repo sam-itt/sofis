@@ -314,7 +314,7 @@ int main(int argc, char **argv)
     alt_ind = alt_indicator_new();
     alt_indicator_set_value(alt_ind, alt);
 
-    stair = vertical_stair_new("vs-bg.png","vs-cursor.png", 16);
+    stair = vertical_stair_new("vs-bg.png","vs-cursor.png", resource_manager_get_font(TERMINUS_16));
     animated_gauge_set_value(ANIMATED_GAUGE(stair), vs);
 
     group = alt_group_new();

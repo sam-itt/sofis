@@ -2,11 +2,12 @@
 #include <stdlib.h>
 
 #include <SDL2/SDL_image.h>
-#include <SDL2/SDL_ttf.h>
 
 #include "SDL_surface.h"
 #include "animated-gauge.h"
 #include "buffered-gauge.h"
+#include "resource-manager.h"
+#include "sdl-pcf/SDL_pcf.h"
 #include "vertical-stair.h"
 #include "sdl-colors.h"
 
@@ -18,11 +19,12 @@ static AnimatedGaugeOps vertical_stair_ops = {
 
 
 
-VerticalStairCursor *vertical_stair_cursor_init(VerticalStairCursor *self, const char *filename, int font_size)
+VerticalStairCursor *vertical_stair_cursor_init(VerticalStairCursor *self, const char *filename, PCF_Font *font)
 {
     self->bg = IMG_Load(filename);
     self->value = NAN;
-    self->font  = TTF_OpenFont("TerminusTTF-4.47.0.ttf", font_size);
+    self->font = font;
+    self->font->xfont.refcnt++;
     if(!self->bg || !self->font)
         return NULL;
     return self;
@@ -33,7 +35,7 @@ void vertical_stair_cursor_dispose(VerticalStairCursor *self)
     if(self->bg)
         SDL_FreeSurface(self->bg);
     if(self->font)
-        TTF_CloseFont(self->font);
+        PCF_CloseFont(self->font);
 }
 
 void vertical_stair_cursor_set_value(VerticalStairCursor *self, float value)
@@ -50,11 +52,9 @@ void vertical_stair_cursor_set_value(VerticalStairCursor *self, float value)
 
         ivalue = round(value);
         snprintf(number, 6, "% -d", ivalue);
-        text = TTF_RenderText_Solid(self->font, number, SDL_WHITE);
 
-        dst = (SDL_Rect){7,-1,0,0};
-        SDL_BlitSurface(text, NULL, self->bg, &dst);
-        SDL_FreeSurface(text);
+        dst = (SDL_Rect){7, 1,0,0};
+        PCF_FontWrite(self->font, number, SDL_UWHITE(self->bg), self->bg, &dst); /*TODO: StaticFont ?*/
 
         self->value = value;
     }
@@ -62,13 +62,13 @@ void vertical_stair_cursor_set_value(VerticalStairCursor *self, float value)
 }
 
 
-VerticalStair *vertical_stair_new(const char *bg_img, const char *cursor_img, int cfont_size)
+VerticalStair *vertical_stair_new(const char *bg_img, const char *cursor_img, PCF_Font *font)
 {
     VerticalStair *self;
 
     self = calloc(1, sizeof(VerticalStair));
     if(self){
-        if(!vertical_stair_init(self, bg_img, cursor_img, cfont_size)){
+        if(!vertical_stair_init(self, bg_img, cursor_img, font)){
             free(self);
             return NULL;
         }
@@ -77,7 +77,7 @@ VerticalStair *vertical_stair_new(const char *bg_img, const char *cursor_img, in
 }
 
 
-VerticalStair *vertical_stair_init(VerticalStair *self, const char *bg_img, const char *cursor_img, int cfont_size)
+VerticalStair *vertical_stair_init(VerticalStair *self, const char *bg_img, const char *cursor_img, PCF_Font *font)
 {
 
     self->scale.ruler = IMG_Load(bg_img);
@@ -85,7 +85,7 @@ VerticalStair *vertical_stair_init(VerticalStair *self, const char *bg_img, cons
     self->scale.start = -2279;
     self->scale.end = 2279;
 
-    vertical_stair_cursor_init(&self->cursor, cursor_img, cfont_size);
+    vertical_stair_cursor_init(&self->cursor, cursor_img, font);
     animated_gauge_init(ANIMATED_GAUGE(self), ANIMATED_GAUGE_OPS(&vertical_stair_ops), self->cursor.bg->w, self->scale.ruler->h);
 
     return self;
