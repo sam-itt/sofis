@@ -2,7 +2,9 @@
 #include <stdlib.h>
 #include <assert.h>
 
+#include "SDL_pixels.h"
 #include "SDL_surface.h"
+#include "sdl-pcf/SDL_pcf.h"
 #include "view.h"
 #include "sdl-colors.h"
 
@@ -108,6 +110,31 @@ void view_draw_text(SDL_Surface *destination, SDL_Rect *location, const char *st
     SDL_BlitSurface(text, NULL, destination, &centered);
     SDL_FreeSurface(text);
 }
+
+
+void view_font_draw_text(SDL_Surface *destination, SDL_Rect *location, const char *string, PCF_Font *font, Uint32 text_color, Uint32 bg_color)
+{
+    SDL_Rect centered;
+    Uint32 text_w,text_h;
+
+    location = location ? location : &(SDL_Rect){0, 0, destination->w, destination->h};
+
+    SDL_FillRect(destination, location, bg_color);
+
+    PCF_FontGetSizeRequest(font, string, &text_w, &text_h);
+
+    /*TODO: Replace this by a centeralized centering macro/function*/
+    centered = (SDL_Rect){
+        .x = location->x + round(location->w/2.0) - round(text_w/2.0) -1,
+        .y = location->y + round(location->h/2.0) - round(text_h/2.0) -1,
+        /*Note: w and h are ignored by SDL_BlitSurface*/
+        .w = location->w,
+        .h = location->h
+    };
+
+    PCF_FontWrite(font, string, text_color, destination, &centered);
+}
+
 
 /**
  * Draw a "rubis" (the location where to current value

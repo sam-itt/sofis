@@ -8,6 +8,7 @@ LDFLAGS=-lz -lm `pkg-config sdl2 SDL2_image SDL2_ttf --libs` -Wl,--as-needed
 EXEC=test-sdl
 #SRC= $(wildcard $(SRCDIR)/*.c)
 SRC= $(filter-out $(SRCDIR)/main.c $(SRCDIR)/testbench.c, $(wildcard $(SRCDIR)/*.c))
+SRC+= sdl-pcf/SDL_GzRW.c sdl-pcf/SDL_pcf.c sdl-pcf/pcfread.c sdl-pcf/utilbitmap.c
 OBJ= $(SRC:.c=.o)
 MAIN_OBJ= main.o
 TEST_OBJ=testbench.o

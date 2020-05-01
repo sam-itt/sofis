@@ -13,6 +13,8 @@
 
 #include "odo-gauge.h"
 #include "alt-indicator.h"
+#include "sdl-pcf/SDL_pcf.h"
+#include "text-gauge.h"
 #include "vertical-stair.h"
 #include "alt-group.h"
 #include "airspeed-indicator.h"
@@ -38,7 +40,7 @@ AltGroup *group = NULL;
 AirspeedIndicator *asi = NULL;
 AttitudeIndicator *ai = NULL;
 RollSlipGauge *rsg = NULL;
-
+TextGauge *txt = NULL;
 
 float gval = 0.0;
 //float alt = 1150.0;
@@ -50,6 +52,8 @@ float ias = 10.0;
 //float pitch = 2.19;
 float pitch = 0.0;
 float roll = 0.0;
+char txtbuf[256];
+
 #define ODO_INC 1
 #define VARIO_INC 100
 #define IAS_INC 1
@@ -108,6 +112,8 @@ bool handle_keyboard(SDL_KeyboardEvent *event, Uint32 elapsed)
                 //alt_group_set_altitude(group, alt);
                 alt_group_set_values(group, alt, vs);
                 basic_hud_set(hud, 1, ALTITUDE, alt);
+                sprintf(txtbuf, "Altitude: %0.2f", alt);
+                text_gauge_set_value(txt, txtbuf);
             }
             break;
         case SDLK_DOWN:
@@ -120,6 +126,8 @@ bool handle_keyboard(SDL_KeyboardEvent *event, Uint32 elapsed)
                 //alt_group_set_altitude(group, alt);
                 alt_group_set_values(group, alt, vs);
                 basic_hud_set(hud, 1, ALTITUDE, alt);
+                sprintf(txtbuf, "Altitude: %0.2f", alt);
+                text_gauge_set_value(txt, txtbuf);
             }
             break;
         case SDLK_l:
@@ -334,6 +342,19 @@ int main(int argc, char **argv)
 
     hud = basic_hud_new();
 
+    txt = text_gauge_new("HI THERE", true, 300, 30);
+    PCF_Font *font = PCF_OpenFont("ter-x24n.pcf.gz");
+    if(!font){
+        printf("%s\n", SDL_GetError());
+        exit(EXIT_FAILURE);
+    }
+    text_gauge_build_static_font(txt, font, &SDL_WHITE, 2, PCF_ALPHA, PCF_DIGITS);
+    PCF_CloseFont(font);
+
+    text_gauge_set_color(txt, SDL_WHITE, TEXT_COLOR);
+    text_gauge_set_color(txt, SDL_BLACK, BACKGROUND_COLOR);
+    SDL_Rect txtrect = {SCREEN_WIDTH/2.0, SCREEN_HEIGHT/2.0,0,0};
+
     SDL_Rect airect = {439,50,0,0};
     SDL_Rect vrect = {96,70,0,0};
     SDL_Rect whole = {0,0,640,480};
@@ -366,12 +387,14 @@ int main(int argc, char **argv)
 //        base_gauge_render(BASE_GAUGE(ai->rollslip), elapsed);
 //        base_gauge_render(BASE_GAUGE(ai), elapsed, screenSurface, NULL);
 
-        base_gauge_render(BASE_GAUGE(hud), elapsed, screenSurface, &whole);
+//        base_gauge_render(BASE_GAUGE(hud), elapsed, screenSurface, &whole);
+        base_gauge_render(BASE_GAUGE(txt), elapsed, screenSurface, &txtrect);
         SDL_UpdateWindowSurface(window);
-
+#if 1
         if(elapsed < 200){
             SDL_Delay(200 - elapsed);
         }
+#endif
         if(acc >= 1000){
             if(ANIMATED_GAUGE(ladder)->value != oldv[0]){
                 printf("Ladder value: %f\n",ANIMATED_GAUGE(ladder)->value);
@@ -419,6 +442,7 @@ int main(int argc, char **argv)
     roll_slip_gauge_free(rsg);
     attitude_indicator_free(ai);
     basic_hud_free(hud);
+    text_gauge_free(txt);
     SDL_DestroyWindow(window);
     TTF_Quit();
     SDL_Quit();

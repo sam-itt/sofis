@@ -7,6 +7,7 @@
 #include "base-gauge.h"
 #include "buffered-gauge.h"
 #include "sdl-colors.h"
+#include "sdl-pcf/SDL_pcf.h"
 #include "view.h"
 
 /*BufferGauge implements BaseGauge::render and triggers the actual
@@ -141,6 +142,18 @@ void buffered_gauge_draw_rubis(BufferedGauge *self, int y, SDL_Color *color, int
     view_draw_rubis(tview, y, color, pskip, &area);
 }
 
+void buffered_gauge_clear_color(BufferedGauge *self, Uint32 color)
+{
+    SDL_Rect area;
+    SDL_Surface *tview;
+
+    buffered_gauge_get_area(self, &area);
+
+    tview = buffered_gauge_get_view(self);
+    SDL_FillRect(tview, &area, color);
+}
+
+
 void buffered_gauge_clear(BufferedGauge *self, SDL_Color *color)
 {
     SDL_Rect area;
@@ -189,6 +202,65 @@ void buffered_gauge_draw_text(BufferedGauge *self, SDL_Rect *location,
 
     view_draw_text(tview, &farea, string, font, text_color, bg_color);
 }
+
+void buffered_gauge_static_font_draw_text(BufferedGauge *self, SDL_Rect *location,
+                              const char *string, PCF_StaticFont *font, Uint32 bg_color)
+{
+    SDL_Rect farea;
+    SDL_Surface *tview;
+    SDL_Rect glyph, cursor;
+    Uint32 text_w,text_h;
+    int len;
+
+    if(location){
+        buffered_gauge_offset(self, location, &farea);
+    }else{
+        buffered_gauge_get_area(self, &farea);
+    }
+    tview = buffered_gauge_get_view(self);
+
+    SDL_FillRect(tview, &farea, bg_color);
+
+    PCF_StaticFontGetSizeRequest(font, string, &text_w, &text_h);
+    len = strlen(string);
+
+    cursor = (SDL_Rect){
+        /*TODO: Replace this centering code by centeralized macro/function*/
+        .x = farea.x + round(farea.w/2.0) - round(text_w/2.0) -1,
+        .y = farea.y + round(farea.h/2.0) - round(text_h/2.0) -1,
+        .w = font->metrics.characterWidth,
+        .h = font->metrics.ascent + font->metrics.descent
+    };
+
+    for(int i = 0; i < len; i++){
+        //TODO: Remove the test, and draw regardless when default glyph gets implemented
+        if(PCF_StaticFontGetCharRect(font, string[i], &glyph)){
+            SDL_BlitSurface(font->raster,&glyph,tview, &cursor);
+
+        }
+        cursor.x += font->metrics.characterWidth;
+    }
+}
+
+
+
+void buffered_gauge_font_draw_text(BufferedGauge *self, SDL_Rect *location,
+                              const char *string, PCF_Font *font,
+                              Uint32 text_color, Uint32 bg_color)
+{
+    SDL_Rect farea;
+    SDL_Surface *tview;
+
+    if(location){
+        buffered_gauge_offset(self, location, &farea);
+    }else{
+        buffered_gauge_get_area(self, &farea);
+    }
+    tview = buffered_gauge_get_view(self);
+
+    view_font_draw_text(tview, &farea, string, font, text_color, bg_color);
+}
+
 
 SDL_Surface *buffer_gauge_build_view(BufferedGauge *self)
 {
