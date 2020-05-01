@@ -1,24 +1,24 @@
 #ifndef ALT_INDICATOR_H
 #define ALT_INDICATOR_H
 
-#include <SDL2/SDL_ttf.h>
-
 #include "buffered-gauge.h"
 #include "ladder-gauge.h"
 #include "odo-gauge.h"
+#include "text-gauge.h"
 
 typedef enum {ALT_SRC_GPS,ALT_SRC_BARO} AltSource;
 
 typedef struct{
     BufferedGauge super;
 
-    TTF_Font *font;
-
     LadderGauge *ladder;
     OdoGauge *odo;
+    TextGauge *talt_txt; /*Target altitude*/
+    TextGauge *qnh_txt;
+    SDL_Surface *gps_flag;
 
     AltSource src;
-    float qnh;
+    int qnh;
     int target_alt;
 }AltIndicator;
 

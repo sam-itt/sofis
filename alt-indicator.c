@@ -2,6 +2,7 @@
 #include <stdlib.h>
 
 #include "SDL_rect.h"
+#include "SDL_surface.h"
 #include "alt-indicator.h"
 #include "alt-ladder-page-descriptor.h"
 #include "animated-gauge.h"
@@ -9,6 +10,8 @@
 #include "buffered-gauge.h"
 #include "misc.h"
 #include "sdl-colors.h"
+#include "sdl-pcf/SDL_pcf.h"
+#include "text-gauge.h"
 
 static void alt_indicator_render(AltIndicator *self, Uint32 dt);
 static BufferedGaugeOps alt_indicator_ops = {
@@ -31,6 +34,8 @@ AltIndicator *alt_indicator_new(void)
 
 AltIndicator *alt_indicator_init(AltIndicator *self)
 {
+    PCF_Font *tmp;
+
     buffered_gauge_init(BUFFERED_GAUGE(self), &alt_indicator_ops, 68, 240+20);
 
     /*TODO: Change size to size - 20, when size becomes a parameter !
@@ -61,7 +66,42 @@ AltIndicator *alt_indicator_init(AltIndicator *self)
     );
 
     buffered_gauge_clear(BUFFERED_GAUGE(self),NULL);
-    self->font  = TTF_OpenFont("TerminusTTF-4.47.0.ttf", 16);
+
+    tmp = PCF_OpenFont("ter-x16n.pcf.gz");
+    if(!tmp) return NULL; //TODO: Free all above allocated resources+find a pattern for that case
+
+    self->talt_txt = text_gauge_new(NULL, true, 68, 20);
+    text_gauge_build_static_font(self->talt_txt, tmp, &SDL_WHITE, 1, PCF_DIGITS);
+    buffered_gauge_set_buffer(BUFFERED_GAUGE(self->talt_txt),
+        buffered_gauge_get_view(BUFFERED_GAUGE(self)),
+        0,
+        0
+    );
+    text_gauge_set_color(self->talt_txt, SDL_BLACK, BACKGROUND_COLOR);
+    text_gauge_set_value(self->talt_txt, "0");
+
+    self->qnh_txt = text_gauge_new(NULL, true, 68, 21);
+    /*TODO: Font+StaticFont sharing using ref/unref*/
+    text_gauge_set_static_font(self->qnh_txt, self->talt_txt->font.static_font);
+    buffered_gauge_set_buffer(BUFFERED_GAUGE(self->qnh_txt),
+        buffered_gauge_get_view(BUFFERED_GAUGE(self)),
+        0,
+        BASE_GAUGE(self)->h - 20 -2
+    );
+    text_gauge_set_color(self->talt_txt, SDL_BLACK, BACKGROUND_COLOR);
+
+    self->gps_flag = SDL_CreateRGBSurface(0,
+        68 - 2,
+        21,
+        buffered_gauge_get_view(BUFFERED_GAUGE(self))->format->BitsPerPixel,
+        buffered_gauge_get_view(BUFFERED_GAUGE(self))->format->Rmask,
+        buffered_gauge_get_view(BUFFERED_GAUGE(self))->format->Gmask,
+        buffered_gauge_get_view(BUFFERED_GAUGE(self))->format->Bmask,
+        buffered_gauge_get_view(BUFFERED_GAUGE(self))->format->Amask
+    );
+    if(!self->gps_flag) return NULL; //TODO: Free all above allocated resources+find a pattern for that case
+    view_font_draw_text(self->gps_flag, NULL, "GPS", tmp, SDL_URED(self->gps_flag), SDL_UBLACK(self->gps_flag));
+    PCF_CloseFont(tmp);
 
     return self;
 }
@@ -70,7 +110,9 @@ void alt_indicator_free(AltIndicator *self)
 {
     ladder_gauge_free(self->ladder);
     odo_gauge_free(self->odo);
-    TTF_CloseFont(self->font);
+    text_gauge_free(self->talt_txt);
+    text_gauge_free(self->qnh_txt);
+    SDL_FreeSurface(self->gps_flag);
     buffered_gauge_dispose(BUFFERED_GAUGE(self));
     free(self);
 }
@@ -86,84 +128,40 @@ bool alt_indicator_set_value(AltIndicator *self, float value)
 /*HPa*/
 void alt_indicator_set_qnh(AltIndicator *self, float value)
 {
-    /* This is temporary during gfx dev. The real feature will damage
-     * the gauge by changing the actual value*/
-    if(self->qnh != value){
-        self->qnh = value;
-        BUFFERED_GAUGE(self->ladder)->damaged = true;
-        BUFFERED_GAUGE(self)->damaged = true; /*Will be replaced by a global system*/
+    char number[5]; //4 digits, final 0x0
+    int ivalue;
+
+    ivalue = round(value);
+
+    if(self->qnh != ivalue){
+        self->qnh = ivalue;
+        snprintf(number, 5, "%04d", self->qnh);
+        text_gauge_set_value(self->qnh_txt, number);
     }
 }
-
-static void alt_indicator_draw_qnh(AltIndicator *self)
-{
-    char number[6]; //5 digits plus \0
-    SDL_Rect location, oloc;
-    SDL_Color color;
-
-    oloc = (SDL_Rect){
-        .x = 0,
-        .y = BASE_GAUGE(self)->h - 20 -2,
-        .h = 21,
-        .w = BASE_GAUGE(self)->w
-    };
-
-    buffered_gauge_draw_outline(BUFFERED_GAUGE(self), &(SDL_WHITE), &oloc);
-
-    location.x = oloc.x + 1;
-    location.y = oloc.y + 1;
-    location.h = oloc.h - 1;
-    location.w = oloc.w - 2;
-
-
-    if(self->src != ALT_SRC_GPS){
-        snprintf(number, 6, "%0.2f", self->qnh);
-        color = SDL_WHITE;
-    }else{
-        snprintf(number, 6, "GPS");
-        color = SDL_RED;
-    }
-    buffered_gauge_draw_text(BUFFERED_GAUGE(self), &location, number, self->font, &color, &SDL_BLACK);
-}
-
-static void alt_indicator_draw_target_altitude(AltIndicator *self)
-{
-    char number[6]; //5 digits plus \0
-    SDL_Rect location, oloc;
-
-    oloc = (SDL_Rect){
-        .x = 0,
-        .y = 0,
-        .h = 20,
-        .w = BASE_GAUGE(self)->w
-    };
-
-    buffered_gauge_draw_outline(BUFFERED_GAUGE(self),&(SDL_WHITE), &oloc);
-
-    location.x = oloc.x + 1;
-    location.y = oloc.y + 1;
-    location.h = oloc.h - 1;
-    location.w = oloc.w - 2;
-
-    if(self->target_alt >= 0){
-        snprintf(number, 6, "%d", self->target_alt);
-    }else{
-        snprintf(number, 6, "----");
-    }
-    buffered_gauge_draw_text(BUFFERED_GAUGE(self), &location, number, self->font, &SDL_WHITE, &SDL_BLACK);
-}
-
-
 
 static void alt_indicator_render(AltIndicator *self, Uint32 dt)
 {
     buffered_gauge_clear(BUFFERED_GAUGE(self), NULL);
+    buffered_gauge_paint_buffer(BUFFERED_GAUGE(self->talt_txt), dt);
+
     buffered_gauge_paint_buffer(BUFFERED_GAUGE(self->ladder), dt);
-    alt_indicator_draw_qnh(self);
-    alt_indicator_draw_target_altitude(self);
+    buffered_gauge_paint_buffer(BUFFERED_GAUGE(self->odo), dt);
+
+    if(self->src != ALT_SRC_GPS){
+        buffered_gauge_paint_buffer(BUFFERED_GAUGE(self->qnh_txt), dt);
+    }else{
+        buffered_gauge_draw_outline(BUFFERED_GAUGE(self->qnh_txt), &SDL_WHITE, NULL);
+        buffered_gauge_blit(BUFFERED_GAUGE(self), self->gps_flag, NULL, &(SDL_Rect){
+            .x = 0 + 1,
+            .y = BASE_GAUGE(self)->h - 20 -2 + 1,
+            .h = 21 - 1,
+            .w = BASE_GAUGE(self)->w - 2
+        });
+    }
+
     buffered_gauge_draw_outline(BUFFERED_GAUGE(self), &SDL_WHITE, NULL);
 
-    buffered_gauge_paint_buffer(BUFFERED_GAUGE(self->odo), dt);
     if(animated_gauge_moving(ANIMATED_GAUGE(self->ladder)) || animated_gauge_moving(ANIMATED_GAUGE(self->odo)))
         BUFFERED_GAUGE(self)->damaged = true;
 }
