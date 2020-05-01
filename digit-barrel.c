@@ -1,21 +1,20 @@
 #include "buffered-gauge.h"
+#include "sdl-pcf/SDL_pcf.h"
 #define _GNU_SOURCE
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
 
-#include <SDL2/SDL_ttf.h>
-
 #include "digit-barrel.h"
 #include "sdl-colors.h"
 
-DigitBarrel *digit_barrel_new(uintf8_t font_size, float start, float end, float step)
+DigitBarrel *digit_barrel_new(PCF_Font *font, float start, float end, float step)
 {
     DigitBarrel *self;
 
     self = calloc(1, sizeof(DigitBarrel));
     if(self){
-        if(!digit_barrel_init(self, font_size, start, end, step)){
+        if(!digit_barrel_init(self, font, start, end, step)){
             free(self);
             return NULL;
         }
@@ -32,16 +31,13 @@ DigitBarrel *digit_barrel_new(uintf8_t font_size, float start, float end, float 
  * @param end: last "full" value. Should be 9.999, 99, etc. To account for rotation
  * @param step: increment between two values (1,15, etc.)
  */
-DigitBarrel *digit_barrel_init(DigitBarrel *self, uintf8_t font_size, float start, float end, float step)
+DigitBarrel *digit_barrel_init(DigitBarrel *self, PCF_Font *font, float start, float end, float step)
 {
-    int minx,maxx;
-    int miny,maxy;
-    int advance;
+    Uint32 advance, font_height;
     int vheight, vwidth;
     int ndigits;
     float maxvalue;
     float minv, maxv;
-    TTF_Font *font;
     SDL_Surface *tmp;
     char *number;
     SDL_Rect cursor; /*write cursor (into VERTICAL_SPLIT(self)->ruler)*/
@@ -61,26 +57,24 @@ DigitBarrel *digit_barrel_init(DigitBarrel *self, uintf8_t font_size, float star
     number = alloca(sizeof(char)*(ndigits+1)); /*There shouldn't be that much digits*/
     snprintf(fmt, 10, "%%0%dd", ndigits);
 
-    font = TTF_OpenFont("TerminusTTF-4.47.0.ttf", font_size);
-    TTF_GlyphMetrics(font,'0',&minx,&maxx, &miny, &maxy, &advance);
-    vheight = round((fabs(end-start)) / step)*font_size; /*end should be .9999 so there is no need for the +1*/
+    PCF_FontGetSizeRequest(font, "0", &advance, &font_height);
+    vheight = round((fabs(end-start)) / step)*font_height; /*end should be .9999 so there is no need for the +1*/
     vwidth = advance * ndigits;
     strip->ruler = SDL_CreateRGBSurface(0, vwidth, vheight, 32, 0, 0, 0, 0);
 
     minv = (start < end) ? start : end;
     maxv = (start > end) ? start : end;
-    cursor = (SDL_Rect){0,0,strip->ruler->w,font_size};
-    fcursor = (SDL_Rect){0,0,vwidth,font_size};
+    cursor = (SDL_Rect){0,0,strip->ruler->w, font_height};
+    fcursor = (SDL_Rect){0,0,vwidth, font_height};
+    Uint32 white = SDL_UWHITE(strip->ruler);
     for(float i = minv; i < maxv; i += step){
         snprintf(number, 6, fmt, (int)round(i));
-        tmp = TTF_RenderText_Solid(font, number, SDL_WHITE);
-        SDL_BlitSurface(tmp, &fcursor, strip->ruler, &cursor);
+        PCF_FontWrite(font, number, white, strip->ruler, &cursor);
         cursor.y += cursor.h;
-        SDL_FreeSurface(tmp);
+        cursor.x = 0; /*PCF_FontWrite advances the cursor*/
     }
-    TTF_CloseFont(font);
 
-    self->symbol_h = font_size;
+    self->symbol_h = font_height;
     self->fei = round((self->symbol_h-1)/2.0);
     /* The value is the centerline of the digit.
      * There is exactly @param step between two digits'

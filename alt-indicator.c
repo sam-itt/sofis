@@ -35,6 +35,8 @@ AltIndicator *alt_indicator_new(void)
 
 AltIndicator *alt_indicator_init(AltIndicator *self)
 {
+    PCF_Font *fnt;
+
     buffered_gauge_init(BUFFERED_GAUGE(self), &alt_indicator_ops, 68, 240+20);
 
     /*TODO: Change size to size - 20, when size becomes a parameter !
@@ -49,8 +51,9 @@ AltIndicator *alt_indicator_init(AltIndicator *self)
         19
     );
 
-    DigitBarrel *db = digit_barrel_new(18, 0, 9.999, 1);
-    DigitBarrel *db2 = digit_barrel_new(18, 0, 99, 10);
+    fnt = resource_manager_get_font(TERMINUS_18);
+    DigitBarrel *db = digit_barrel_new(fnt, 0, 9.999, 1);
+    DigitBarrel *db2 = digit_barrel_new(fnt, 0, 99, 10);
     self->odo = odo_gauge_new_multiple(-1, 4,
             -1, db2,
             -2, db,

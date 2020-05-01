@@ -37,6 +37,7 @@ AirspeedIndicator *airspeed_indicator_init(AirspeedIndicator *self, speed_t v_so
 {
     AirspeedPageDescriptor *descriptor;
     DigitBarrel *db;
+    PCF_Font *fnt;
 
     buffered_gauge_init(BUFFERED_GAUGE(self), &airspeed_indicator_ops, 68, 240+20);
 
@@ -49,7 +50,8 @@ AirspeedIndicator *airspeed_indicator_init(AirspeedIndicator *self, speed_t v_so
         0
     );
 
-    db = digit_barrel_new(18, 0, 9.999, 1);
+    fnt = resource_manager_get_font(TERMINUS_18);
+    db = digit_barrel_new(fnt, 0, 9.999, 1);
     self->odo = odo_gauge_new_multiple(-1, 3,
             -1, db,
             -2, db,

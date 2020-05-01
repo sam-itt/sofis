@@ -282,14 +282,18 @@ int main(int argc, char **argv)
     colors[2] = SDL_MapRGB(screenSurface->format, 0x00, 0xFF, 0x00);
     colors[3] = SDL_MapRGB(screenSurface->format, 0x11, 0x56, 0xFF);
 
-    gauge = odo_gauge_new(digit_barrel_new(61, 0, 99,10),-1,-1);
+    gauge = odo_gauge_new(digit_barrel_new(
+        resource_manager_get_font(TERMINUS_32), 0, 99,10),
+        -1,-1
+    );
     odo_gauge_set_value(gauge, gval);
 
     ladder = ladder_gauge_new((LadderPageDescriptor *)alt_ladder_page_descriptor_new(), -1);
     animated_gauge_set_value(ANIMATED_GAUGE(ladder), alt);
 
-    DigitBarrel *db = digit_barrel_new(18, 0, 9.999, 1);
-    DigitBarrel *db2 = digit_barrel_new(18, 0, 99, 10);
+    PCF_Font *fnt = resource_manager_get_font(TERMINUS_18);
+    DigitBarrel *db = digit_barrel_new(fnt, 0, 9.999, 1);
+    DigitBarrel *db2 = digit_barrel_new(fnt, 0, 99, 10);
     wheel = odo_gauge_new_multiple(-1, 4,
             -1, db2,
             -2, db,
@@ -298,8 +302,8 @@ int main(int argc, char **argv)
     );
     odo_gauge_set_value(wheel, alt);
 
-    DigitBarrel *db4 = digit_barrel_new(18, 0, 9.999, 1);
-    DigitBarrel *db3 = digit_barrel_new(18, 0, 99, 10);
+    DigitBarrel *db4 = digit_barrel_new(fnt, 0, 9.999, 1);
+    DigitBarrel *db3 = digit_barrel_new(fnt, 0, 99, 10);
     odo = odo_gauge_new_multiple(-1, 3,
             -1, db3,
             -2, db4,

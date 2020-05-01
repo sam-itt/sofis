@@ -16,8 +16,8 @@ typedef struct{
 }DigitBarrel;
 
 
-DigitBarrel *digit_barrel_new(uintf8_t font_size, float start, float end, float step);
-DigitBarrel *digit_barrel_init(DigitBarrel *self, uintf8_t font_size, float start, float end, float step);
+DigitBarrel *digit_barrel_new(PCF_Font *font, float start, float end, float step);
+DigitBarrel *digit_barrel_init(DigitBarrel *self, PCF_Font *font, float start, float end, float step);
 void digit_barrel_free(DigitBarrel *self);
 
 
