@@ -55,9 +55,6 @@ void buffered_gauge_clear_color(BufferedGauge *self, Uint32 color);
 void buffered_gauge_clear(BufferedGauge *self, SDL_Color *color);
 
 void buffered_gauge_fill(BufferedGauge *self, SDL_Rect *area, SDL_Color *color);
-void buffered_gauge_draw_text(BufferedGauge *self, SDL_Rect *location,
-                              const char *string, TTF_Font *font,
-                              SDL_Color *text_color, SDL_Color *bg_color);
 
 void buffered_gauge_static_font_draw_text(BufferedGauge *self,
                                           SDL_Rect *location,

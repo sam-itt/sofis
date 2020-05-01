@@ -189,20 +189,6 @@ void buffered_gauge_fill(BufferedGauge *self, SDL_Rect *area, SDL_Color *color)
     SDL_FillRect(tview, &farea, col);
 }
 
-void buffered_gauge_draw_text(BufferedGauge *self, SDL_Rect *location,
-                              const char *string, TTF_Font *font,
-                              SDL_Color *text_color, SDL_Color *bg_color)
-{
-    SDL_Rect farea;
-    SDL_Surface *tview;
-
-
-    buffered_gauge_offset(self, location, &farea);
-    tview = buffered_gauge_get_view(self);
-
-    view_draw_text(tview, &farea, string, font, text_color, bg_color);
-}
-
 void buffered_gauge_static_font_draw_text(BufferedGauge *self, SDL_Rect *location,
                               const char *string, PCF_StaticFont *font, Uint32 bg_color)
 {

@@ -85,33 +85,6 @@ void view_draw_outline(SDL_Surface *self, SDL_Color *rgba, SDL_Rect *area)
     SDL_UnlockSurface(canvas);
 }
 
-
-void view_draw_text(SDL_Surface *destination, SDL_Rect *location, const char *string, TTF_Font *font, SDL_Color *text_color, SDL_Color *bg_color)
-{
-    SDL_Surface *text;
-    Uint32 bcolor;
-    SDL_Rect centered;
-
-    bcolor = SDL_MapRGBA(destination->format, bg_color->r, bg_color->g, bg_color->b, bg_color->a);
-
-    SDL_FillRect(destination, location, bcolor);
-
-    text = TTF_RenderText_Solid(font, string, *text_color);
-
-    /*TODO: Replace this by a centeralized centering macro/function*/
-    centered = (SDL_Rect){
-        .x = location->x + round(location->w/2.0) - round(text->w/2.0) -1,
-        .y = location->y + round(location->h/2.0) - round(text->h/2.0) -1,
-        /*Note: w and h are ignored by SDL_BlitSurface*/
-        .w = location->w,
-        .h = location->h
-    };
-
-    SDL_BlitSurface(text, NULL, destination, &centered);
-    SDL_FreeSurface(text);
-}
-
-
 void view_font_draw_text(SDL_Surface *destination, SDL_Rect *location, const char *string, PCF_Font *font, Uint32 text_color, Uint32 bg_color)
 {
     SDL_Rect centered;
