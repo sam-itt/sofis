@@ -15,6 +15,7 @@ typedef struct{
     PCFWrapFont font;
     Uint32 text_color;
     Uint32 bg_color;
+    uint8_t alignment;
     bool outlined;
 
     char *value;

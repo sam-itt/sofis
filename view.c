@@ -1,3 +1,4 @@
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <assert.h>
@@ -5,9 +6,25 @@
 #include "SDL_pixels.h"
 #include "SDL_surface.h"
 #include "sdl-pcf/SDL_pcf.h"
-#include "view.h"
 #include "sdl-colors.h"
+#include "view.h"
+#include "misc.h"
 
+/**
+ * This file contains generic drawing code that is intended to make
+ * static draws directly on SDL_Surfaces. By static we mean that it
+ * should be used when we need to generate "textures" that then will
+ * be used without changes other than display coordinates on each frame.
+ *
+ * This is *NOT* intented to be used as per-frame drawing code. All the
+ * per-frame drawing code must be in BufferGauge where it can be switched
+ * from SDL_Blit to SDL_Renderer, and then to OpenGL.
+ */
+
+/**
+ * Clear the area using the global color key (SDL_UCKEY)
+ *
+ */
 void view_clear(SDL_Surface *self, SDL_Rect *area)
 {
     SDL_FillRect(self, area, SDL_UCKEY(self));
@@ -85,31 +102,20 @@ void view_draw_outline(SDL_Surface *self, SDL_Color *rgba, SDL_Rect *area)
     SDL_UnlockSurface(canvas);
 }
 
-void view_font_draw_text(SDL_Surface *destination, SDL_Rect *location, const char *string, PCF_Font *font, Uint32 text_color, Uint32 bg_color)
+void view_font_draw_text(SDL_Surface *destination, SDL_Rect *location, uint8_t alignment, const char *string, PCF_Font *font, Uint32 text_color, Uint32 bg_color)
 {
-    SDL_Rect centered;
-    Uint32 text_w,text_h;
+    SDL_Rect aligned;
     Uint32 ckey;
 
     location = location ? location : &(SDL_Rect){0, 0, destination->w, destination->h};
 
-    SDL_FillRect(destination, location, bg_color);
-
-    PCF_FontGetSizeRequest(font, string, &text_w, &text_h);
-
-    /*TODO: Replace this by a centeralized centering macro/function*/
-    centered = (SDL_Rect){
-        .x = location->x + round(location->w/2.0) - round(text_w/2.0) -1,
-        .y = location->y + round(location->h/2.0) - round(text_h/2.0) -1,
-        /*Note: w and h are ignored by SDL_BlitSurface*/
-        .w = location->w,
-        .h = location->h
-    };
     SDL_GetColorKey(destination, &ckey);
     if(bg_color != ckey)
         SDL_FillRect(destination, location, bg_color);
 
-    PCF_FontWrite(font, string, text_color, destination, &centered);
+    PCF_FontGetSizeRequestRect(font, string, &aligned);
+    SDLExt_RectAlign(&aligned, location, alignment);
+    PCF_FontWrite(font, string, text_color, destination, &aligned);
 }
 
 

@@ -76,12 +76,46 @@ bool interval_intersect(float as, float ae, float bs, float be, float *is, float
  * @param self the SDL_Rect that is worked on. Must have w and h set.
  * @param reference the rectangle that will have self in its center
  */
-
 void SDLExt_RectCenter(SDL_Rect *self, SDL_Rect *reference)
 {
     self->y = reference->y + round(reference->h/2.0) - round(self->h/2.0) -1;
     self->x = reference->x + round(reference->w/2.0) - round(self->w/2.0) -1;
 }
+
+/**
+ * Aligns self with/in the reference rectangle. Self width
+ * and height *must* be set. Alignemnt is controled by @param alignement
+ *
+ * @param self the SDL_Rect that is worked on. Must have w and h set.
+ * @param reference the rectangle that will have self in its center
+ * @param alignment bitwise combination of at most 2 VALIGN and HALIGN
+ * constants. Example: HALIGN_CENTER | VALIGN_MIDDLE. Passing 0 means TOP/LEFT
+ * alignment.
+ */
+void SDLExt_RectAlign(SDL_Rect *self, SDL_Rect *reference, uint8_t alignment)
+{
+    uint8_t valign, halign;
+
+    halign = alignment & HALIGN_MASK;
+    valign = (alignment & VALIGN_MASK);
+
+    /*Default alignment: left/bottom*/
+    self->x = reference->x;
+    self->y = reference->y;
+
+    if(halign == HALIGN_RIGHT){
+        self->x += reference->w - self->w;
+    }else if(halign == HALIGN_CENTER){
+        self->x += round(reference->w/2.0) - round(self->w/2.0);
+    }
+
+    if(valign == VALIGN_BOTTOM){
+        self->y += reference->h - self->h;
+    }else if(valign == VALIGN_MIDDLE){
+        self->y +=  round(reference->h/2.0) - round(self->h/2.0);
+    }
+}
+
 
 void SDLExt_RectDump(SDL_Rect *self)
 {

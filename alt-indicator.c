@@ -70,6 +70,7 @@ AltIndicator *alt_indicator_init(AltIndicator *self)
     buffered_gauge_clear(BUFFERED_GAUGE(self),NULL);
 
     self->talt_txt = text_gauge_new(NULL, true, 68, 20);
+    self->talt_txt->alignment = HALIGN_CENTER | VALIGN_MIDDLE;
     text_gauge_build_static_font(self->talt_txt, resource_manager_get_font(TERMINUS_16), &SDL_WHITE, 1, PCF_DIGITS);
     buffered_gauge_set_buffer(BUFFERED_GAUGE(self->talt_txt),
         buffered_gauge_get_view(BUFFERED_GAUGE(self)),
@@ -80,6 +81,7 @@ AltIndicator *alt_indicator_init(AltIndicator *self)
     text_gauge_set_value(self->talt_txt, "0");
 
     self->qnh_txt = text_gauge_new(NULL, true, 68, 21);
+    self->qnh_txt->alignment = HALIGN_CENTER | VALIGN_MIDDLE;
     /*TODO: Font+StaticFont sharing using ref/unref*/
     text_gauge_set_static_font(self->qnh_txt, self->talt_txt->font.static_font);
     buffered_gauge_set_buffer(BUFFERED_GAUGE(self->qnh_txt),
@@ -100,7 +102,8 @@ AltIndicator *alt_indicator_init(AltIndicator *self)
     );
     if(!self->gps_flag) return NULL; //TODO: Free all above allocated resources+find a pattern for that case
     view_font_draw_text(self->gps_flag,
-        NULL, "GPS",
+        NULL, HALIGN_CENTER | VALIGN_MIDDLE,
+        "GPS",
         resource_manager_get_font(TERMINUS_16),
         SDL_URED(self->gps_flag), SDL_UBLACK(self->gps_flag)
     );

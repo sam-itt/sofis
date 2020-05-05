@@ -145,9 +145,9 @@ static void text_gauge_render(TextGauge *self, Uint32 dt)
 
     if(self->value){
         if(self->font.is_static)
-            buffered_gauge_static_font_draw_text(BUFFERED_GAUGE(self), NULL, self->value, self->font.static_font, self->bg_color);
+            buffered_gauge_static_font_draw_text(BUFFERED_GAUGE(self), NULL, self->alignment, self->value, self->font.static_font, self->bg_color);
         else
-            buffered_gauge_font_draw_text(BUFFERED_GAUGE(self), NULL, self->value, self->font.font, self->text_color, self->bg_color);
+            buffered_gauge_font_draw_text(BUFFERED_GAUGE(self), NULL, self->alignment, self->value, self->font.font, self->text_color, self->bg_color);
     }else{
         buffered_gauge_clear_color(BUFFERED_GAUGE(self), self->bg_color);
     }

@@ -58,12 +58,14 @@ void buffered_gauge_fill(BufferedGauge *self, SDL_Rect *area, SDL_Color *color);
 
 void buffered_gauge_static_font_draw_text(BufferedGauge *self,
                                           SDL_Rect *location,
+                                          uint8_t alignment,
                                           const char *string,
                                           PCF_StaticFont *font,
                                           Uint32 bg_color);
 
 void buffered_gauge_font_draw_text(BufferedGauge *self,
                                    SDL_Rect *location,
+                                   uint8_t alignment,
                                    const char *string,
                                    PCF_Font *font,
                                    Uint32 text_color,

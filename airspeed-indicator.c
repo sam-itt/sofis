@@ -6,6 +6,7 @@
 #include "airspeed-page-descriptor.h"
 #include "base-gauge.h"
 #include "buffered-gauge.h"
+#include "misc.h"
 #include "resource-manager.h"
 #include "sdl-colors.h"
 #include "sdl-pcf/SDL_pcf.h"
@@ -67,6 +68,7 @@ AirspeedIndicator *airspeed_indicator_init(AirspeedIndicator *self, speed_t v_so
     buffered_gauge_clear(BUFFERED_GAUGE(self),NULL);
 
     self->txt = text_gauge_new(NULL, true, 68, 21);
+    self->txt->alignment = HALIGN_CENTER | VALIGN_MIDDLE;
     text_gauge_build_static_font(self->txt,
         resource_manager_get_font(TERMINUS_12),
         &SDL_WHITE,

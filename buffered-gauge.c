@@ -1,4 +1,5 @@
 #include <stdarg.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -6,6 +7,7 @@
 #include "SDL_surface.h"
 #include "base-gauge.h"
 #include "buffered-gauge.h"
+#include "misc.h"
 #include "sdl-colors.h"
 #include "sdl-pcf/SDL_pcf.h"
 #include "view.h"
@@ -190,12 +192,14 @@ void buffered_gauge_fill(BufferedGauge *self, SDL_Rect *area, SDL_Color *color)
 }
 
 void buffered_gauge_static_font_draw_text(BufferedGauge *self, SDL_Rect *location,
-                              const char *string, PCF_StaticFont *font, Uint32 bg_color)
+                                          uint8_t alignment,
+                                          const char *string,
+                                          PCF_StaticFont *font,
+                                          Uint32 bg_color)
 {
     SDL_Rect farea;
     SDL_Surface *tview;
     SDL_Rect glyph, cursor;
-    Uint32 text_w,text_h;
     Uint32 ckey;
     int len;
 
@@ -210,17 +214,10 @@ void buffered_gauge_static_font_draw_text(BufferedGauge *self, SDL_Rect *locatio
     if(bg_color != ckey)
         SDL_FillRect(tview, &farea, bg_color);
 
-    PCF_StaticFontGetSizeRequest(font, string, &text_w, &text_h);
+    PCF_StaticFontGetSizeRequestRect(font, string, &cursor);
+    SDLExt_RectAlign(&cursor, &farea, alignment);
+
     len = strlen(string);
-
-    cursor = (SDL_Rect){
-        /*TODO: Replace this centering code by centeralized macro/function*/
-        .x = farea.x + round(farea.w/2.0) - round(text_w/2.0) -1,
-        .y = farea.y + round(farea.h/2.0) - round(text_h/2.0) -1,
-        .w = font->metrics.characterWidth,
-        .h = font->metrics.ascent + font->metrics.descent
-    };
-
     for(int i = 0; i < len; i++){
         //TODO: Remove the test, and draw regardless when default glyph gets implemented
         if(PCF_StaticFontGetCharRect(font, string[i], &glyph)){
@@ -234,8 +231,9 @@ void buffered_gauge_static_font_draw_text(BufferedGauge *self, SDL_Rect *locatio
 
 
 void buffered_gauge_font_draw_text(BufferedGauge *self, SDL_Rect *location,
-                              const char *string, PCF_Font *font,
-                              Uint32 text_color, Uint32 bg_color)
+                                   uint8_t alignment,
+                                   const char *string, PCF_Font *font,
+                                   Uint32 text_color, Uint32 bg_color)
 {
     SDL_Rect farea;
     SDL_Surface *tview;
@@ -247,7 +245,7 @@ void buffered_gauge_font_draw_text(BufferedGauge *self, SDL_Rect *location,
     }
     tview = buffered_gauge_get_view(self);
 
-    view_font_draw_text(tview, &farea, string, font, text_color, bg_color);
+    view_font_draw_text(tview, &farea, alignment, string, font, text_color, bg_color);
 }
 
 
