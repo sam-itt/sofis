@@ -307,7 +307,12 @@ int main(int argc, char **argv)
     alt_ind = alt_indicator_new();
     alt_indicator_set_value(alt_ind, alt);
 
-    stair = vertical_stair_new("vs-bg.png","vs-cursor.png", resource_manager_get_font(TERMINUS_16));
+    stair = vertical_stair_new(
+        "vs-bg.png",
+        "vs-cursor.png",
+        resource_manager_get_static_font(TERMINUS_16, &SDL_WHITE, 2, PCF_DIGITS, "+-")
+    );
+
     animated_gauge_set_value(ANIMATED_GAUGE(stair), vs);
 
     group = alt_group_new();
@@ -341,7 +346,12 @@ int main(int argc, char **argv)
     hud = basic_hud_new();
 
     txt = text_gauge_new("HI THERE", true, 300, 30);
-    text_gauge_build_static_font(txt, resource_manager_get_font(TERMINUS_24), &SDL_WHITE, 2, PCF_ALPHA, PCF_DIGITS);
+    text_gauge_set_static_font(txt,
+        resource_manager_get_static_font(TERMINUS_24,
+            &SDL_WHITE,
+            2, PCF_ALPHA, PCF_DIGITS
+        )
+    );
 
     text_gauge_set_color(txt, SDL_WHITE, TEXT_COLOR);
     text_gauge_set_color(txt, SDL_BLACK, BACKGROUND_COLOR);

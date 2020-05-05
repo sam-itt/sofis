@@ -29,6 +29,9 @@ int number_split(float n, float *parts, size_t p_size);
 int number_digits(float n);
 
 bool interval_intersect(float as, float ae, float bs, float be, float *is, float *ie);
+
+void filter_dedup(char *base, size_t len);
+
 void SDLExt_RectCenter(SDL_Rect *self, SDL_Rect *reference);
 void SDLExt_RectAlign(SDL_Rect *self, SDL_Rect *reference, uint8_t alignment);
 void SDLExt_RectDump(SDL_Rect *self);

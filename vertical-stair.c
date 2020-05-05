@@ -19,7 +19,7 @@ static AnimatedGaugeOps vertical_stair_ops = {
    .render_value = (ValueRenderFunc)vertical_stair_render_value
 };
 
-VerticalStair *vertical_stair_new(const char *bg_img, const char *cursor_img, PCF_Font *font)
+VerticalStair *vertical_stair_new(const char *bg_img, const char *cursor_img, PCF_StaticFont *font)
 {
     VerticalStair *self;
 
@@ -34,7 +34,7 @@ VerticalStair *vertical_stair_new(const char *bg_img, const char *cursor_img, PC
 }
 
 
-VerticalStair *vertical_stair_init(VerticalStair *self, const char *bg_img, const char *cursor_img, PCF_Font *font)
+VerticalStair *vertical_stair_init(VerticalStair *self, const char *bg_img, const char *cursor_img, PCF_StaticFont *font)
 {
 
     self->scale.ruler = IMG_Load(bg_img);
@@ -47,7 +47,7 @@ VerticalStair *vertical_stair_init(VerticalStair *self, const char *bg_img, cons
     if(!self->cursor || !self->font)
         return NULL; //TODO: Will leak self->scale.ruler
 
-    self->font->xfont.refcnt++;
+    self->font->refcnt++;
 
     animated_gauge_init(ANIMATED_GAUGE(self), ANIMATED_GAUGE_OPS(&vertical_stair_ops), self->cursor->w, self->scale.ruler->h);
 
@@ -61,7 +61,7 @@ void vertical_stair_dispose(VerticalStair *self)
     if(self->cursor)
         SDL_FreeSurface(self->cursor);
     if(self->font)
-        PCF_CloseFont(self->font);
+        PCF_FreeStaticFont(self->font);
 }
 
 void vertical_stair_free(VerticalStair *self)
@@ -91,15 +91,14 @@ static void vertical_stair_render_value(VerticalStair *self, float value)
     cloc = (SDL_Rect){1, y,self->cursor->w,self->cursor->h};
     buffered_gauge_blit(BUFFERED_GAUGE(self), self->cursor, NULL, &cloc);
 
-    PCF_FontGetSizeRequestRect(self->font, number, &dst);
+    PCF_StaticFontGetSizeRequestRect(self->font, number, &dst);
     SDLExt_RectAlign(&dst, &cloc, HALIGN_LEFT | VALIGN_MIDDLE);
-    dst.x += self->font->xfont.fontPrivate->metrics->metrics.characterWidth;
+    dst.x += self->font->metrics.characterWidth;
 
-    buffered_gauge_font_draw_text(BUFFERED_GAUGE(self),
+    buffered_gauge_static_font_draw_text(BUFFERED_GAUGE(self),
         &dst, 0,
         number,
         self->font,
-        SDL_UWHITE(BUFFERED_GAUGE(self)->view),
         SDL_UCKEY(BUFFERED_GAUGE(self)->view)
     );
 }

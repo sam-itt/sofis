@@ -10,13 +10,13 @@ typedef struct{
     AnimatedGauge super;
 
     SDL_Surface *cursor; /*cursor background image*/
-    PCF_Font *font;
+    PCF_StaticFont *font;
 
     VerticalStrip scale;
 }VerticalStair;
 
-VerticalStair *vertical_stair_new(const char *bg_img, const char *cursor_img, PCF_Font *font);
-VerticalStair *vertical_stair_init(VerticalStair *self, const char *bg_img, const char *cursor_img, PCF_Font *font);
+VerticalStair *vertical_stair_new(const char *bg_img, const char *cursor_img, PCF_StaticFont *font);
+VerticalStair *vertical_stair_init(VerticalStair *self, const char *bg_img, const char *cursor_img, PCF_StaticFont *font);
 void vertical_stair_dispose(VerticalStair *self);
 void vertical_stair_free(VerticalStair *self);
 

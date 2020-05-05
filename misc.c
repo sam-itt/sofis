@@ -70,6 +70,30 @@ bool interval_intersect(float as, float ae, float bs, float be, float *is, float
 }
 
 /**
+ * Remove duplicates characters from base. base must be sorted
+ * so that duplicates follow each other (i.e. use qsort() beforehand).
+ *
+ * @param base The string to filter
+ * @param len THe string len, -1 to have the function compute it.
+ */
+void filter_dedup(char *base, size_t len)
+{
+    len = len > -1 ? len : strlen(base);
+
+    for(int i = 1; i < len; i++){
+        if(base[i] == base[i-1]){
+            for(int j = i; j < len; j++){
+                /* Index doesn't go OOB, last iteration will
+                 * access (and move back) the final '\0' */
+                base[j] = base[j+1];
+            }
+        }
+    }
+}
+
+
+
+/**
  * Centers self on/in the reference rectangle. Self width
  * and height *must* be set.
  *

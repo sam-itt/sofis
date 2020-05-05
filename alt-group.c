@@ -4,6 +4,8 @@
 #include "alt-group.h"
 #include "base-gauge.h"
 #include "resource-manager.h"
+#include "sdl-colors.h"
+#include "sdl-pcf/SDL_pcf.h"
 
 static void alt_group_render(AltGroup *self, Uint32 dt, SDL_Surface *destination, SDL_Rect *location);
 static BaseGaugeOps alt_group_ops = {
@@ -27,7 +29,7 @@ AltGroup *alt_group_init(AltGroup *self)
 {
     self->altimeter = alt_indicator_new();
     self->vsi = vertical_stair_new("vs-bg.png","vs-cursor.png",
-        resource_manager_get_font(TERMINUS_16)
+        resource_manager_get_static_font(TERMINUS_16, &SDL_WHITE, 2, PCF_DIGITS, "+-")
     );
 
     if(!self->vsi || !self->altimeter)

@@ -69,10 +69,11 @@ AirspeedIndicator *airspeed_indicator_init(AirspeedIndicator *self, speed_t v_so
 
     self->txt = text_gauge_new(NULL, true, 68, 21);
     self->txt->alignment = HALIGN_CENTER | VALIGN_MIDDLE;
-    text_gauge_build_static_font(self->txt,
-        resource_manager_get_font(TERMINUS_12),
-        &SDL_WHITE,
-        2, "TASKT-", PCF_DIGITS
+    text_gauge_set_static_font(self->txt,
+        resource_manager_get_static_font(TERMINUS_12,
+            &SDL_WHITE,
+            2, "TASKT-", PCF_DIGITS
+        )
     );
     buffered_gauge_set_buffer(BUFFERED_GAUGE(self->txt),
         buffered_gauge_get_view(BUFFERED_GAUGE(self)),

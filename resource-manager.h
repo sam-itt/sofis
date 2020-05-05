@@ -16,10 +16,21 @@ typedef enum{
 }FontResource;
 
 typedef struct{
+    PCF_StaticFont *font;
+    SDL_Color color;
+    FontResource creator;
+}StaticFontResource;
+
+typedef struct{
     PCF_Font *fonts[FONT_MAX];
 
+    StaticFontResource *sfonts;
+    size_t n_allocated;
+    size_t n_sfonts;
 }ResourceManager;
 
 PCF_Font *resource_manager_get_font(FontResource font);
+PCF_StaticFont *resource_manager_get_static_font(FontResource font, SDL_Color *color, int nsets, ...);
+
 void resource_manager_shutdown(void);
 #endif /* RESOURCE_MANAGER_H */
