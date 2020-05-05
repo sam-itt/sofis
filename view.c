@@ -89,6 +89,7 @@ void view_font_draw_text(SDL_Surface *destination, SDL_Rect *location, const cha
 {
     SDL_Rect centered;
     Uint32 text_w,text_h;
+    Uint32 ckey;
 
     location = location ? location : &(SDL_Rect){0, 0, destination->w, destination->h};
 
@@ -104,6 +105,9 @@ void view_font_draw_text(SDL_Surface *destination, SDL_Rect *location, const cha
         .w = location->w,
         .h = location->h
     };
+    SDL_GetColorKey(destination, &ckey);
+    if(bg_color != ckey)
+        SDL_FillRect(destination, location, bg_color);
 
     PCF_FontWrite(font, string, text_color, destination, &centered);
 }

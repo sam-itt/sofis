@@ -196,6 +196,7 @@ void buffered_gauge_static_font_draw_text(BufferedGauge *self, SDL_Rect *locatio
     SDL_Surface *tview;
     SDL_Rect glyph, cursor;
     Uint32 text_w,text_h;
+    Uint32 ckey;
     int len;
 
     if(location){
@@ -205,7 +206,9 @@ void buffered_gauge_static_font_draw_text(BufferedGauge *self, SDL_Rect *locatio
     }
     tview = buffered_gauge_get_view(self);
 
-    SDL_FillRect(tview, &farea, bg_color);
+    SDL_GetColorKey(tview, &ckey);
+    if(bg_color != ckey)
+        SDL_FillRect(tview, &farea, bg_color);
 
     PCF_StaticFontGetSizeRequest(font, string, &text_w, &text_h);
     len = strlen(string);
