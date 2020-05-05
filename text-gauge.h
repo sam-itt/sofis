@@ -32,5 +32,4 @@ void text_gauge_set_color(TextGauge *self, SDL_Color color, Uint8 which);
 
 void text_gauge_set_font(TextGauge *self, PCF_Font *font);
 void text_gauge_set_static_font(TextGauge *self, PCF_StaticFont *font);
-void text_gauge_build_static_font(TextGauge *self, PCF_Font *font, SDL_Color *color, int nsets, ...);
 #endif /* TEXT_GAUGE_H */

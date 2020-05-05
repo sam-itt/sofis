@@ -75,30 +75,6 @@ void text_gauge_set_font(TextGauge *self, PCF_Font *font)
     self->font.is_static = false;
 }
 
-void text_gauge_build_static_font(TextGauge *self, PCF_Font *font, SDL_Color *color, int nsets, ...)
-{
-    va_list ap;
-    char *tmp;
-    size_t tlen;
-    PCF_StaticFont *sfont;
-
-    tlen = 0;
-    va_start(ap, nsets);
-    for(int i = 0; i < nsets; i++){
-        tmp = va_arg(ap, char*);
-        tlen += strlen(tmp);
-    }
-    va_end(ap);
-
-    text_gauge_dispose_font(self);
-    va_start(ap, nsets);
-    sfont = PCF_FontCreateStaticFontVA(font, color, nsets, tlen, ap);
-    va_end(ap);
-    if(!sfont) return; //TODO: Handle failure ?
-
-    text_gauge_set_static_font(self, sfont);
-}
-
 void text_gauge_set_static_font(TextGauge *self, PCF_StaticFont *font)
 {
     text_gauge_dispose_font(self);
