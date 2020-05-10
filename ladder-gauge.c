@@ -113,7 +113,7 @@ LadderPage *ladder_gauge_get_page_for(LadderGauge *self, float value)
 {
     int page_idx;
 
-    page_idx = (int)value/(self->descriptor->page_size+self->descriptor->offset);
+    page_idx = (int)value/(self->descriptor->page_size);
 
     return ladder_gauge_get_page(self, page_idx);
 }
