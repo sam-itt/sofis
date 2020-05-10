@@ -123,7 +123,7 @@ static void ladder_gauge_render_value(LadderGauge *self, float value)
     float y;
     float rubis;
     LadderPage *page, *page2;
-    SDL_Rect dst_region = {0,0,0,0};
+    SDL_Rect dst_region = {0,0,BASE_GAUGE(self)->w,BASE_GAUGE(self)->h};
 
     buffered_gauge_clear(BUFFERED_GAUGE(self), NULL);
     buffered_gauge_draw_outline(BUFFERED_GAUGE(self), &SDL_WHITE, NULL);
@@ -141,6 +141,12 @@ static void ladder_gauge_render_value(LadderGauge *self, float value)
         .w = VERTICAL_STRIP(page)->ruler->w,
         .h = BASE_GAUGE(self)->h
     };
+    /* Ensures that portion.y + portion.h doesn't got past image bounds:
+     * w/h are ignored by SDL_BlitSurface, but when using SDL_Renderers wrong
+     * values will stretch the image.
+     * */
+    if(portion.y + portion.h > VERTICAL_STRIP(page)->ruler->h)
+        portion.h = VERTICAL_STRIP(page)->ruler->h - portion.y;
     /*All pages must have the same size*/
     if(portion.y < 0){ //Fill top
         SDL_Rect patch = {

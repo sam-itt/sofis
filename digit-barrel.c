@@ -150,6 +150,13 @@ void digit_barrel_render_value(DigitBarrel *self, float value, BufferedGauge *ds
         .w = strip->ruler->w,
         .h = region->h
     };
+    /* Ensures that portion.y + portion.h doesn't got past image bounds:
+     * w/h are ignored by SDL_BlitSurface, but when using SDL_Renderers wrong
+     * values will stretch the image.
+     */
+    if(portion.y + portion.h > strip->ruler->h)
+        portion.h = strip->ruler->h - portion.y;
+
 
     if(portion.y < 0){ //Fill top
         SDL_Rect patch = {
