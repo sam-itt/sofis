@@ -385,12 +385,13 @@ void buffered_gauge_static_font_draw_text(BufferedGauge *self, SDL_Rect *locatio
     }
     queue = buffered_gauge_get_queue(self);
 
-
-    bg.a = (bg_color >> 24) & 0xff;
-    bg.r = (bg_color >> 16) & 0xff;
-    bg.g = (bg_color >> 8) & 0xff;
-    bg.b = (bg_color) & 0xff;
-    render_queue_push_clear(self->queue, &bg, &farea);
+    if(bg_color != 0xFFFF00FF){
+        bg.a = (bg_color >> 24) & 0xff;
+        bg.r = (bg_color >> 16) & 0xff;
+        bg.g = (bg_color >> 8) & 0xff;
+        bg.b = (bg_color) & 0xff;
+        render_queue_push_clear(self->queue, &bg, &farea);
+    }
 
     PCF_StaticFontGetSizeRequestRect(font, string, &cursor);
     SDLExt_RectAlign(&cursor, &farea, alignment);

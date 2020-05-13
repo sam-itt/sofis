@@ -113,7 +113,7 @@ static void vertical_stair_render_value(VerticalStair *self, float value)
         &dst, 0,
         number,
         self->font,
-       0
+        0xFFFF00FF
     );
 #else
     buffered_gauge_static_font_draw_text(BUFFERED_GAUGE(self),
