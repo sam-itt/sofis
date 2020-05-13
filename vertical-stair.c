@@ -90,11 +90,8 @@ static void vertical_stair_render_value(VerticalStair *self, float value)
     vertical_strip_clip_value(&self->scale, &value);
 
     buffered_gauge_clear(BUFFERED_GAUGE(self), NULL);
-#if USE_SDL_RENDERER
-    buffered_gauge_blit_texture(BUFFERED_GAUGE(self), self->scale.rtex, NULL, &(SDL_Rect){0, 0, self->scale.ruler->w, self->scale.ruler->h});
-#else
-    buffered_gauge_blit(BUFFERED_GAUGE(self), self->scale.ruler, NULL, NULL);
-#endif
+    buffered_gauge_blit_strip(BUFFERED_GAUGE(self), &self->scale, NULL, &(SDL_Rect){0, 0, self->scale.ruler->w, self->scale.ruler->h});
+
     y = vertical_strip_resolve_value(&self->scale, value, true);
     y = round(round(y) - self->cursor->h/2.0);
 

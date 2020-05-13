@@ -6,6 +6,7 @@
 
 #include "SDL_render.h"
 #include "base-gauge.h"
+#include "vertical-strip.h"
 #include "render-queue.h"
 #include "view.h"
 
@@ -60,6 +61,7 @@ void buffered_gauge_share_buffer(BufferedGauge *self, BufferedGauge *with, int x
 
 SDL_Surface *buffer_gauge_build_view(BufferedGauge *self);
 
+int buffered_gauge_blit_strip(BufferedGauge *self, VerticalStrip *src, SDL_Rect *srcrect, SDL_Rect *dstrect);
 int buffered_gauge_blit(BufferedGauge *self, SDL_Surface *src, SDL_Rect *srcrect, SDL_Rect *dstrect);
 void buffered_gauge_draw_rubis(BufferedGauge *self, int y, SDL_Color *color, int pskip);
 void buffered_gauge_draw_outline(BufferedGauge *self, SDL_Color *color, SDL_Rect *area);

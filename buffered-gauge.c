@@ -12,6 +12,7 @@
 #include "render-queue.h"
 #include "sdl-colors.h"
 #include "sdl-pcf/SDL_pcf.h"
+#include "vertical-strip.h"
 #include "view.h"
 
 /*BufferGauge implements BaseGauge::render and triggers the actual
@@ -218,6 +219,24 @@ int buffered_gauge_blit_rotated_texture(BufferedGauge *self, SDL_Texture *src, S
     return render_queue_push_rotate(queue, src, srcrect, &fdst, angle, about, clip);
 }
 
+
+/**
+ * Does a blit on the gauge's relative space using a vertical strip
+ * as source.
+ *
+ * @param src The VerticalStrip to blit on the buffer
+ * @param srcrect The portion of src to consider. NULL for whole surface.
+ * @param dstrect The location in the buffer. NULL for whole buffer. This
+ * destination *must* ignore the buffer's internal offset.
+ */
+int buffered_gauge_blit_strip(BufferedGauge *self, VerticalStrip *src, SDL_Rect *srcrect, SDL_Rect *dstrect)
+{
+#if USE_SDL_RENDERER
+    return buffered_gauge_blit_texture(self, src->rtex, srcrect, dstrect);
+#else
+    return buffered_gauge_blit(self, src->ruler, srcrect, dstrect);
+#endif
+}
 
 void buffered_gauge_draw_outline(BufferedGauge *self, SDL_Color *color, SDL_Rect *area)
 {

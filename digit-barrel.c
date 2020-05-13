@@ -170,20 +170,14 @@ void digit_barrel_render_value(DigitBarrel *self, float value, BufferedGauge *ds
             .w = strip->ruler->w,
             .h = strip->ruler->h - patch.y
         };
-#if USE_SDL_RENDERER
-        buffered_gauge_blit_texture(dst, strip->rtex, &patch, &dst_region);
-#else
-        buffered_gauge_blit(dst, strip->ruler, &patch, &dst_region);
-#endif
+        buffered_gauge_blit_strip(dst, strip, &patch, &dst_region);
+
         dst_region.y = patch.h;
         portion.y = 0;
         portion.h -= patch.h;
     }
-#if USE_SDL_RENDERER
-    buffered_gauge_blit_texture(dst, strip->rtex, &portion, &dst_region);
-#else
-    buffered_gauge_blit(dst, strip->ruler, &portion, &dst_region);
-#endif
+    buffered_gauge_blit_strip(dst, strip, &portion, &dst_region);
+
     if(portion.y + region->h > strip->ruler->h){// fill bottom
         float taken = strip->ruler->h - portion.y; //number of pixels taken from the bottom of values pict
         float delta = region->h - taken;
@@ -194,11 +188,7 @@ void digit_barrel_render_value(DigitBarrel *self, float value, BufferedGauge *ds
             .w = strip->ruler->w,
             .h = delta
         };
-#if USE_SDL_RENDERER
-        buffered_gauge_blit_texture(dst, strip->rtex, &patch, &dst_region);
-#else
-        buffered_gauge_blit(dst, strip->ruler, &patch, &dst_region);
-#endif
+        buffered_gauge_blit_strip(dst, strip, &patch, &dst_region);
     }
 }
 

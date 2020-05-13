@@ -162,32 +162,21 @@ static void ladder_gauge_render_value(LadderGauge *self, float value)
             int pidx = ladder_page_get_index(page);
             if(pidx > 0){
                 page2 = ladder_gauge_get_page(self, pidx - 1);
-#if USE_SDL_RENDERER
-                buffered_gauge_blit_texture(BUFFERED_GAUGE(self), VERTICAL_STRIP(page2)->rtex, &patch, &dst_region);
-#else
-                buffered_gauge_blit(BUFFERED_GAUGE(self), VERTICAL_STRIP(page2)->ruler, &patch, &dst_region);
-#endif
+                buffered_gauge_blit_strip(BUFFERED_GAUGE(self), VERTICAL_STRIP(page2), &patch, &dst_region);
             }
         }else{
             /* 0 at the bottom, 100 is upwards. We need to fill the top with values after the end
              * of the current page, i.e get the next page */
             int pidx = ladder_page_get_index(page);
             page2 = ladder_gauge_get_page(self, pidx + 1);
-#if USE_SDL_RENDERER
-            buffered_gauge_blit_texture(BUFFERED_GAUGE(self), VERTICAL_STRIP(page2)->rtex, &patch, &dst_region);
-#else
-            buffered_gauge_blit(BUFFERED_GAUGE(self), VERTICAL_STRIP(page2)->ruler, &patch, &dst_region);
-#endif
+            buffered_gauge_blit_strip(BUFFERED_GAUGE(self), VERTICAL_STRIP(page2), &patch, &dst_region);
         }
         dst_region.y = patch.h;
         portion.y = 0;
         portion.h -= patch.h;
     }
-#if USE_SDL_RENDERER
-    buffered_gauge_blit_texture(BUFFERED_GAUGE(self), VERTICAL_STRIP(page)->rtex, &portion, &dst_region);
-#else
-    buffered_gauge_blit(BUFFERED_GAUGE(self), VERTICAL_STRIP(page)->ruler, &portion, &dst_region);
-#endif
+    buffered_gauge_blit_strip(BUFFERED_GAUGE(self), VERTICAL_STRIP(page), &portion, &dst_region);
+
     if(portion.y + BASE_GAUGE(self)->h > VERTICAL_STRIP(page)->ruler->h){// fill bottom
         float taken = VERTICAL_STRIP(page)->ruler->h - portion.y; //number of pixels taken from the bottom of values pict
         float delta = BASE_GAUGE(self)->h - taken;
@@ -203,22 +192,14 @@ static void ladder_gauge_render_value(LadderGauge *self, float value)
              * of the current page, i.e get the next page */
             int pidx = ladder_page_get_index(page);
             page2 = ladder_gauge_get_page(self, pidx + 1);
-#if USE_SDL_RENDERER
-            buffered_gauge_blit_texture(BUFFERED_GAUGE(self), VERTICAL_STRIP(page2)->rtex, &patch, &dst_region);
-#else
-            buffered_gauge_blit(BUFFERED_GAUGE(self), VERTICAL_STRIP(page2)->ruler, &patch, &dst_region);
-#endif
+            buffered_gauge_blit_strip(BUFFERED_GAUGE(self), VERTICAL_STRIP(page2), &patch, &dst_region);
         }else{
             /* 0 at the bottom, 100 is upwards. We need to fill the bottom with values that are before the begining
              * of the current page, i.e get the previous page */
             int pidx = ladder_page_get_index(page);
             if(pidx > 0){
                 page2 = ladder_gauge_get_page(self, pidx - 1);
-#if USE_SDL_RENDERER
-                buffered_gauge_blit_texture(BUFFERED_GAUGE(self), VERTICAL_STRIP(page2)->rtex, &patch, &dst_region);
-#else
-                buffered_gauge_blit(BUFFERED_GAUGE(self), VERTICAL_STRIP(page2)->ruler, &patch, &dst_region);
-#endif
+                buffered_gauge_blit_strip(BUFFERED_GAUGE(self), VERTICAL_STRIP(page2), &patch, &dst_region);
             }
         }
     }
