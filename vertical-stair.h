@@ -1,5 +1,6 @@
 #ifndef VERTICAL_STAIR_H
 #define VERTICAL_STAIR_H
+#include "SDL_render.h"
 #include "sdl-pcf/SDL_pcf.h"
 
 #include "animated-gauge.h"
@@ -10,6 +11,10 @@ typedef struct{
     AnimatedGauge super;
 
     SDL_Surface *cursor; /*cursor background image*/
+#if USE_SDL_RENDERER
+    SDL_Texture *tcursor;
+#endif
+
     PCF_StaticFont *font;
 
     VerticalStrip scale;

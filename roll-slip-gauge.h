@@ -12,8 +12,11 @@ typedef struct{
 	SDL_Surface *arc;
 	SDL_Texture *arrow;
 
-
+#if USE_SDL_RENDERER
+    SDL_Texture *tarc;
+#else
 	SDL_Renderer *renderer;
+#endif
 }RollSlipGauge;
 
 

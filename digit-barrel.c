@@ -1,4 +1,6 @@
+#include "SDL_render.h"
 #include "buffered-gauge.h"
+#include "misc.h"
 #include "sdl-pcf/SDL_pcf.h"
 #define _GNU_SOURCE
 #include <stdio.h>
@@ -85,6 +87,9 @@ DigitBarrel *digit_barrel_init(DigitBarrel *self, PCF_Font *font, float start, f
     strip->ppv = self->symbol_h / step;
 
 //    digit_barrel_draw_etch_marks(self);
+#if USE_SDL_RENDERER
+    strip->rtex = SDL_CreateTextureFromSurface(g_renderer, strip->ruler); /*TODO: This must go a layer up (or down)*/
+#endif
     return self;
 }
 
@@ -165,13 +170,20 @@ void digit_barrel_render_value(DigitBarrel *self, float value, BufferedGauge *ds
             .w = strip->ruler->w,
             .h = strip->ruler->h - patch.y
         };
+#if USE_SDL_RENDERER
+        buffered_gauge_blit_texture(dst, strip->rtex, &patch, &dst_region);
+#else
         buffered_gauge_blit(dst, strip->ruler, &patch, &dst_region);
+#endif
         dst_region.y = patch.h;
         portion.y = 0;
         portion.h -= patch.h;
     }
+#if USE_SDL_RENDERER
+    buffered_gauge_blit_texture(dst, strip->rtex, &portion, &dst_region);
+#else
     buffered_gauge_blit(dst, strip->ruler, &portion, &dst_region);
-
+#endif
     if(portion.y + region->h > strip->ruler->h){// fill bottom
         float taken = strip->ruler->h - portion.y; //number of pixels taken from the bottom of values pict
         float delta = region->h - taken;
@@ -182,7 +194,11 @@ void digit_barrel_render_value(DigitBarrel *self, float value, BufferedGauge *ds
             .w = strip->ruler->w,
             .h = delta
         };
+#if USE_SDL_RENDERER
+        buffered_gauge_blit_texture(dst, strip->rtex, &patch, &dst_region);
+#else
         buffered_gauge_blit(dst, strip->ruler, &patch, &dst_region);
+#endif
     }
 }
 

@@ -87,8 +87,11 @@ void text_gauge_set_static_font(TextGauge *self, PCF_StaticFont *font)
 void text_gauge_set_color(TextGauge *self, SDL_Color color, Uint8 which)
 {
     Uint32 icol;
-
+#if USE_SDL_RENDERER
+    icol = (Uint32)((color.a << 24) + (color.r << 16) + (color.g << 8) + (color.b << 0));
+#else
     icol = SDL_MapRGBA(buffered_gauge_get_view(BUFFERED_GAUGE(self))->format, color.r, color.g, color.b, color.a);
+#endif
     if(which == TEXT_COLOR)
         self->text_color = icol;
     else

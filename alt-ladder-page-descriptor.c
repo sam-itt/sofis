@@ -33,7 +33,9 @@ LadderPage *alt_ladder_page_init(LadderPage *self)
 {
     fb_ladder_page_init(self);
     ladder_page_etch_markings(self, resource_manager_get_font(TERMINUS_16));
-
+#if USE_SDL_RENDERER
+    VERTICAL_STRIP(self)->rtex = SDL_CreateTextureFromSurface(g_renderer, VERTICAL_STRIP(self)->ruler);
+#endif
     return self;
 }
 
