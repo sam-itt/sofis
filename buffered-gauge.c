@@ -219,11 +219,8 @@ void buffered_gauge_static_font_draw_text(BufferedGauge *self, SDL_Rect *locatio
 
     len = strlen(string);
     for(int i = 0; i < len; i++){
-        //TODO: Remove the test, and draw regardless when default glyph gets implemented
-        if(PCF_StaticFontGetCharRect(font, string[i], &glyph)){
+        if(PCF_StaticFontGetCharRect(font, string[i], &glyph) != 0)
             SDL_BlitSurface(font->raster,&glyph,tview, &cursor);
-
-        }
         cursor.x += font->metrics.characterWidth;
     }
 }
