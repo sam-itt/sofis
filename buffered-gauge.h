@@ -18,7 +18,6 @@ typedef enum{
 }BufferType;
 
 
-
 /* BufferedGauge derivative will draw on their assigned buffer.
  * Therefore there is no need to give them the final on-screen
  * destination raster and area wherein
@@ -49,6 +48,7 @@ typedef struct{
 
 #define buffered_gauge_get_view(self) ((self)->view ? (self)->view : buffer_gauge_build_view((self)))
 #define buffered_gauge_get_queue(self) ((self)->queue ? (self)->queue : buffer_gauge_build_queue((self)))
+#define buffered_gauge_clear(self) buffered_gauge_fill((self), NULL, NULL, false)
 
 #define DEFAULT_QUEUE_SIZE 24
 
@@ -66,10 +66,8 @@ int buffered_gauge_blit(BufferedGauge *self, SDL_Surface *src, SDL_Rect *srcrect
 void buffered_gauge_draw_rubis(BufferedGauge *self, int y, SDL_Color *color, int pskip);
 void buffered_gauge_draw_outline(BufferedGauge *self, SDL_Color *color, SDL_Rect *area);
 
-void buffered_gauge_clear_color(BufferedGauge *self, Uint32 color);
-void buffered_gauge_clear(BufferedGauge *self, SDL_Color *color);
 
-void buffered_gauge_fill(BufferedGauge *self, SDL_Rect *area, SDL_Color *color);
+void buffered_gauge_fill(BufferedGauge *self, SDL_Rect *area, void *color, bool packed);
 
 void buffered_gauge_static_font_draw_text(BufferedGauge *self,
                                           SDL_Rect *location,

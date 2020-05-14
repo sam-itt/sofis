@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include "SDL_pixels.h"
 #include "SDL_rect.h"
 #include "SDL_render.h"
 #include "SDL_surface.h"
@@ -269,8 +270,8 @@ void buffered_gauge_draw_outline(BufferedGauge *self, SDL_Color *color, SDL_Rect
 
 void buffered_gauge_draw_rubis(BufferedGauge *self, int y, SDL_Color *color, int pskip)
 {
-#if USE_SDL_RENDERER
     SDL_Rect area;
+#if USE_SDL_RENDERER
     RenderQueue *queue;
     int startx, stopx;
     int restartx, endx;
@@ -294,7 +295,6 @@ void buffered_gauge_draw_rubis(BufferedGauge *self, int y, SDL_Color *color, int
     render_queue_push_line(queue, color, startx, liney, stopx, liney);
     render_queue_push_line(queue, color, restartx, liney, endx, liney);
 #else
-    SDL_Rect area;
     SDL_Surface *tview;
 
     buffered_gauge_get_area(self, &area);
@@ -304,80 +304,44 @@ void buffered_gauge_draw_rubis(BufferedGauge *self, int y, SDL_Color *color, int
 #endif
 }
 
-void buffered_gauge_clear_color(BufferedGauge *self, Uint32 color)
-{
-#if USE_SDL_RENDERER
-    printf("buffered_gauge_clear_color not implemeneted using SDL_Renderer, rather use buffered_gauge_clear\n");
-#else
-    SDL_Rect area;
-    SDL_Surface *tview;
-
-    buffered_gauge_get_area(self, &area);
-
-    tview = buffered_gauge_get_view(self);
-    SDL_FillRect(tview, &area, color);
-#endif
-}
-
-/*TODO: Merge fill/clear/clear_color*/
-void buffered_gauge_clear(BufferedGauge *self, SDL_Color *color)
-{
-#if USE_SDL_RENDERER
-    SDL_Rect area;
-    RenderQueue *queue;
-
-    buffered_gauge_get_area(self, &area);
-    queue = buffered_gauge_get_queue(self);
-
-    render_queue_push_clear(queue, color, &area);
-#else
-    SDL_Rect area;
-    SDL_Surface *tview;
-
-    buffered_gauge_get_area(self, &area);
-
-    tview = buffered_gauge_get_view(self);
-    if(color){
-        Uint32 col;
-
-        col = SDL_MapRGBA(tview->format, color->r, color->g, color->b, color->a);
-        SDL_FillRect(tview, &area, col);
-    }else{
-        view_clear(tview, &area);
-    }
-#endif
-}
-
 /*TODO: Merge fill/clear*/
-void buffered_gauge_fill(BufferedGauge *self, SDL_Rect *area, SDL_Color *color)
+void buffered_gauge_fill(BufferedGauge *self, SDL_Rect *area, void *color, bool packed)
 {
-#if USE_SDL_RENDERER
     SDL_Rect farea;
+
+    if(area){
+        buffered_gauge_offset(self, area, &farea);
+    }else{
+        buffered_gauge_get_area(self, &farea);
+    }
+#if USE_SDL_RENDERER
     RenderQueue *queue;
 
 
-    if(area){
-        buffered_gauge_offset(self, area, &farea);
-    }else{
-        buffered_gauge_get_area(self, &farea);
-    }
     queue = buffered_gauge_get_queue(self);
-
-    render_queue_push_clear(queue, color, &farea);
+    render_queue_push_clear(queue, (SDL_Color*)color, &farea);
 #else
-    SDL_Rect farea;
     SDL_Surface *tview;
-    Uint32 col;
 
-    if(area){
-        buffered_gauge_offset(self, area, &farea);
-    }else{
-        buffered_gauge_get_area(self, &farea);
-    }
     tview = buffered_gauge_get_view(self);
-    col = SDL_MapRGBA(tview->format, color->r, color->g, color->b, color->a);
+    if(!color){
+        SDL_FillRect(tview, &farea, SDL_UCKEY(tview));
+        return;
+    }
 
-    SDL_FillRect(tview, &farea, col);
+    if(packed){
+        SDL_FillRect(tview, &farea, color->packed);
+    }else{
+        SDL_FillRect(tview,
+            &farea,
+            SDL_MapRGBA(tview->format,
+                color->rgba.r,
+                color->rgba.g,
+                color->rgba.b,
+                color->rgba.a
+            )
+        );
+    }
 #endif
 }
 

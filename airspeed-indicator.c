@@ -62,7 +62,7 @@ AirspeedIndicator *airspeed_indicator_init(AirspeedIndicator *self, speed_t v_so
         (BASE_GAUGE(self->ladder)->h-1)/2.0 - BASE_GAUGE(self->odo)->h/2.0 +1
     );
 
-    buffered_gauge_clear(BUFFERED_GAUGE(self),NULL);
+    buffered_gauge_clear(BUFFERED_GAUGE(self));
 
     self->txt = text_gauge_new(NULL, true, 68, 21);
     self->txt->alignment = HALIGN_CENTER | VALIGN_MIDDLE;
@@ -115,7 +115,7 @@ bool airspeed_indicator_set_value(AirspeedIndicator *self, float value)
 
 static void airspeed_indicator_render(AirspeedIndicator *self, Uint32 dt)
 {
-    buffered_gauge_clear(BUFFERED_GAUGE(self), NULL);
+    buffered_gauge_clear(BUFFERED_GAUGE(self));
     buffered_gauge_draw_outline(BUFFERED_GAUGE(self), &SDL_WHITE, NULL); /*Not really needed*/
 
     buffered_gauge_paint_buffer(BUFFERED_GAUGE(self->ladder), dt);

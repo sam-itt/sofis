@@ -477,7 +477,7 @@ static void attitude_indicator_render_value(AttitudeIndicator *self, float value
 	value = (value < self->size*-10) ? self->size*-10 - 5: value;
 
     value = value * -1.0;
-    buffered_gauge_clear(BUFFERED_GAUGE(self), NULL);
+    buffered_gauge_clear(BUFFERED_GAUGE(self));
 
 
     /*First find out a view-sized window into the larger ball buffer for a 0deg pitch*/

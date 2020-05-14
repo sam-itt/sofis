@@ -83,7 +83,7 @@ static void roll_slip_gauge_render_value(RollSlipGauge *self, float value)
 #if USE_SDL_RENDERER
     buffered_gauge_blit_texture(BUFFERED_GAUGE(self), self->tarc, NULL, &(SDL_Rect){0,0,self->arc->w,self->arc->h});
 #else
-    buffered_gauge_fill(BUFFERED_GAUGE(self), NULL, &SDL_TRANSPARENT);
+    buffered_gauge_fill(BUFFERED_GAUGE(self), NULL, &SDL_TRANSPARENT, false);
     buffered_gauge_blit(BUFFERED_GAUGE(self), self->arc, NULL, NULL);
 #endif
 	//Arc 0°: 86/10

@@ -89,7 +89,7 @@ static void vertical_stair_render_value(VerticalStair *self, float value)
     snprintf(number, 6, "% -d", ivalue);
     vertical_strip_clip_value(&self->scale, &value);
 
-    buffered_gauge_clear(BUFFERED_GAUGE(self), NULL);
+    buffered_gauge_clear(BUFFERED_GAUGE(self));
     buffered_gauge_blit_strip(BUFFERED_GAUGE(self), &self->scale, NULL, &(SDL_Rect){0, 0, self->scale.ruler->w, self->scale.ruler->h});
 
     y = vertical_strip_resolve_value(&self->scale, value, true);

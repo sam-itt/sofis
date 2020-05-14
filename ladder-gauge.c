@@ -126,7 +126,7 @@ static void ladder_gauge_render_value(LadderGauge *self, float value)
     LadderPage *page, *page2;
     SDL_Rect dst_region = {0,0,BASE_GAUGE(self)->w,BASE_GAUGE(self)->h};
 
-    buffered_gauge_clear(BUFFERED_GAUGE(self), NULL);
+    buffered_gauge_clear(BUFFERED_GAUGE(self));
     buffered_gauge_draw_outline(BUFFERED_GAUGE(self), &SDL_WHITE, NULL);
 
     value = value >= 0 ? value : 0.0f;

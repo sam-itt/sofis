@@ -67,7 +67,7 @@ AltIndicator *alt_indicator_init(AltIndicator *self)
         19 + (BASE_GAUGE(self->ladder)->h-1)/2.0 - BASE_GAUGE(self->odo)->h/2.0 +1
     );
 
-    buffered_gauge_clear(BUFFERED_GAUGE(self),NULL);
+    buffered_gauge_clear(BUFFERED_GAUGE(self));
 
     self->talt_txt = text_gauge_new(NULL, true, 68, 20);
     self->talt_txt->alignment = HALIGN_CENTER | VALIGN_MIDDLE;
@@ -161,7 +161,7 @@ void alt_indicator_set_qnh(AltIndicator *self, float value)
 
 static void alt_indicator_render(AltIndicator *self, Uint32 dt)
 {
-    buffered_gauge_clear(BUFFERED_GAUGE(self), NULL);
+    buffered_gauge_clear(BUFFERED_GAUGE(self));
     buffered_gauge_paint_buffer(BUFFERED_GAUGE(self->talt_txt), dt);
 
     buffered_gauge_paint_buffer(BUFFERED_GAUGE(self->ladder), dt);

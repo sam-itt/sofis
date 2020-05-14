@@ -128,7 +128,7 @@ static void text_gauge_render(TextGauge *self, Uint32 dt)
         else
             buffered_gauge_font_draw_text(BUFFERED_GAUGE(self), NULL, self->alignment, self->value, self->font.font, self->text_color, self->bg_color);
     }else{
-        buffered_gauge_clear_color(BUFFERED_GAUGE(self), self->bg_color);
+        buffered_gauge_fill(BUFFERED_GAUGE(self), NULL, &self->bg_color, true);
     }
 
     if(self->outlined)
