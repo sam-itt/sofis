@@ -41,15 +41,13 @@ AirspeedIndicator *airspeed_indicator_init(AirspeedIndicator *self, speed_t v_so
     PCF_Font *fnt;
 
     buffered_gauge_init(BUFFERED_GAUGE(self), &airspeed_indicator_ops, 68, 240+20);
+    BUFFERED_GAUGE(self)->max_ops = 22;
 
     descriptor = airspeed_page_descriptor_new( v_so,  v_s1,  v_fe,  v_no,  v_ne);
     self->ladder = ladder_gauge_new((LadderPageDescriptor *)descriptor, -1);
-    buffered_gauge_set_buffer(
-        BUFFERED_GAUGE(self->ladder),
-        buffered_gauge_get_view(BUFFERED_GAUGE(self)),
-        0,
-        0
-    );
+    buffered_gauge_share_buffer(BUFFERED_GAUGE(self->ladder),
+        BUFFERED_GAUGE(self),
+        0, 0);
 
     fnt = resource_manager_get_font(TERMINUS_18);
     db = digit_barrel_new(fnt, 0, 9.999, 1);
@@ -58,14 +56,13 @@ AirspeedIndicator *airspeed_indicator_init(AirspeedIndicator *self, speed_t v_so
             -2, db,
             -2, db
     );
-    buffered_gauge_set_buffer(
-        BUFFERED_GAUGE(self->odo),
-        buffered_gauge_get_view(BUFFERED_GAUGE(self->ladder)),
+    buffered_gauge_share_buffer(BUFFERED_GAUGE(self->odo),
+        BUFFERED_GAUGE(self->ladder),
         25,
         (BASE_GAUGE(self->ladder)->h-1)/2.0 - BASE_GAUGE(self->odo)->h/2.0 +1
     );
 
-    buffered_gauge_clear(BUFFERED_GAUGE(self),NULL);
+    buffered_gauge_clear(BUFFERED_GAUGE(self));
 
     self->txt = text_gauge_new(NULL, true, 68, 21);
     self->txt->alignment = HALIGN_CENTER | VALIGN_MIDDLE;
@@ -75,8 +72,8 @@ AirspeedIndicator *airspeed_indicator_init(AirspeedIndicator *self, speed_t v_so
             2, "TASKT-", PCF_DIGITS
         )
     );
-    buffered_gauge_set_buffer(BUFFERED_GAUGE(self->txt),
-        buffered_gauge_get_view(BUFFERED_GAUGE(self)),
+    buffered_gauge_share_buffer(BUFFERED_GAUGE(self->txt),
+        BUFFERED_GAUGE(self),
         0,
         BASE_GAUGE(self)->h - 20 - 1
     );
@@ -118,7 +115,7 @@ bool airspeed_indicator_set_value(AirspeedIndicator *self, float value)
 
 static void airspeed_indicator_render(AirspeedIndicator *self, Uint32 dt)
 {
-    buffered_gauge_clear(BUFFERED_GAUGE(self), NULL);
+    buffered_gauge_clear(BUFFERED_GAUGE(self));
     buffered_gauge_draw_outline(BUFFERED_GAUGE(self), &SDL_WHITE, NULL); /*Not really needed*/
 
     buffered_gauge_paint_buffer(BUFFERED_GAUGE(self->ladder), dt);

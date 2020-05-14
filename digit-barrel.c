@@ -1,4 +1,6 @@
+#include "SDL_render.h"
 #include "buffered-gauge.h"
+#include "misc.h"
 #include "sdl-pcf/SDL_pcf.h"
 #define _GNU_SOURCE
 #include <stdio.h>
@@ -85,6 +87,9 @@ DigitBarrel *digit_barrel_init(DigitBarrel *self, PCF_Font *font, float start, f
     strip->ppv = self->symbol_h / step;
 
 //    digit_barrel_draw_etch_marks(self);
+#if USE_SDL_RENDERER
+    strip->rtex = SDL_CreateTextureFromSurface(g_renderer, strip->ruler); /*TODO: This must go a layer up (or down)*/
+#endif
     return self;
 }
 
@@ -150,6 +155,13 @@ void digit_barrel_render_value(DigitBarrel *self, float value, BufferedGauge *ds
         .w = strip->ruler->w,
         .h = region->h
     };
+    /* Ensures that portion.y + portion.h doesn't got past image bounds:
+     * w/h are ignored by SDL_BlitSurface, but when using SDL_Renderers wrong
+     * values will stretch the image.
+     */
+    if(portion.y + portion.h > strip->ruler->h)
+        portion.h = strip->ruler->h - portion.y;
+
 
     if(portion.y < 0){ //Fill top
         SDL_Rect patch = {
@@ -158,12 +170,13 @@ void digit_barrel_render_value(DigitBarrel *self, float value, BufferedGauge *ds
             .w = strip->ruler->w,
             .h = strip->ruler->h - patch.y
         };
-        buffered_gauge_blit(dst, strip->ruler, &patch, &dst_region);
+        buffered_gauge_blit_strip(dst, strip, &patch, &dst_region);
+
         dst_region.y = patch.h;
         portion.y = 0;
         portion.h -= patch.h;
     }
-    buffered_gauge_blit(dst, strip->ruler, &portion, &dst_region);
+    buffered_gauge_blit_strip(dst, strip, &portion, &dst_region);
 
     if(portion.y + region->h > strip->ruler->h){// fill bottom
         float taken = strip->ruler->h - portion.y; //number of pixels taken from the bottom of values pict
@@ -175,7 +188,7 @@ void digit_barrel_render_value(DigitBarrel *self, float value, BufferedGauge *ds
             .w = strip->ruler->w,
             .h = delta
         };
-        buffered_gauge_blit(dst, strip->ruler, &patch, &dst_region);
+        buffered_gauge_blit_strip(dst, strip, &patch, &dst_region);
     }
 }
 

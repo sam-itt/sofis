@@ -3,10 +3,13 @@
 
 #include <SDL2/SDL_image.h>
 
+#include "SDL_render.h"
 #include "airspeed-page-descriptor.h"
+#include "buffered-gauge.h"
 #include "resource-manager.h"
 #include "sdl-colors.h"
 #include "misc.h"
+#include "vertical-strip.h"
 
 #define PAGE_SIZE 70
 
@@ -44,7 +47,9 @@ LadderPage *airspeed_ladder_page_init(LadderPage *self)
     ladder_page_etch_markings(self, resource_manager_get_font(TERMINUS_16));
 
     airspeed_ladder_page_draw_arcs(self);
-
+#if USE_SDL_RENDERER
+    VERTICAL_STRIP(self)->rtex = SDL_CreateTextureFromSurface(g_renderer, VERTICAL_STRIP(self)->ruler);
+#endif
     return self;
 }
 

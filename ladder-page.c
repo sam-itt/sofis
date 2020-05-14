@@ -60,8 +60,7 @@ void ladder_page_free(LadderPage *self)
 
 int ladder_page_get_index(LadderPage *self)
 {
-
-    return VERTICAL_STRIP(self)->start/(self->descriptor->page_size+self->descriptor->offset);
+    return ceil(VERTICAL_STRIP(self)->start/(self->descriptor->page_size));
 }
 
 /*TODO: inline*/

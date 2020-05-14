@@ -1,6 +1,7 @@
 #ifndef ATTITUDE_INDICATOR_H
 #define ATTITUDE_INDICATOR_H
 
+#include "SDL_render.h"
 #include "animated-gauge.h"
 #include "roll-slip-gauge.h"
 
@@ -33,14 +34,17 @@ typedef struct{
 //	int size;
 
 	SDL_Surface *markers[3]; //left, right, center
+	SDL_Texture *tmarkers[3]; //left, right, center
 	SDL_Rect locations[LOCATION_MAX];
-
+#if USE_SDL_RENDERER
+    SDL_Texture *tbuffer;
+    SDL_Texture *tetched_ball;
+#else
 	SDL_Surface *buffer;
 	SDL_Renderer *renderer;
 	SDL_Texture *horizon;
-
+#endif
     SDL_Surface *etched_ball;
-
 }AttitudeIndicator;
 
 

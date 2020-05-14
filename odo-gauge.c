@@ -162,7 +162,7 @@ void odo_gauge_render_value(OdoGauge *self, float value)
      * to clear portions when appropriate
      * */
     if(BUFFERED_GAUGE(self)->type == BUFFER_OWN)
-        buffered_gauge_clear(BUFFERED_GAUGE(self), NULL);
+        buffered_gauge_clear(BUFFERED_GAUGE(self));
 
     nparts = number_split(value, vparts, 6);
 //    printf("doing value %f, splitted in to %d parts\n",value,nparts);
@@ -201,7 +201,7 @@ void odo_gauge_render_value(OdoGauge *self, float value)
         cursor.y = 0 + BASE_GAUGE(self)->h/2 - cursor.h/2;
         cursor.w = VERTICAL_STRIP(self->barrels[current_rotor])->ruler->w;
 
-        buffered_gauge_fill(BUFFERED_GAUGE(self), &cursor, &SDL_BLACK);
+        buffered_gauge_fill(BUFFERED_GAUGE(self), &cursor, &SDL_BLACK, false);
     }
     buffered_gauge_draw_rubis(BUFFERED_GAUGE(self), self->rubis, &SDL_RED, round(BASE_GAUGE(self)->w/2.0));
 }

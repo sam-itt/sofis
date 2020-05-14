@@ -1,6 +1,7 @@
 #ifndef VERTICAL_STRIP_H
 #define VERTICAL_STRIP_H
 
+#include "SDL_render.h"
 #include <stdbool.h>
 
 #include <SDL2/SDL.h>
@@ -11,6 +12,9 @@
  */
 typedef struct{
     SDL_Surface *ruler;
+#if USE_SDL_RENDERER
+    SDL_Texture *rtex;
+#endif
 
     float ppv; /* pixels per value*/
     float start, end; /*Range*/

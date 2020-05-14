@@ -2,6 +2,7 @@
 #include <stdlib.h>
 
 #include "animated-gauge.h"
+#include "base-gauge.h"
 #include "buffered-gauge.h"
 #include "ladder-gauge.h"
 #include "ladder-page-factory.h"
@@ -113,7 +114,7 @@ LadderPage *ladder_gauge_get_page_for(LadderGauge *self, float value)
 {
     int page_idx;
 
-    page_idx = (int)value/(self->descriptor->page_size+self->descriptor->offset);
+    page_idx = (int)value/(self->descriptor->page_size);
 
     return ladder_gauge_get_page(self, page_idx);
 }
@@ -123,9 +124,9 @@ static void ladder_gauge_render_value(LadderGauge *self, float value)
     float y;
     float rubis;
     LadderPage *page, *page2;
-    SDL_Rect dst_region = {0,0,0,0};
+    SDL_Rect dst_region = {0,0,BASE_GAUGE(self)->w,BASE_GAUGE(self)->h};
 
-    buffered_gauge_clear(BUFFERED_GAUGE(self), NULL);
+    buffered_gauge_clear(BUFFERED_GAUGE(self));
     buffered_gauge_draw_outline(BUFFERED_GAUGE(self), &SDL_WHITE, NULL);
 
     value = value >= 0 ? value : 0.0f;
@@ -141,6 +142,12 @@ static void ladder_gauge_render_value(LadderGauge *self, float value)
         .w = VERTICAL_STRIP(page)->ruler->w,
         .h = BASE_GAUGE(self)->h
     };
+    /* Ensures that portion.y + portion.h doesn't got past image bounds:
+     * w/h are ignored by SDL_BlitSurface, but when using SDL_Renderers wrong
+     * values will stretch the image.
+     * */
+    if(portion.y + portion.h > VERTICAL_STRIP(page)->ruler->h)
+        portion.h = VERTICAL_STRIP(page)->ruler->h - portion.y;
     /*All pages must have the same size*/
     if(portion.y < 0){ //Fill top
         SDL_Rect patch = {
@@ -155,23 +162,20 @@ static void ladder_gauge_render_value(LadderGauge *self, float value)
             int pidx = ladder_page_get_index(page);
             if(pidx > 0){
                 page2 = ladder_gauge_get_page(self, pidx - 1);
-                buffered_gauge_blit(BUFFERED_GAUGE(self), VERTICAL_STRIP(page2)->ruler, &patch, &dst_region);
-
+                buffered_gauge_blit_strip(BUFFERED_GAUGE(self), VERTICAL_STRIP(page2), &patch, &dst_region);
             }
         }else{
             /* 0 at the bottom, 100 is upwards. We need to fill the top with values after the end
              * of the current page, i.e get the next page */
             int pidx = ladder_page_get_index(page);
             page2 = ladder_gauge_get_page(self, pidx + 1);
-            buffered_gauge_blit(BUFFERED_GAUGE(self), VERTICAL_STRIP(page2)->ruler, &patch, &dst_region);
-
+            buffered_gauge_blit_strip(BUFFERED_GAUGE(self), VERTICAL_STRIP(page2), &patch, &dst_region);
         }
         dst_region.y = patch.h;
         portion.y = 0;
         portion.h -= patch.h;
     }
-
-    buffered_gauge_blit(BUFFERED_GAUGE(self), VERTICAL_STRIP(page)->ruler, &portion, &dst_region);
+    buffered_gauge_blit_strip(BUFFERED_GAUGE(self), VERTICAL_STRIP(page), &portion, &dst_region);
 
     if(portion.y + BASE_GAUGE(self)->h > VERTICAL_STRIP(page)->ruler->h){// fill bottom
         float taken = VERTICAL_STRIP(page)->ruler->h - portion.y; //number of pixels taken from the bottom of values pict
@@ -188,14 +192,14 @@ static void ladder_gauge_render_value(LadderGauge *self, float value)
              * of the current page, i.e get the next page */
             int pidx = ladder_page_get_index(page);
             page2 = ladder_gauge_get_page(self, pidx + 1);
-            buffered_gauge_blit(BUFFERED_GAUGE(self), VERTICAL_STRIP(page2)->ruler, &patch, &dst_region);
+            buffered_gauge_blit_strip(BUFFERED_GAUGE(self), VERTICAL_STRIP(page2), &patch, &dst_region);
         }else{
             /* 0 at the bottom, 100 is upwards. We need to fill the bottom with values that are before the begining
              * of the current page, i.e get the previous page */
             int pidx = ladder_page_get_index(page);
             if(pidx > 0){
                 page2 = ladder_gauge_get_page(self, pidx - 1);
-                buffered_gauge_blit(BUFFERED_GAUGE(self), VERTICAL_STRIP(page2)->ruler, &patch, &dst_region);
+                buffered_gauge_blit_strip(BUFFERED_GAUGE(self), VERTICAL_STRIP(page2), &patch, &dst_region);
             }
         }
     }

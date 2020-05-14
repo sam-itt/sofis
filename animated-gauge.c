@@ -91,8 +91,10 @@ void animated_gauge_dispose(AnimatedGauge *self)
 
 void animated_gauge_set_value(AnimatedGauge *self, float value)
 {
-    basic_animation_start(&self->animation, self->value, value, SPIN_DURATION);
-    self->value = value;
+    if(self->value != value){
+        basic_animation_start(&self->animation, self->value, value, SPIN_DURATION);
+        self->value = value;
+    }
 }
 
 /**

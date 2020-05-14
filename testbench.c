@@ -4,6 +4,9 @@
 
 #include <SDL2/SDL.h>
 
+#include "SDL_hints.h"
+#include "SDL_pixels.h"
+#include "SDL_render.h"
 #include "animated-gauge.h"
 #include "base-gauge.h"
 #include "basic-hud.h"
@@ -42,8 +45,10 @@ AttitudeIndicator *ai = NULL;
 RollSlipGauge *rsg = NULL;
 TextGauge *txt = NULL;
 
+
+SDL_Renderer *g_renderer = NULL;
+
 float gval = 0.0;
-//float alt = 1150.0;
 float alt = 900.0;
 float odo_val = 0.0;
 //float vs = 2000.0;
@@ -78,6 +83,7 @@ bool handle_keyboard(SDL_KeyboardEvent *event, Uint32 elapsed)
                 if(gval > 99)
                     gval = 99;
                 odo_gauge_set_value(gauge, gval);
+//                printf("Odo gauge just set to %0.2f\n",gval);
             }
             break;
         case SDLK_g:
@@ -86,6 +92,7 @@ bool handle_keyboard(SDL_KeyboardEvent *event, Uint32 elapsed)
                 if(gval < 0)
                     gval = 0;
                 odo_gauge_set_value(gauge, gval);
+//                printf("Odo gauge just set to %0.2f\n",gval);
             }
             break;
         case SDLK_a:
@@ -251,6 +258,8 @@ int main(int argc, char **argv)
     if (SDL_Init(SDL_INIT_VIDEO) < 0) {
         return 1;
     }
+//    SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "0");
+//    SDL_SetHintWithPriority(SDL_HINT_RENDER_SCALE_QUALITY, "0", SDL_HINT_OVERRIDE);
 
     window = SDL_CreateWindow(
                 "hello_sdl2",
@@ -262,18 +271,30 @@ int main(int argc, char **argv)
         fprintf(stderr, "could not create window: %s\n", SDL_GetError());
         return 1;
     }
-
+#if USE_SDL_RENDERER
+    SDL_RendererInfo rinfo;
+//    g_renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_SOFTWARE);
+    g_renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
+    if (g_renderer == NULL) {
+        fprintf(stderr, "could not create renderer: %s\n", SDL_GetError());
+        return 1;
+    }
+    SDL_GetRendererInfo(g_renderer, &rinfo);
+    printf("Got renderer: %s\n", rinfo.name);
+    if(!(rinfo.flags & SDL_RENDERER_TARGETTEXTURE)){
+        printf("Renderer doesn't support rendering to texture. Problems ahead(attitude indicator)\n");
+    }
+#else
     screenSurface = SDL_GetWindowSurface(window);
     if(!screenSurface){
         printf("Error: %s\n",SDL_GetError());
         exit(-1);
     }
-
-
     colors[0] = SDL_MapRGB(screenSurface->format, 0xFF, 0xFF, 0xFF);
     colors[1] = SDL_MapRGB(screenSurface->format, 0xFF, 0x00, 0x00);
     colors[2] = SDL_MapRGB(screenSurface->format, 0x00, 0xFF, 0x00);
     colors[3] = SDL_MapRGB(screenSurface->format, 0x11, 0x56, 0xFF);
+#endif
 
     gauge = odo_gauge_new(digit_barrel_new(
         resource_manager_get_font(TERMINUS_32), 0, 99,10),
@@ -361,7 +382,12 @@ int main(int argc, char **argv)
     SDL_Rect vrect = {96,70,0,0};
     SDL_Rect whole = {0,0,640,480};
 
+#if USE_SDL_RENDERER
+    SDL_SetRenderDrawColor(g_renderer, 0x11, 0x56, 0xFF, 255);
+    SDL_RenderClear(g_renderer);
+#else
     SDL_FillRect(screenSurface, NULL, SDL_UFBLUE(screenSurface));
+#endif
     do{
         ticks = SDL_GetTicks();
         elapsed = ticks - last_ticks;
@@ -372,7 +398,12 @@ int main(int argc, char **argv)
         /* Not having this in the loop breaks ladder-gauge display
          * TODO: Check why and fix
          * */
+#if USE_SDL_RENDERER
+        SDL_SetRenderDrawColor(g_renderer, 0x11, 0x56, 0xFF, 255);
+        SDL_RenderClear(g_renderer);
+#else
         SDL_FillRect(screenSurface, NULL, SDL_UFBLUE(screenSurface));
+#endif
 //        base_gauge_render(BASE_GAUGE(ladder), elapsed, screenSurface, &lrect);
 //        base_gauge_render(BASE_GAUGE(gauge), elapsed, screenSurface, &dst);
 //        base_gauge_render(BASE_GAUGE(wheel), elapsed, screenSurface, &wheelrect);
@@ -391,13 +422,17 @@ int main(int argc, char **argv)
 
         base_gauge_render(BASE_GAUGE(hud), elapsed, screenSurface, &whole);
 //        base_gauge_render(BASE_GAUGE(txt), elapsed, screenSurface, &txtrect);
+#if USE_SDL_RENDERER
+        SDL_RenderPresent(g_renderer);
+#else
         SDL_UpdateWindowSurface(window);
+#endif
 #if 1
         if(elapsed < 200){
             SDL_Delay(200 - elapsed);
         }
 #endif
-        if(acc >= 1000){
+        if(acc >= 10000){
             if(ANIMATED_GAUGE(ladder)->value != oldv[0]){
                 printf("Ladder value: %f\n",ANIMATED_GAUGE(ladder)->value);
                 oldv[0] = ANIMATED_GAUGE(ladder)->value;
@@ -446,6 +481,9 @@ int main(int argc, char **argv)
     basic_hud_free(hud);
     text_gauge_free(txt);
     resource_manager_shutdown();
+#if USE_SDL_RENDERER
+    SDL_DestroyRenderer(g_renderer);
+#endif
     SDL_DestroyWindow(window);
     SDL_Quit();
     return 0;

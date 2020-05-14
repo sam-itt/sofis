@@ -16,6 +16,7 @@ typedef struct{
     TextGauge *talt_txt; /*Target altitude*/
     TextGauge *qnh_txt;
     SDL_Surface *gps_flag;
+    SDL_Texture *tgps_flag;
 
     AltSource src;
     int qnh;
