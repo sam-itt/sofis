@@ -330,15 +330,15 @@ void buffered_gauge_fill(BufferedGauge *self, SDL_Rect *area, void *color, bool 
     }
 
     if(packed){
-        SDL_FillRect(tview, &farea, color->packed);
+        SDL_FillRect(tview, &farea, *((Uint32*)color));
     }else{
         SDL_FillRect(tview,
             &farea,
             SDL_MapRGBA(tview->format,
-                color->rgba.r,
-                color->rgba.g,
-                color->rgba.b,
-                color->rgba.a
+                ((SDL_Color*)color)->r,
+                ((SDL_Color*)color)->g,
+                ((SDL_Color*)color)->b,
+                ((SDL_Color*)color)->a
             )
         );
     }
