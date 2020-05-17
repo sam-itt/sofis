@@ -185,7 +185,7 @@ static void inline render_clear_op_execute(RenderClearOp *self, SDL_Renderer *re
 
 void render_clear_op_dump(RenderClearOp *self)
 {
-    printf("Clear area (x:%d, y:%d, h:%d, w:%d) with color (r: %d, g:%d; b:%d, a:%d)\n",
+    printf("Clear area (x:%d, y:%d, w:%d, h:%d) with color (r: %d, g:%d; b:%d, a:%d)\n",
         self->area.x,self->area.y,self->area.w,self->area.h,
         self->color.r, self->color.g, self->color.b, self->color.a
     );
@@ -213,12 +213,12 @@ void render_blit_op_dump(RenderBlitOp *self)
     if(is_null_rect(&self->src))
         printf("(whole) ");
     else
-        printf(" (area x:%d, y:%d, h:%d, w:%d)", self->src.x, self->src.y, self->src.w, self->src.h);
+        printf(" (area x:%d, y:%d, w:%d, h:%d) ", self->src.x, self->src.y, self->src.w, self->src.h);
     printf("to: ");
     if(is_null_rect(&self->dst))
         printf("(0,0,renderer->width, renderer->height) ");
     else
-        printf(" (area x:%d, y:%d, h:%d, w:%d)", self->dst.x, self->dst.y, self->dst.w, self->dst.h);
+        printf(" (area x:%d, y:%d, w:%d, h:%d)", self->dst.x, self->dst.y, self->dst.w, self->dst.h);
     printf("\n");
 }
 
@@ -268,7 +268,7 @@ static void inline render_outline_op_execute(RenderOutlineOp *self, SDL_Renderer
 
 void render_outline_op_dump(RenderOutlineOp *self)
 {
-    printf("Outline area (x:%d, y:%d, h:%d, w:%d) with color (r: %d, g:%d; b:%d, a:%d)\n",
+    printf("Outline area (x:%d, y:%d, w:%d, h:%d) with color (r: %d, g:%d; b:%d, a:%d)\n",
         self->rect.x, self->rect.y, self->rect.w, self->rect.h,
         self->color.r, self->color.g, self->color.b, self->color.a
     );
@@ -301,13 +301,13 @@ void render_rotate_op_dump(RenderRotateOp *self)
     if(is_null_rect(&self->src))
         printf("(whole) ");
     else
-        printf(" (area x:%d, y:%d, h:%d, w:%d)", self->src.x, self->src.y, self->src.w, self->src.h);
+        printf(" (area x:%d, y:%d, w:%d, h:%d)", self->src.x, self->src.y, self->src.w, self->src.h);
     printf("%0.2f degrees about (x:%d, y:%d) ", self->angle, self->center.x, self->center.y);
     printf("and blit to: ");
     if(is_null_rect(&self->dst))
         printf("(0,0,renderer->width, renderer->height) ");
     else
-        printf(" (area x:%d, y:%d, h:%d, w:%d)", self->dst.x, self->dst.y, self->dst.w, self->dst.h);
+        printf(" (area x:%d, y:%d, w:%d, h:%d)", self->dst.x, self->dst.y, self->dst.w, self->dst.h);
     printf("\n");
 }
 
