@@ -1,3 +1,4 @@
+#include "SDL_gpu.h"
 #include "SDL_render.h"
 #include "buffered-gauge.h"
 #include "misc.h"
@@ -87,8 +88,8 @@ DigitBarrel *digit_barrel_init(DigitBarrel *self, PCF_Font *font, float start, f
     strip->ppv = self->symbol_h / step;
 
 //    digit_barrel_draw_etch_marks(self);
-#if USE_SDL_RENDERER
-    strip->rtex = SDL_CreateTextureFromSurface(g_renderer, strip->ruler); /*TODO: This must go a layer up (or down)*/
+#if USE_SDL_GPU
+    strip->rtex = GPU_CopyImageFromSurface(strip->ruler);
 #endif
     return self;
 }

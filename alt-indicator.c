@@ -99,7 +99,7 @@ AltIndicator *alt_indicator_init(AltIndicator *self)
     );
     text_gauge_set_color(self->talt_txt, SDL_BLACK, BACKGROUND_COLOR);
 
-#if USE_SDL_RENDERER
+#if USE_SDL_GPU
     self->gps_flag = SDL_CreateRGBSurfaceWithFormat(0, 68-2, 21, 24, SDL_PIXELFORMAT_RGB24);
 #else
     self->gps_flag = SDL_CreateRGBSurface(0,
@@ -119,8 +119,8 @@ AltIndicator *alt_indicator_init(AltIndicator *self)
         resource_manager_get_font(TERMINUS_16),
         SDL_URED(self->gps_flag), SDL_UBLACK(self->gps_flag)
     );
-#if USE_SDL_RENDERER
-    self->tgps_flag = SDL_CreateTextureFromSurface(g_renderer, self->gps_flag);
+#if USE_SDL_GPU
+    self->tgps_flag = GPU_CopyImageFromSurface(self->gps_flag);
 #endif
     return self;
 }
@@ -171,7 +171,7 @@ static void alt_indicator_render(AltIndicator *self, Uint32 dt)
         buffered_gauge_paint_buffer(BUFFERED_GAUGE(self->qnh_txt), dt);
     }else{
         buffered_gauge_draw_outline(BUFFERED_GAUGE(self->qnh_txt), &SDL_WHITE, NULL);
-#if USE_SDL_RENDERER
+#if USE_SDL_GPU
         buffered_gauge_blit_texture(BUFFERED_GAUGE(self), self->tgps_flag, NULL, &(SDL_Rect){
             .x = 0 + 1,
             .y = BASE_GAUGE(self)->h - 20 -2 + 1,

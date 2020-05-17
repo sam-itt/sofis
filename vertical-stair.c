@@ -49,9 +49,9 @@ VerticalStair *vertical_stair_init(VerticalStair *self, const char *bg_img, cons
     self->font = font;
     if(!self->cursor || !self->font)
         return NULL; //TODO: Will leak self->scale.ruler
-#if USE_SDL_RENDERER
-    self->scale.rtex = SDL_CreateTextureFromSurface(g_renderer, self->scale.ruler);
-    self->tcursor = SDL_CreateTextureFromSurface(g_renderer, self->cursor);
+#if USE_SDL_GPU
+    self->scale.rtex = GPU_CopyImageFromSurface(self->scale.ruler);
+    self->tcursor = GPU_CopyImageFromSurface(self->cursor);
 #endif
     self->font->refcnt++;
 
@@ -96,7 +96,7 @@ static void vertical_stair_render_value(VerticalStair *self, float value)
     y = round(round(y) - self->cursor->h/2.0);
 
     cloc = (SDL_Rect){1, y,self->cursor->w,self->cursor->h};
-#if USE_SDL_RENDERER
+#if USE_SDL_GPU
     buffered_gauge_blit_texture(BUFFERED_GAUGE(self), self->tcursor, NULL, &cloc);
 #else
     buffered_gauge_blit(BUFFERED_GAUGE(self), self->cursor, NULL, &cloc);
@@ -105,7 +105,7 @@ static void vertical_stair_render_value(VerticalStair *self, float value)
     PCF_StaticFontGetSizeRequestRect(self->font, number, &dst);
     SDLExt_RectAlign(&dst, &cloc, HALIGN_LEFT | VALIGN_MIDDLE);
     dst.x += self->font->metrics.characterWidth;
-#if USE_SDL_RENDERER
+#if USE_SDL_GPU
     buffered_gauge_static_font_draw_text(BUFFERED_GAUGE(self),
         &dst, 0,
         number,

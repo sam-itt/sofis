@@ -44,12 +44,12 @@ RollSlipGauge *roll_slip_gauge_init(RollSlipGauge *self)
 
 	SDL_Surface *tmp = IMG_Load("arrow-needleless.png");
     if(!tmp) return NULL; //TODO: Can leak self->arc
-#if USE_SDL_RENDERER
-	self->arrow = SDL_CreateTextureFromSurface(g_renderer, tmp);
-    self->tarc = SDL_CreateTextureFromSurface(g_renderer, self->arc);
+#if USE_SDL_GPU
+    self->arrow = GPU_CopyImageFromSurface(tmp);
+    self->tarc = GPU_CopyImageFromSurface(self->arc);
 #else
-	self->renderer = SDL_CreateSoftwareRenderer(buffered_gauge_get_view(BUFFERED_GAUGE(self)));
-	self->arrow = SDL_CreateTextureFromSurface(self->renderer, tmp);
+    self->renderer = SDL_CreateSoftwareRenderer(buffered_gauge_get_view(BUFFERED_GAUGE(self)));
+    self->arrow = SDL_CreateTextureFromSurface(self->renderer, tmp);
 #endif
 	SDL_FreeSurface(tmp);
 
@@ -60,7 +60,7 @@ void roll_slip_gauge_dispose(RollSlipGauge *self)
 {
     animated_gauge_dispose(ANIMATED_GAUGE(self));
     SDL_FreeSurface(self->arc);
-#if !USE_SDL_RENDERER
+#if !USE_SDL_GPU
     SDL_DestroyRenderer(self->renderer); /*Will also free self->arrow*/
 #endif
 }
@@ -80,7 +80,7 @@ static void roll_slip_gauge_render_value(RollSlipGauge *self, float value)
 		value = sign(value)*65;
 
 	value *= -1.0;
-#if USE_SDL_RENDERER
+#if USE_SDL_GPU
     buffered_gauge_blit_texture(BUFFERED_GAUGE(self), self->tarc, NULL, &(SDL_Rect){0,0,self->arc->w,self->arc->h});
 #else
     buffered_gauge_fill(BUFFERED_GAUGE(self), NULL, &SDL_TRANSPARENT, false);
@@ -98,7 +98,7 @@ static void roll_slip_gauge_render_value(RollSlipGauge *self, float value)
 
 	center.x = rect.w/2;
 	center.y = 90; /*Radius 94.5 or 92.725*/
-#if USE_SDL_RENDERER
+#if USE_SDL_GPU
     buffered_gauge_blit_rotated_texture(BUFFERED_GAUGE(self), self->arrow, NULL, value, &center, &rect, NULL);
 #else
 	SDL_RenderCopyEx(self->renderer, self->arrow, NULL,&rect, value, &center, SDL_FLIP_NONE);

@@ -47,8 +47,8 @@ LadderPage *airspeed_ladder_page_init(LadderPage *self)
     ladder_page_etch_markings(self, resource_manager_get_font(TERMINUS_16));
 
     airspeed_ladder_page_draw_arcs(self);
-#if USE_SDL_RENDERER
-    VERTICAL_STRIP(self)->rtex = SDL_CreateTextureFromSurface(g_renderer, VERTICAL_STRIP(self)->ruler);
+#if USE_SDL_GPU
+    VERTICAL_STRIP(self)->rtex = GPU_CopyImageFromSurface(VERTICAL_STRIP(self)->ruler);
 #endif
     return self;
 }

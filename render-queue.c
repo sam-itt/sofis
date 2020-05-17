@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <stdbool.h>
 
+#include "SDL_gpu.h"
 #include "SDL_render.h"
 #include "misc.h"
 #include "render-queue.h"
@@ -10,7 +11,8 @@
 //#define is_color_key(c) (0)
 #define is_null_rect(r) ((r)->x == -1 && (r)->y == -1 && (r)->w == -1 && (r)->h == -1)
 #define rect_offset(r1, r2) ((SDL_Rect){r1->x + r2->x, r1->y + r2->y, r1->w, r1->h})
-
+#define rectf_offset(r1, r2) ((GPU_Rect){r1->x + r2->x, r1->y + r2->y, r1->w, r1->h})
+#define rectf(r) (GPU_Rect){(r)->x, (r)->y, (r)->w, (r)->h}
 
 
 RenderQueue *render_queue_new(size_t size)
@@ -53,7 +55,7 @@ void render_queue_free(RenderQueue *self)
     }
 }
 
-bool render_queue_push_blit(RenderQueue *self, SDL_Texture *texture, SDL_Rect *src, SDL_Rect *dst)
+bool render_queue_push_blit(RenderQueue *self, GPU_Image *texture, SDL_Rect *src, SDL_Rect *dst)
 {
     if(self->nops >= self->allocated_ops){
         printf("Can't push op, max limit of %d reached\n",self->allocated_ops);
@@ -88,6 +90,12 @@ bool render_queue_push_outline(RenderQueue *self, SDL_Color *color, SDL_Rect *ar
     self->operations[self->nops].type = OUTLINE_OP;
     self->operations[self->nops].outline.color = *color;
     self->operations[self->nops].outline.rect = *area;
+
+    /*SDL_GPU treats coordinates as inclusive*/
+    self->operations[self->nops].outline.rect.x++;
+    self->operations[self->nops].outline.rect.y++;
+    self->operations[self->nops].outline.rect.w--;
+    self->operations[self->nops].outline.rect.h--;
 
     self->nops++;
     return true;
@@ -129,8 +137,9 @@ bool render_queue_push_clear(RenderQueue *self, SDL_Color *color, SDL_Rect *area
         self->operations[self->nops].clear.color = *color;
     else
         self->operations[self->nops].clear.color = (SDL_Color){255,0,255};
-    if(area)
+    if(area){
         self->operations[self->nops].clear.area = *area;
+    }
     else
         self->operations[self->nops].clear.area = (SDL_Rect){-1,-1,-1,-1};
 
@@ -138,7 +147,7 @@ bool render_queue_push_clear(RenderQueue *self, SDL_Color *color, SDL_Rect *area
     return true;
 }
 
-bool render_queue_push_rotate(RenderQueue *self, SDL_Texture *texture, SDL_Rect *src, SDL_Rect *dst, double angle, SDL_Point *center, SDL_Rect *clip)
+bool render_queue_push_rotate(RenderQueue *self, GPU_Image *texture, SDL_Rect *src, SDL_Rect *dst, double angle, SDL_Point *center, SDL_Rect *clip)
 {
     if(self->nops >= self->allocated_ops){
         printf("Can't push op, max limit of %d reached\n",self->allocated_ops);
@@ -170,17 +179,17 @@ bool render_queue_push_rotate(RenderQueue *self, SDL_Texture *texture, SDL_Rect 
 }
 
 
-static void inline render_clear_op_execute(RenderClearOp *self, SDL_Renderer *renderer, SDL_Rect *offset)
+static void inline render_clear_op_execute(RenderClearOp *self, GPU_Target *target, SDL_Rect *offset)
 {
 //    printf("%s\n",__FUNCTION__);
     if(is_color_key(&self->color))
         return;
 
-    SDL_SetRenderDrawColor(renderer, self->color.r, self->color.g, self->color.b, self->color.a);
     if(is_null_rect(&self->area))
-        SDL_RenderClear(renderer);
-    else
-        SDL_RenderFillRect(renderer, &rect_offset((&self->area), offset));
+        GPU_ClearColor(target, self->color);
+    else{
+        GPU_RectangleFilled2(target, rectf_offset((&self->area), offset), self->color);
+    }
 }
 
 void render_clear_op_dump(RenderClearOp *self)
@@ -191,8 +200,7 @@ void render_clear_op_dump(RenderClearOp *self)
     );
 }
 
-
-static void inline render_blit_op_execute(RenderBlitOp *self, SDL_Renderer *renderer, SDL_Rect *offset)
+static void inline render_blit_op_execute(RenderBlitOp *self, GPU_Target *target, SDL_Rect *offset)
 {
 #if 0
     printf("%s texture %p from: ",__FUNCTION__, self->texture);
@@ -200,12 +208,26 @@ static void inline render_blit_op_execute(RenderBlitOp *self, SDL_Renderer *rend
     printf("To: ");
     SDLExt_RectDump(&rect_offset((&self->dst), offset));
 #endif
-    SDL_RenderCopy(renderer,
-        self->texture,
-        is_null_rect(&self->src) ? NULL : &self->src,
-        is_null_rect(&self->dst) ? NULL : &rect_offset((&self->dst), offset)
-    );
+    GPU_Rect *dst, *src;
+    float x,y;
+
+    dst = is_null_rect(&self->dst) ? &(GPU_Rect){0,0,0,0} : &rectf_offset((&self->dst), offset);
+    if(is_null_rect(&self->src)){
+        x = self->texture->w/2.0 + dst->x;
+        y = self->texture->h/2.0 + dst->y;
+        src = NULL;
+    }else{
+        x = self->src.w/2.0 + dst->x;
+        y = self->src.h/2.0 + dst->y;
+        src = &rectf(&self->src);
+    }
+
+    GPU_Blit(self->texture, src, target, x, y);
 }
+
+
+
+
 
 void render_blit_op_dump(RenderBlitOp *self)
 {
@@ -222,27 +244,15 @@ void render_blit_op_dump(RenderBlitOp *self)
     printf("\n");
 }
 
-static void inline render_line_op_execute(RenderLineOp *self, SDL_Renderer *renderer, SDL_Rect *offset)
+static void inline render_line_op_execute(RenderLineOp *self, GPU_Target *target, SDL_Rect *offset)
 {
-    if(!is_color_key(&self->color))
-        SDL_SetRenderDrawColor(renderer, self->color.r, self->color.g, self->color.b, self->color.a);
-
-    /* SDL_RenderDrawLine is currently broken (at least on some platforms): it draws one more pixel
-     * on the line above when using accelerated rendering. This code is a workaround and could be dropped
-     * when SDL_RenderDrawLine gets fixed*/
-    if(self->start.y == self->end.y){
-        for(int x = self->start.x + offset->x; x < self->end.x + offset->x; x++)
-            SDL_RenderDrawPoint(renderer, x, self->start.y + offset->y);
-    }else if(self->start.x == self->end.x){
-        for(int y = self->start.y + offset->y; y < self->end.y + offset->y; y++)
-            SDL_RenderDrawPoint(renderer, self->start.x + offset->x, y);
-    }else{ /*Does an extra pixel using accelerated renderer*/
-        SDL_RenderDrawLine(renderer,
-            self->start.x + offset->x,
-            self->start.y + offset->y,
-            self->end.x + offset->x,
-            self->end.y + offset->y);
-    }
+    GPU_Line(target,
+        self->start.x + offset->x,
+        self->start.y + offset->y,
+        self->end.x + offset->x,
+        self->end.y + offset->y,
+        self->color
+    );
 }
 
 void render_line_op_dump(RenderLineOp *self)
@@ -256,14 +266,13 @@ void render_line_op_dump(RenderLineOp *self)
     );
 }
 
-static void inline render_outline_op_execute(RenderOutlineOp *self, SDL_Renderer *renderer, SDL_Rect *offset)
+static void inline render_outline_op_execute(RenderOutlineOp *self, GPU_Target *target, SDL_Rect *offset)
 {
 //    printf("%s\n",__FUNCTION__);
-    if(!is_color_key(&self->color))
-        SDL_SetRenderDrawColor(renderer, self->color.r, self->color.g, self->color.b, self->color.a);
-    SDL_RenderDrawRect(renderer,
-        is_null_rect(&self->rect) ? NULL : &rect_offset((&self->rect), offset)
-    );
+    if(is_null_rect(&self->rect))
+        printf("%s: warning, nullrect as rect\n",__FUNCTION__);
+//    if(!is_color_key(&self->color))
+    GPU_Rectangle2(target, rectf_offset((&self->rect), offset), self->color);
 }
 
 void render_outline_op_dump(RenderOutlineOp *self)
@@ -274,25 +283,28 @@ void render_outline_op_dump(RenderOutlineOp *self)
     );
 }
 
-static void inline render_rotate_op_execute(RenderRotateOp *self, SDL_Renderer *renderer, SDL_Rect *offset)
+static void inline render_rotate_op_execute(RenderRotateOp *self, GPU_Target *target, SDL_Rect *offset)
 {
-#if 0
-    printf("%s texture %p from: ",__FUNCTION__, self->texture);
-    SDLExt_RectDump(&self->src);
-    printf("To: ");
-    SDLExt_RectDump(&rect_offset((&self->dst), offset));
-#endif
-    if(!is_null_rect(&self->clip))
-        SDL_RenderSetClipRect(renderer, &self->clip);
-    SDL_RenderCopyEx(renderer,
-        self->texture,
-        is_null_rect(&self->src) ? NULL : &self->src,
-        is_null_rect(&self->dst) ? NULL : &rect_offset((&self->dst), offset),
-        self->angle,
-        &self->center,
-        SDL_FLIP_NONE
-    );
-    SDL_RenderSetClipRect(renderer, NULL);
+	if(is_null_rect(&self->clip)){
+		GPU_BlitRectX(self->texture,
+			is_null_rect(&self->src) ? NULL : &rectf(&self->src),
+			target,
+			is_null_rect(&self->dst) ? NULL : &rectf_offset((&self->dst), offset),
+			self->angle,
+			self->center.x,
+			self->center.y,
+			GPU_FLIP_NONE
+		);
+	}else{
+		GPU_BlitTransformX(self->texture,
+			is_null_rect(&self->src) ? NULL : &rectf(&self->src),
+			target,
+			self->clip.x, self->clip.y,
+			self->center.x,
+			self->center.y,
+			self->angle, 1,1
+		);
+	}
 }
 
 void render_rotate_op_dump(RenderRotateOp *self)
@@ -310,9 +322,7 @@ void render_rotate_op_dump(RenderRotateOp *self)
         printf(" (area x:%d, y:%d, w:%d, h:%d)", self->dst.x, self->dst.y, self->dst.w, self->dst.h);
     printf("\n");
 }
-
-
-bool render_queue_execute(RenderQueue *self, SDL_Renderer *renderer, SDL_Rect *offset)
+bool render_queue_execute(RenderQueue *self, GPU_Target *target, SDL_Rect *offset)
 {
     RenderOp *op;
 
@@ -324,19 +334,19 @@ bool render_queue_execute(RenderQueue *self, SDL_Renderer *renderer, SDL_Rect *o
         op = &self->operations[i];
         switch(op->type){
         case CLEAR_OP:
-            render_clear_op_execute(&op->clear, renderer, offset);
+            render_clear_op_execute(&op->clear, target, offset);
             break;
         case BLIT_OP:
-            render_blit_op_execute(&op->blit, renderer, offset);
+            render_blit_op_execute(&op->blit, target, offset);
             break;
         case LINE_OP:
-            render_line_op_execute(&op->line, renderer, offset);
+            render_line_op_execute(&op->line, target, offset);
             break;
         case OUTLINE_OP:
-            render_outline_op_execute(&op->outline, renderer, offset);
+            render_outline_op_execute(&op->outline, target, offset);
             break;
         case ROTATE_OP:
-            render_rotate_op_execute(&op->rotate, renderer, offset);
+            render_rotate_op_execute(&op->rotate, target, offset);
             break;
         case NO_OP:
         default:

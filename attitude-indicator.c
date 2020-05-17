@@ -54,10 +54,10 @@ AttitudeIndicator *attitude_indicator_init(AttitudeIndicator *self, int width, i
 	self->markers[MARKER_LEFT] = IMG_Load("left-marker.png");
 	self->markers[MARKER_RIGHT] = IMG_Load("right-marker.png");
 	self->markers[MARKER_CENTER] = IMG_Load("center-marker.png");
-#if USE_SDL_RENDERER
-    self->tmarkers[MARKER_LEFT] = SDL_CreateTextureFromSurface(g_renderer, self->markers[MARKER_LEFT]);
-    self->tmarkers[MARKER_RIGHT] = SDL_CreateTextureFromSurface(g_renderer, self->markers[MARKER_RIGHT]);
-    self->tmarkers[MARKER_CENTER] = SDL_CreateTextureFromSurface(g_renderer, self->markers[MARKER_CENTER]);
+#if USE_SDL_GPU
+    self->tmarkers[MARKER_LEFT] = GPU_CopyImageFromSurface(self->markers[MARKER_LEFT]);
+    self->tmarkers[MARKER_RIGHT] = GPU_CopyImageFromSurface(self->markers[MARKER_RIGHT]);
+    self->tmarkers[MARKER_CENTER] = GPU_CopyImageFromSurface(self->markers[MARKER_CENTER]);
 #endif
 
 	self->rollslip = roll_slip_gauge_new();
@@ -84,8 +84,8 @@ AttitudeIndicator *attitude_indicator_init(AttitudeIndicator *self, int width, i
 		7,
 		0,0
 	};
-#if USE_SDL_RENDERER
-    self->tbuffer = SDL_CreateTexture(g_renderer, SDL_PIXELFORMAT_RGBA32, SDL_TEXTUREACCESS_TARGET, width*2, height*2);
+#if USE_SDL_GPU
+    self->tbuffer = GPU_CreateImage(width*2, height*2, GPU_FORMAT_RGBA);
 #else
 	self->buffer = SDL_CreateRGBSurfaceWithFormat(0, width*2, height*2, 32, SDL_PIXELFORMAT_RGBA32);
 	self->renderer =  SDL_CreateSoftwareRenderer(self->buffer);
@@ -103,9 +103,9 @@ void attitude_indicator_dispose(AttitudeIndicator *self)
 		if(self->markers[i])
 			SDL_FreeSurface(self->markers[i]);
 	}
-#if USE_SDL_RENDERER
+#if USE_SDL_GPU
     if(self->tbuffer)
-        SDL_DestroyTexture(self->tbuffer);
+        GPU_FreeImage(self->tbuffer);
 #else
 	if(self->buffer)
 		SDL_FreeSurface(self->buffer);
@@ -454,11 +454,11 @@ static SDL_Surface *attitude_indicator_get_etched_ball(AttitudeIndicator *self)
 	return self->etched_ball;
 }
 
-#if USE_SDL_RENDERER
-static SDL_Texture *attitude_indicator_get_etched_ball_texure(AttitudeIndicator *self)
+#if USE_SDL_GPU
+static GPU_Image *attitude_indicator_get_etched_ball_texure(AttitudeIndicator *self)
 {
     if(!self->tetched_ball){
-        self->tetched_ball = SDL_CreateTextureFromSurface(g_renderer, attitude_indicator_get_etched_ball(self));
+        self->tetched_ball = GPU_CopyImageFromSurface(attitude_indicator_get_etched_ball(self));
     }
     return self->tetched_ball;
 }
@@ -496,8 +496,8 @@ static void attitude_indicator_render_value(AttitudeIndicator *self, float value
         .x = win.x + (round(win.w/2.0)-1),
         .y = win.y + (round(win.h*0.4)-1)
     };
-#if USE_SDL_RENDERER
-    SDL_SetRenderTarget(g_renderer, self->tbuffer);
+#if USE_SDL_GPU
+/*    SDL_SetRenderTarget(g_renderer, self->tbuffer);
     SDL_RenderCopyEx(g_renderer,
         attitude_indicator_get_etched_ball_texure(self),
         NULL,
@@ -510,6 +510,14 @@ static void attitude_indicator_render_value(AttitudeIndicator *self, float value
         self->tbuffer,
         &win,
         NULL
+    );*/
+	buffered_gauge_blit_rotated_texture(BUFFERED_GAUGE(self),
+       attitude_indicator_get_etched_ball_texure(self),
+       NULL,
+       ANIMATED_GAUGE(self->rollslip)->value,
+       &rcenter,
+       NULL,
+       &(SDL_Rect){rcenter.x - win.x, rcenter.y - win.y,0,0}
     );
 #else
     surface = attitude_indicator_get_etched_ball(self); /*TODO: Change to etched ball*/
@@ -531,7 +539,7 @@ static void attitude_indicator_render_value(AttitudeIndicator *self, float value
 //	SDL_BlitSurface(self->rollslip->super.view, NULL, tview, &self->locations[ROLL_SLIP]);
 
 	/*Then place markers in the middle of the *screen* markers don't move*/
-#if USE_SDL_RENDERER
+#if USE_SDL_GPU
     buffered_gauge_blit_texture(BUFFERED_GAUGE(self), self->tmarkers[MARKER_LEFT], NULL, &self->locations[MARKER_LEFT]);
     buffered_gauge_blit_texture(BUFFERED_GAUGE(self), self->tmarkers[MARKER_RIGHT], NULL, &self->locations[MARKER_RIGHT]);
     buffered_gauge_blit_texture(BUFFERED_GAUGE(self), self->tmarkers[MARKER_CENTER], NULL, &self->locations[MARKER_CENTER]);

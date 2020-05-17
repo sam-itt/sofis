@@ -7,6 +7,9 @@ void vertical_strip_dispose(VerticalStrip *self)
 {
     if(self->ruler)
         SDL_FreeSurface(self->ruler);
+#if USE_SDL_GPU
+    GPU_FreeImage(self->rtex);
+#endif
 }
 
 bool vertical_strip_has_value(VerticalStrip *self, float value)

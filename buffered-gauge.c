@@ -62,7 +62,7 @@ void buffered_gauge_dispose(BufferedGauge *self)
  */
 void buffered_gauge_share_buffer(BufferedGauge *self, BufferedGauge *with, int xoffset, int yoffset)
 {
-#if USE_SDL_RENDERER
+#if USE_SDL_GPU
     buffered_gauge_set_render_queue(self,
         buffered_gauge_get_queue(with),
         xoffset, yoffset
@@ -178,7 +178,7 @@ int buffered_gauge_blit(BufferedGauge *self, SDL_Surface *src, SDL_Rect *srcrect
 }
 
 
-int buffered_gauge_blit_texture(BufferedGauge *self, SDL_Texture *src, SDL_Rect *srcrect, SDL_Rect *dstrect)
+int buffered_gauge_blit_texture(BufferedGauge *self, GPU_Image *src, SDL_Rect *srcrect, SDL_Rect *dstrect)
 {
     SDL_Rect fdst;
     RenderQueue *queue;
@@ -190,7 +190,7 @@ int buffered_gauge_blit_texture(BufferedGauge *self, SDL_Texture *src, SDL_Rect 
     }
 
 #if 1
-//    printf("Befoire clipping: ");
+//    printf("Before clipping: ");
 //    SDLExt_RectDump(&fdst);
 
     /*Auto clip dest to source to avoid unwanted scaling*/
@@ -205,9 +205,9 @@ int buffered_gauge_blit_texture(BufferedGauge *self, SDL_Texture *src, SDL_Rect 
     return render_queue_push_blit(queue, src, srcrect, &fdst);
 }
 
-int buffered_gauge_blit_rotated_texture(BufferedGauge *self, SDL_Texture *src, SDL_Rect *srcrect, double angle, SDL_Point *about, SDL_Rect *dstrect, SDL_Rect *clip)
+int buffered_gauge_blit_rotated_texture(BufferedGauge *self, GPU_Image *src, SDL_Rect *srcrect, double angle, SDL_Point *about, SDL_Rect *dstrect, SDL_Rect *clip)
 {
-    SDL_Rect fdst;
+    SDL_Rect fdst, fclip;
     RenderQueue *queue;
 
     if(dstrect){
@@ -215,9 +215,12 @@ int buffered_gauge_blit_rotated_texture(BufferedGauge *self, SDL_Texture *src, S
     }else{
         buffered_gauge_get_area(self, &fdst);
     }
+    if(clip)
+        buffered_gauge_offset(self, clip, &fclip);
+
 
     queue = buffered_gauge_get_queue(self);
-    return render_queue_push_rotate(queue, src, srcrect, &fdst, angle, about, clip);
+    return render_queue_push_rotate(queue, src, srcrect, &fdst, angle, about, clip ? &fclip : NULL);
 }
 
 
@@ -232,7 +235,7 @@ int buffered_gauge_blit_rotated_texture(BufferedGauge *self, SDL_Texture *src, S
  */
 int buffered_gauge_blit_strip(BufferedGauge *self, VerticalStrip *src, SDL_Rect *srcrect, SDL_Rect *dstrect)
 {
-#if USE_SDL_RENDERER
+#if USE_SDL_GPU
     return buffered_gauge_blit_texture(self, src->rtex, srcrect, dstrect);
 #else
     return buffered_gauge_blit(self, src->ruler, srcrect, dstrect);
@@ -241,7 +244,7 @@ int buffered_gauge_blit_strip(BufferedGauge *self, VerticalStrip *src, SDL_Rect 
 
 void buffered_gauge_draw_outline(BufferedGauge *self, SDL_Color *color, SDL_Rect *area)
 {
-#if USE_SDL_RENDERER
+#if USE_SDL_GPU
     SDL_Rect farea;
     RenderQueue *queue;
 
@@ -271,7 +274,7 @@ void buffered_gauge_draw_outline(BufferedGauge *self, SDL_Color *color, SDL_Rect
 void buffered_gauge_draw_rubis(BufferedGauge *self, int y, SDL_Color *color, int pskip)
 {
     SDL_Rect area;
-#if USE_SDL_RENDERER
+#if USE_SDL_GPU
     RenderQueue *queue;
     int startx, stopx;
     int restartx, endx;
@@ -314,7 +317,7 @@ void buffered_gauge_fill(BufferedGauge *self, SDL_Rect *area, void *color, bool 
     }else{
         buffered_gauge_get_area(self, &farea);
     }
-#if USE_SDL_RENDERER
+#if USE_SDL_GPU
     RenderQueue *queue;
 
 
@@ -351,7 +354,7 @@ void buffered_gauge_static_font_draw_text(BufferedGauge *self, SDL_Rect *locatio
                                           PCF_StaticFont *font,
                                           Uint32 bg_color)
 {
-#if USE_SDL_RENDERER
+#if USE_SDL_GPU
     SDL_Rect farea;
     RenderQueue *queue;
     SDL_Rect glyph, cursor;
@@ -359,7 +362,7 @@ void buffered_gauge_static_font_draw_text(BufferedGauge *self, SDL_Rect *locatio
     int len;
 
     if(!font->texture)
-        PCF_StaticFontCreateTexture(font, g_renderer);
+        PCF_StaticFontCreateTexture(font);
 
     if(location){
         buffered_gauge_offset(self, location, &farea);
@@ -424,7 +427,7 @@ void buffered_gauge_font_draw_text(BufferedGauge *self, SDL_Rect *location,
                                    const char *string, PCF_Font *font,
                                    Uint32 text_color, Uint32 bg_color)
 {
-#if USE_SDL_RENDERER
+#if USE_SDL_GPU
     /*TODO: Implement me in SDL_Pcf using DrawPoints*/
     printf("buffered_gauge_font_draw_text not implemeneted using SDL_Renderer, rather use buffered_gauge_static_font_draw_text\n");
 #else
@@ -469,7 +472,7 @@ void buffered_gauge_paint_buffer(BufferedGauge *self, Uint32 dt)
     BufferedGaugeOps *ops;
     /*TODO: Check if it would be appropriate to clear the buffer here to avoid
      * having clearing code in gauges*/
-#if USE_SDL_RENDERER
+#if USE_SDL_GPU
     if(self->queue && !self->queue->cleared){
         self->queue->nops = 0;
         self->queue->cleared = true; /*When sharing a queue, avoid multiple clears*/
@@ -487,8 +490,8 @@ void buffered_gauge_render(BufferedGauge *self, Uint32 dt, SDL_Surface *destinat
         self->damaged = false; /*Set it before so that it can be overrided by the gauge*/
         buffered_gauge_paint_buffer(self, dt);
     }
-#if USE_SDL_RENDERER
-    render_queue_execute(self->queue, g_renderer, location);
+#if USE_SDL_GPU
+    render_queue_execute(self->queue, gpu_screen, location);
 #else
     SDL_BlitSurface(self->view, NULL, destination, location);
 #endif

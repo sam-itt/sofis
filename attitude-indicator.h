@@ -34,11 +34,11 @@ typedef struct{
 //	int size;
 
 	SDL_Surface *markers[3]; //left, right, center
-	SDL_Texture *tmarkers[3]; //left, right, center
+	GPU_Image *tmarkers[3]; //left, right, center
 	SDL_Rect locations[LOCATION_MAX];
-#if USE_SDL_RENDERER
-    SDL_Texture *tbuffer;
-    SDL_Texture *tetched_ball;
+#if USE_SDL_GPU
+    GPU_Image *tbuffer;
+    GPU_Image *tetched_ball;
 #else
 	SDL_Surface *buffer;
 	SDL_Renderer *renderer;

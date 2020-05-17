@@ -3,6 +3,7 @@
 #include <stdbool.h>
 
 #include <SDL2/SDL.h>
+#include <SDL_gpu.h>
 
 #include "SDL_render.h"
 #include "base-gauge.h"
@@ -11,6 +12,7 @@
 #include "view.h"
 
 extern SDL_Renderer *g_renderer;
+extern GPU_Target* gpu_screen;
 
 typedef enum{
     BUFFER_OWN,
@@ -96,7 +98,7 @@ void buffered_gauge_get_area(BufferedGauge *self, SDL_Rect *rect);
 
 RenderQueue *buffer_gauge_build_queue(BufferedGauge *self);
 void buffered_gauge_set_render_queue(BufferedGauge *self, RenderQueue *queue, int xoffset, int yoffset);
-int buffered_gauge_blit_texture(BufferedGauge *self, SDL_Texture *src, SDL_Rect *srcrect, SDL_Rect *dstrect);
-int buffered_gauge_blit_rotated_texture(BufferedGauge *self, SDL_Texture *src, SDL_Rect *srcrect, double angle, SDL_Point *about, SDL_Rect *dstrect, SDL_Rect *clip);
+int buffered_gauge_blit_texture(BufferedGauge *self, GPU_Image *src, SDL_Rect *srcrect, SDL_Rect *dstrect);
+int buffered_gauge_blit_rotated_texture(BufferedGauge *self, GPU_Image *src, SDL_Rect *srcrect, double angle, SDL_Point *about, SDL_Rect *dstrect, SDL_Rect *clip);
 
 #endif /* BUFFERED_GAUGE_H */

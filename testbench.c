@@ -3,6 +3,7 @@
 #include <stdbool.h>
 
 #include <SDL2/SDL.h>
+#include <SDL_gpu.h>
 
 #include "SDL_hints.h"
 #include "SDL_pixels.h"
@@ -47,6 +48,7 @@ TextGauge *txt = NULL;
 
 
 SDL_Renderer *g_renderer = NULL;
+GPU_Target* gpu_screen = NULL;
 
 float gval = 0.0;
 float alt = 900.0;
@@ -255,6 +257,14 @@ int main(int argc, char **argv)
     int i;
     float oldv[5] = {0,0,0,0,0};
 
+#if USE_SDL_GPU
+	GPU_SetRequiredFeatures(GPU_FEATURE_BASIC_SHADERS);
+	gpu_screen = GPU_InitRenderer(GPU_RENDERER_OPENGL_2, SCREEN_WIDTH, SCREEN_HEIGHT, GPU_DEFAULT_INIT_FLAGS);
+	if(gpu_screen == NULL){
+        GPU_LogError("Initialization Error: Could not create a renderer with proper feature support for this demo.\n");
+		return 1;
+    }
+#else
     if (SDL_Init(SDL_INIT_VIDEO) < 0) {
         return 1;
     }
@@ -271,20 +281,7 @@ int main(int argc, char **argv)
         fprintf(stderr, "could not create window: %s\n", SDL_GetError());
         return 1;
     }
-#if USE_SDL_RENDERER
-    SDL_RendererInfo rinfo;
-//    g_renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_SOFTWARE);
-    g_renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
-    if (g_renderer == NULL) {
-        fprintf(stderr, "could not create renderer: %s\n", SDL_GetError());
-        return 1;
-    }
-    SDL_GetRendererInfo(g_renderer, &rinfo);
-    printf("Got renderer: %s\n", rinfo.name);
-    if(!(rinfo.flags & SDL_RENDERER_TARGETTEXTURE)){
-        printf("Renderer doesn't support rendering to texture. Problems ahead(attitude indicator)\n");
-    }
-#else
+
     screenSurface = SDL_GetWindowSurface(window);
     if(!screenSurface){
         printf("Error: %s\n",SDL_GetError());
@@ -382,12 +379,12 @@ int main(int argc, char **argv)
     SDL_Rect vrect = {96,70,0,0};
     SDL_Rect whole = {0,0,640,480};
 
-#if USE_SDL_RENDERER
-    SDL_SetRenderDrawColor(g_renderer, 0x11, 0x56, 0xFF, 255);
-    SDL_RenderClear(g_renderer);
+#if USE_SDL_GPU
+    GPU_ClearRGB(gpu_screen, 0x11, 0x56, 0xFF);
 #else
     SDL_FillRect(screenSurface, NULL, SDL_UFBLUE(screenSurface));
 #endif
+
     do{
         ticks = SDL_GetTicks();
         elapsed = ticks - last_ticks;
@@ -398,9 +395,8 @@ int main(int argc, char **argv)
         /* Not having this in the loop breaks ladder-gauge display
          * TODO: Check why and fix
          * */
-#if USE_SDL_RENDERER
-        SDL_SetRenderDrawColor(g_renderer, 0x11, 0x56, 0xFF, 255);
-        SDL_RenderClear(g_renderer);
+#if USE_SDL_GPU
+        GPU_ClearRGB(gpu_screen, 0x11, 0x56, 0xFF);
 #else
         SDL_FillRect(screenSurface, NULL, SDL_UFBLUE(screenSurface));
 #endif
@@ -422,8 +418,8 @@ int main(int argc, char **argv)
 
         base_gauge_render(BASE_GAUGE(hud), elapsed, screenSurface, &whole);
 //        base_gauge_render(BASE_GAUGE(txt), elapsed, screenSurface, &txtrect);
-#if USE_SDL_RENDERER
-        SDL_RenderPresent(g_renderer);
+#if USE_SDL_GPU
+		GPU_Flip(gpu_screen);
 #else
         SDL_UpdateWindowSurface(window);
 #endif
@@ -482,10 +478,11 @@ int main(int argc, char **argv)
     text_gauge_free(txt);
     resource_manager_shutdown();
 #if USE_SDL_RENDERER
-    SDL_DestroyRenderer(g_renderer);
-#endif
+	GPU_Quit();
+#else
     SDL_DestroyWindow(window);
     SDL_Quit();
+#endif
     return 0;
 
 }

@@ -3,8 +3,8 @@
 SRCDIR=.
 
 CC=gcc
-CFLAGS=-g3 -O0 `pkg-config sdl2 SDL2_image --cflags` -I$(SRCDIR) -DHAVE_SDL2=1 -DUSE_SDL_RENDERER=1
-LDFLAGS=-lz -lm `pkg-config sdl2 SDL2_image --libs` -Wl,--as-needed
+CFLAGS=-g3 -O0 `pkg-config sdl2 SDL2_image --cflags` -I$(SRCDIR) -DHAVE_SDL2=1 -DUSE_SDL_GPU=1
+LDFLAGS=-lz -lm `pkg-config sdl2 SDL2_image --libs` -Wl,--as-needed -lSDL2_gpu
 EXEC=test-sdl
 #SRC= $(wildcard $(SRCDIR)/*.c)
 SRC= $(filter-out $(SRCDIR)/main.c $(SRCDIR)/testbench.c, $(wildcard $(SRCDIR)/*.c))

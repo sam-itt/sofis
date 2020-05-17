@@ -10,11 +10,12 @@ typedef struct{
 	AnimatedGauge super;
 
 	SDL_Surface *arc;
-	SDL_Texture *arrow;
 
-#if USE_SDL_RENDERER
-    SDL_Texture *tarc;
+#if USE_SDL_GPU
+	GPU_Image *arrow;
+    GPU_Image *tarc;
 #else
+    SDL_Texture *arrow;
 	SDL_Renderer *renderer;
 #endif
 }RollSlipGauge;

@@ -1,19 +1,20 @@
 #ifndef VERTICAL_STRIP_H
 #define VERTICAL_STRIP_H
 
-#include "SDL_render.h"
 #include <stdbool.h>
 
 #include <SDL2/SDL.h>
+#include <SDL_gpu.h>
 
+#include "SDL_render.h"
 /**
  * Generic mapping between a range of values {@value #start},  {@value #start}
  * and an image.
  */
 typedef struct{
     SDL_Surface *ruler;
-#if USE_SDL_RENDERER
-    SDL_Texture *rtex;
+#if USE_SDL_GPU
+    GPU_Image *rtex;
 #endif
 
     float ppv; /* pixels per value*/

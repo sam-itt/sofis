@@ -1,6 +1,7 @@
 #ifndef RENDER_QUEUE_H
 #define RENDER_QUEUE_H
 #include <stdbool.h>
+#include <SDL_gpu.h>
 
 #include "SDL_pixels.h"
 #include "SDL_render.h"
@@ -25,7 +26,7 @@ typedef struct{
 
 typedef struct{
     Uint8 type;
-    SDL_Texture *texture;
+    GPU_Image *texture;
     SDL_Rect src;
     SDL_Rect dst;
 }RenderBlitOp;
@@ -45,7 +46,7 @@ typedef struct{
 
 typedef struct{
     Uint8 type;
-    SDL_Texture *texture;
+    GPU_Image *texture;
     SDL_Rect src;
     SDL_Rect dst;
     double angle;
@@ -76,14 +77,14 @@ RenderQueue *render_queue_init(RenderQueue *self, size_t size);
 void render_queue_dispose(RenderQueue *self);
 void render_queue_free(RenderQueue *self);
 
-bool render_queue_push_blit(RenderQueue *self, SDL_Texture *tex, SDL_Rect *src, SDL_Rect *dst);
+bool render_queue_push_blit(RenderQueue *self, GPU_Image *tex, SDL_Rect *src, SDL_Rect *dst);
 bool render_queue_push_outline(RenderQueue *self, SDL_Color *color, SDL_Rect *area);
 bool render_queue_push_line(RenderQueue *self, SDL_Color *color, int x0, int y0, int x1, int y1);
 bool render_queue_push_clear(RenderQueue *self, SDL_Color *color, SDL_Rect *area);
-bool render_queue_push_rotate(RenderQueue *self, SDL_Texture *texture, SDL_Rect *src, SDL_Rect *dst, double angle, SDL_Point *center, SDL_Rect *clip);
+bool render_queue_push_rotate(RenderQueue *self, GPU_Image *texture, SDL_Rect *src, SDL_Rect *dst, double angle, SDL_Point *center, SDL_Rect *clip);
 
 
-bool render_queue_execute(RenderQueue *self, SDL_Renderer *renderer, SDL_Rect *offset);
+bool render_queue_execute(RenderQueue *self, GPU_Target *target, SDL_Rect *offset);
 
 
 void render_queue_dump(RenderQueue *self);

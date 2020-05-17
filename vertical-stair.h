@@ -11,8 +11,8 @@ typedef struct{
     AnimatedGauge super;
 
     SDL_Surface *cursor; /*cursor background image*/
-#if USE_SDL_RENDERER
-    SDL_Texture *tcursor;
+#if USE_SDL_GPU
+    GPU_Image *tcursor;
 #endif
 
     PCF_StaticFont *font;
