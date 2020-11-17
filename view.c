@@ -5,7 +5,7 @@
 
 #include "SDL_pixels.h"
 #include "SDL_surface.h"
-#include "sdl-pcf/SDL_pcf.h"
+#include "SDL_pcf.h"
 #include "sdl-colors.h"
 #include "view.h"
 #include "misc.h"

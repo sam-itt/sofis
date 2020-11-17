@@ -3,7 +3,7 @@
 #include <stdbool.h>
 
 #include "buffered-gauge.h"
-#include "sdl-pcf/SDL_pcf.h"
+#include "SDL_pcf.h"
 #include "view.h"
 
 #define TEXT_COLOR 0

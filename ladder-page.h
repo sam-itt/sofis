@@ -1,7 +1,7 @@
 #ifndef LADDER_PAGE_H
 #define LADDER_PAGE_H
 
-#include "sdl-pcf/SDL_pcf.h"
+#include "SDL_pcf.h"
 #include "vertical-strip.h"
 
 typedef struct _LadderPage LadderPage;

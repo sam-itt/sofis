@@ -12,7 +12,7 @@
 #include "misc.h"
 #include "render-queue.h"
 #include "sdl-colors.h"
-#include "sdl-pcf/SDL_pcf.h"
+#include "SDL_pcf.h"
 #include "vertical-strip.h"
 #include "view.h"
 

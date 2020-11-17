@@ -13,7 +13,7 @@
 #include "misc.h"
 #include "resource-manager.h"
 #include "sdl-colors.h"
-#include "sdl-pcf/SDL_pcf.h"
+#include "SDL_pcf.h"
 #include "text-gauge.h"
 
 static void alt_indicator_render(AltIndicator *self, Uint32 dt);

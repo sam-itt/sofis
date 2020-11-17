@@ -1,7 +1,7 @@
 #ifndef RESOURCE_MANAGER_H
 #define RESOURCE_MANAGER_H
 
-#include "sdl-pcf/SDL_pcf.h"
+#include "SDL_pcf.h"
 
 
 typedef enum{

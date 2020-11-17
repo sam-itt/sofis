@@ -3,7 +3,7 @@
 
 #include <SDL2/SDL.h>
 
-#include "sdl-pcf/SDL_pcf.h"
+#include "SDL_pcf.h"
 
 typedef struct{
     union{

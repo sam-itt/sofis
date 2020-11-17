@@ -5,7 +5,7 @@
 #include "base-gauge.h"
 #include "resource-manager.h"
 #include "sdl-colors.h"
-#include "sdl-pcf/SDL_pcf.h"
+#include "SDL_pcf.h"
 
 static void alt_group_render(AltGroup *self, Uint32 dt, SDL_Surface *destination, SDL_Rect *location);
 static BaseGaugeOps alt_group_ops = {

@@ -3,7 +3,7 @@
 #include <string.h>
 
 #include "SDL_pixels.h"
-#include "sdl-pcf/SDL_pcf.h"
+#include "SDL_pcf.h"
 
 #include "resource-manager.h"
 #include "misc.h"

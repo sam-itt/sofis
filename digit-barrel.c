@@ -2,7 +2,7 @@
 #include "SDL_render.h"
 #include "buffered-gauge.h"
 #include "misc.h"
-#include "sdl-pcf/SDL_pcf.h"
+#include "SDL_pcf.h"
 #define _GNU_SOURCE
 #include <stdio.h>
 #include <stdlib.h>

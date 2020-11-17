@@ -6,7 +6,7 @@
 #include "SDL_pixels.h"
 #include "buffered-gauge.h"
 #include "sdl-colors.h"
-#include "sdl-pcf/SDL_pcf.h"
+#include "SDL_pcf.h"
 #include "text-gauge.h"
 
 static void text_gauge_render(TextGauge *self, Uint32 dt);

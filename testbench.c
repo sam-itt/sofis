@@ -17,7 +17,7 @@
 #include "odo-gauge.h"
 #include "alt-indicator.h"
 #include "resource-manager.h"
-#include "sdl-pcf/SDL_pcf.h"
+#include "SDL_pcf.h"
 #include "text-gauge.h"
 #include "vertical-stair.h"
 #include "alt-group.h"

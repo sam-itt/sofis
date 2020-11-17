@@ -1,7 +1,7 @@
 #ifndef VERTICAL_STAIR_H
 #define VERTICAL_STAIR_H
 #include "SDL_render.h"
-#include "sdl-pcf/SDL_pcf.h"
+#include "SDL_pcf.h"
 
 #include "animated-gauge.h"
 #include "vertical-strip.h"

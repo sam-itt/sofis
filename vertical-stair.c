@@ -10,7 +10,7 @@
 #include "buffered-gauge.h"
 #include "misc.h"
 #include "resource-manager.h"
-#include "sdl-pcf/SDL_pcf.h"
+#include "SDL_pcf.h"
 #include "vertical-stair.h"
 #include "sdl-colors.h"
 

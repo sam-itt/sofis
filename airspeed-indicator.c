@@ -9,7 +9,7 @@
 #include "misc.h"
 #include "resource-manager.h"
 #include "sdl-colors.h"
-#include "sdl-pcf/SDL_pcf.h"
+#include "SDL_pcf.h"
 #include "text-gauge.h"
 #include "view.h"
 

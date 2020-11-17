@@ -14,7 +14,7 @@
 #include "misc.h"
 #include "resource-manager.h"
 #include "sdl-colors.h"
-#include "sdl-pcf/SDL_pcf.h"
+#include "SDL_pcf.h"
 
 #define sign(x) (((x) > 0) - ((x) < 0))
 
@@ -311,38 +311,27 @@ SDL_Surface *attitude_indicator_draw_ruler(AttitudeIndicator *self, int size, PC
 	}
     SDL_UnlockSurface(rv);
 
-	char number[4]; /*Three digits plus \0*/
-	uintf8_t current_grad;
-	SDL_Rect left, right;
-    Uint32 text_w;
-    Uint32 tcol;
+    int current_grad;
+    Uint32 tcol; /*text color*/
 
     tcol = SDL_UWHITE(rv);
-
-	start_x = middle_x - (57-1)/2;
-	end_x = middle_x + (57-1)/2;
-
-    int empty_top_pix = font->xfont.fontPrivate->metrics->metrics.ascent -  font->xfont.fontPrivate->ink_metrics->ascent;
-    int glyph_middle =  empty_top_pix + round(font->xfont.fontPrivate->ink_metrics->ascent/2.0);
-
 
 	/*Go upwards*/
 	current_grad = 0;
 	for(y = middle_y; y >= 0+yoffset; y--){
 		if((y-middle_y) % 36 == 0){ // 10 graduation
 			if(current_grad > 0){
-				snprintf(number, 4, "%d", current_grad);
-
-                PCF_FontGetSizeRequest(font, number, &text_w, NULL);
-
-				left.x = middle_x - (57-1)/2 - (text_w + 4);
-				right.x = middle_x + (57-1)/2 + (4);
-				left.y = y - glyph_middle;
-				right.y = left.y;
-                PCF_FontWrite(font, number, tcol, rv, &left);
-                PCF_FontWrite(font, number, tcol, rv, &right);
+                PCF_FontWriteNumberAt(font,
+                    &current_grad, TypeInt, 2,
+                    tcol, rv,
+                    middle_x - (57-1)/2 - 4, y, LeftToCol | CenterOnRow
+                );
+                PCF_FontWriteNumberAt(font,
+                    &current_grad, TypeInt, 2,
+                    tcol, rv,
+                    middle_x + (57-1)/2 + 4, y, RightToCol | CenterOnRow
+                );
 			}
-
 			current_grad += 10;
 		}
 	}
@@ -352,17 +341,16 @@ SDL_Surface *attitude_indicator_draw_ruler(AttitudeIndicator *self, int size, PC
 	for(y = middle_y; y < rv->h-yoffset; y++){
 		if((y-middle_y) % 36 == 0){ // 10 graduation
 			if(current_grad > 0){
-				snprintf(number, 4, "%d", current_grad);
-
-                PCF_FontGetSizeRequest(font, number, &text_w, NULL);
-
-				left.x = middle_x - (57-1)/2 - (text_w + 4);
-				right.x = middle_x + (57-1)/2 + (4);
-				left.y = y - glyph_middle;
-				right.y = left.y;
-
-                PCF_FontWrite(font, number, tcol, rv, &left);
-                PCF_FontWrite(font, number, tcol, rv, &right);
+                PCF_FontWriteNumberAt(font,
+                    &current_grad, TypeInt, 2,
+                    tcol, rv,
+                    middle_x - (57-1)/2 - 4, y, LeftToCol | CenterOnRow
+                );
+                PCF_FontWriteNumberAt(font,
+                    &current_grad, TypeInt, 2,
+                    tcol, rv,
+                    middle_x + (57-1)/2 + 4, y, RightToCol | CenterOnRow
+                );
 			}
 			current_grad += 10;
 		}
