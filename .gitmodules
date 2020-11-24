@@ -1,3 +1,7 @@
 [submodule "sdl-pcf"]
 	path = sdl-pcf
 	url = https://github.com/sam-itt/sdl-pcf
+[submodule "fg-io"]
+	path = fg-io
+	url = https://github.com/sam-itt/fg-io.git
+	shallow = true
