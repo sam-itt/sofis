@@ -1,6 +1,7 @@
 #include "SDL_gpu.h"
 #include "SDL_render.h"
 #include "buffered-gauge.h"
+#include "generic-layer.h"
 #include "misc.h"
 #include "SDL_pcf.h"
 #define _GNU_SOURCE
@@ -47,8 +48,10 @@ DigitBarrel *digit_barrel_init(DigitBarrel *self, PCF_Font *font, float start, f
     SDL_Rect fcursor; /*font read cursor*/
     char fmt[10];
     VerticalStrip *strip;
+    GenericLayer *layer;
 
     strip = VERTICAL_STRIP(self);
+    layer = GENERIC_LAYER(self);
 
     strip->start = start;
     strip->end = end;
@@ -63,16 +66,17 @@ DigitBarrel *digit_barrel_init(DigitBarrel *self, PCF_Font *font, float start, f
     PCF_FontGetSizeRequest(font, "0", &advance, &font_height);
     vheight = round((fabs(end-start)) / step)*font_height; /*end should be .9999 so there is no need for the +1*/
     vwidth = advance * ndigits;
-    strip->ruler = SDL_CreateRGBSurface(0, vwidth, vheight, 32, 0, 0, 0, 0);
+
+    generic_layer_init_with_masks(GENERIC_LAYER(self), vwidth, vheight, 0, 0, 0, 0);
 
     minv = (start < end) ? start : end;
     maxv = (start > end) ? start : end;
-    cursor = (SDL_Rect){0,0,strip->ruler->w, font_height};
+    cursor = (SDL_Rect){0,0,generic_layer_w(layer), font_height};
     fcursor = (SDL_Rect){0,0,vwidth, font_height};
-    Uint32 white = SDL_UWHITE(strip->ruler);
+    Uint32 white = SDL_UWHITE(layer->canvas);
     for(float i = minv; i < maxv; i += step){
         snprintf(number, 6, fmt, (int)round(i));
-        PCF_FontWrite(font, number, white, strip->ruler, &cursor);
+        PCF_FontWrite(font, number, white, layer->canvas, &cursor);
         cursor.y += cursor.h;
         cursor.x = 0; /*PCF_FontWrite advances the cursor*/
     }
@@ -87,10 +91,8 @@ DigitBarrel *digit_barrel_init(DigitBarrel *self, PCF_Font *font, float start, f
      * */
     strip->ppv = self->symbol_h / step;
 
+    generic_layer_build_texture(layer);
 //    digit_barrel_draw_etch_marks(self);
-#if USE_SDL_GPU
-    strip->rtex = GPU_CopyImageFromSurface(strip->ruler);
-#endif
     return self;
 }
 
@@ -145,7 +147,10 @@ void digit_barrel_render_value(DigitBarrel *self, float value, BufferedGauge *ds
     float y;
     SDL_Rect dst_region = {region->x,region->y,region->w,region->h};
     VerticalStrip *strip;
+    GenericLayer *layer;
+
     strip = VERTICAL_STRIP(self);
+    layer = GENERIC_LAYER(self);
 
     /*translate @param value to an index in the spinner texture*/
     y = digit_barrel_resolve_value(self, value);
@@ -153,43 +158,43 @@ void digit_barrel_render_value(DigitBarrel *self, float value, BufferedGauge *ds
     SDL_Rect portion = {
         .x = 0,
         .y = round(y - rubis),
-        .w = strip->ruler->w,
+        .w = generic_layer_w(layer),
         .h = region->h
     };
     /* Ensures that portion.y + portion.h doesn't got past image bounds:
      * w/h are ignored by SDL_BlitSurface, but when using SDL_Renderers wrong
      * values will stretch the image.
      */
-    if(portion.y + portion.h > strip->ruler->h)
-        portion.h = strip->ruler->h - portion.y;
+    if(portion.y + portion.h > generic_layer_h(layer))
+        portion.h = generic_layer_h(layer) - portion.y;
 
 
     if(portion.y < 0){ //Fill top
         SDL_Rect patch = {
             .x = 0,
-            .y = strip->ruler->h + portion.y, //means - portion.y as portion.y < 0 here
-            .w = strip->ruler->w,
-            .h = strip->ruler->h - patch.y
+            .y = generic_layer_h(layer) + portion.y, //means - portion.y as portion.y < 0 here
+            .w = generic_layer_w(layer),
+            .h = generic_layer_h(layer) - patch.y
         };
-        buffered_gauge_blit_strip(dst, strip, &patch, &dst_region);
+        buffered_gauge_blit_layer(dst, layer, &patch, &dst_region);
 
         dst_region.y = patch.h;
         portion.y = 0;
         portion.h -= patch.h;
     }
-    buffered_gauge_blit_strip(dst, strip, &portion, &dst_region);
+    buffered_gauge_blit_layer(dst, layer, &portion, &dst_region);
 
-    if(portion.y + region->h > strip->ruler->h){// fill bottom
-        float taken = strip->ruler->h - portion.y; //number of pixels taken from the bottom of values pict
+    if(portion.y + region->h > generic_layer_h(layer)){// fill bottom
+        float taken = generic_layer_h(layer) - portion.y; //number of pixels taken from the bottom of values pict
         float delta = region->h - taken;
         dst_region.y += taken;
         SDL_Rect patch = {
             .x = 0,
             .y = 0,
-            .w = strip->ruler->w,
+            .w = generic_layer_w(layer),
             .h = delta
         };
-        buffered_gauge_blit_strip(dst, strip, &patch, &dst_region);
+        buffered_gauge_blit_layer(dst, layer, &patch, &dst_region);
     }
 }
 
@@ -197,23 +202,25 @@ void digit_barrel_draw_etch_marks(DigitBarrel *self)
 {
     int iy;
     VerticalStrip *strip;
+    GenericLayer *layer;
 
     strip = VERTICAL_STRIP(self);
+    layer = GENERIC_LAYER(self);
 
-    SDL_LockSurface(strip->ruler);
+    generic_layer_lock(layer);
 
-    Uint32 *pixels = strip->ruler->pixels;
-    Uint32 color = SDL_UYELLOW(strip->ruler);
+    Uint32 *pixels = layer->canvas->pixels;
+    Uint32 color = SDL_UYELLOW(layer->canvas);
     float count = 0;
-    for(float y = self->fei; round(y) < strip->ruler->h; y += self->symbol_h/2.0){
+    for(float y = self->fei; round(y) < generic_layer_h(layer); y += self->symbol_h/2.0){
         iy = round(y);
 //        printf("%0.2f y = %d\n",count,iy);
-        for(int x = 0; x < strip->ruler->w; x++){
-            pixels[iy * strip->ruler->w + x] = color;
+        for(int x = 0; x < generic_layer_w(layer); x++){
+            pixels[iy * generic_layer_w(layer) + x] = color;
         }
         count += 5.0;
     }
-    SDL_UnlockSurface(strip->ruler);
+    generic_layer_unlock(layer);
 }
 
 

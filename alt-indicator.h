@@ -2,6 +2,7 @@
 #define ALT_INDICATOR_H
 
 #include "buffered-gauge.h"
+#include "generic-layer.h"
 #include "ladder-gauge.h"
 #include "odo-gauge.h"
 #include "text-gauge.h"
@@ -15,8 +16,7 @@ typedef struct{
     OdoGauge *odo;
     TextGauge *talt_txt; /*Target altitude*/
     TextGauge *qnh_txt;
-    SDL_Surface *gps_flag;
-    GPU_Image *tgps_flag;
+    GenericLayer gps_flag;
 
     AltSource src;
     int qnh;

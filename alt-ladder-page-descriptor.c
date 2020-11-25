@@ -5,6 +5,7 @@
 
 #include "alt-ladder-page-descriptor.h"
 #include "animated-gauge.h"
+#include "generic-layer.h"
 #include "resource-manager.h"
 #include "sdl-colors.h"
 
@@ -33,9 +34,7 @@ LadderPage *alt_ladder_page_init(LadderPage *self)
 {
     fb_ladder_page_init(self);
     ladder_page_etch_markings(self, resource_manager_get_font(TERMINUS_16));
-#if USE_SDL_GPU
-    VERTICAL_STRIP(self)->rtex = GPU_CopyImageFromSurface(VERTICAL_STRIP(self)->ruler);
-#endif
+    generic_layer_build_texture(GENERIC_LAYER(self));
     return self;
 }
 

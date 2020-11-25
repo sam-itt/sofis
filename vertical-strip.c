@@ -1,15 +1,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include "generic-layer.h"
 #include "vertical-strip.h"
 
 void vertical_strip_dispose(VerticalStrip *self)
 {
-    if(self->ruler)
-        SDL_FreeSurface(self->ruler);
-#if USE_SDL_GPU
-    GPU_FreeImage(self->rtex);
-#endif
+    generic_layer_dispose(GENERIC_LAYER(self));
 }
 
 bool vertical_strip_has_value(VerticalStrip *self, float value)
@@ -45,10 +42,10 @@ float vertical_strip_resolve_value(VerticalStrip *self, float value, bool revers
      */
 /*    first interval is start,end, second interval is 0,surface->h-1*/
     if(!reverse){
-        rv = (value - self->start)*((self->ruler->h-1) - 0)/(self->end - self->start) + 0;
+        rv = (value - self->start)*((generic_layer_h(GENERIC_LAYER(self))-1) - 0)/(self->end - self->start) + 0;
 //        printf("Forward: New resolve: mapping value %f from [%f %f] to [%d %d]: %f\n",value, self->start,self->end,0,self->ruler->h-1,rv);
     }else{
-        rv = (value - self->start)*(0 - (self->ruler->h-1))/(self->end - self->start) + (self->ruler->h-1);
+        rv = (value - self->start)*(0 - (generic_layer_h(GENERIC_LAYER(self))-1))/(self->end - self->start) + (generic_layer_h(GENERIC_LAYER(self))-1);
 //        printf("Reverse: New resolve: mapping value %f from [%f %f] to [%d %d]: %f\n",value, self->start,self->end,self->ruler->h-1,0,rv);
     }
     return rv;

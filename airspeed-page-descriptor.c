@@ -6,6 +6,7 @@
 #include "SDL_render.h"
 #include "airspeed-page-descriptor.h"
 #include "buffered-gauge.h"
+#include "generic-layer.h"
 #include "resource-manager.h"
 #include "sdl-colors.h"
 #include "misc.h"
@@ -47,9 +48,8 @@ LadderPage *airspeed_ladder_page_init(LadderPage *self)
     ladder_page_etch_markings(self, resource_manager_get_font(TERMINUS_16));
 
     airspeed_ladder_page_draw_arcs(self);
-#if USE_SDL_GPU
-    VERTICAL_STRIP(self)->rtex = GPU_CopyImageFromSurface(VERTICAL_STRIP(self)->ruler);
-#endif
+    generic_layer_build_texture(GENERIC_LAYER(self));
+
     return self;
 }
 
@@ -70,14 +70,14 @@ void airspeed_ladder_page_draw_arcs(LadderPage *self)
 
     /*Green arc*/
 //    printf("Green arc from %d kts to %d kts\n",descriptor->v_s1, descriptor->v_no);
-    airspeed_ladder_page_draw_arc(self, descriptor->v_s1, descriptor->v_no, 4, SDL_UGREEN(VERTICAL_STRIP(self)->ruler));
+    airspeed_ladder_page_draw_arc(self, descriptor->v_s1, descriptor->v_no, 4, SDL_UGREEN(GENERIC_LAYER(self)->canvas));
     /*Yellow*/
-    airspeed_ladder_page_draw_arc(self, descriptor->v_no, descriptor->v_ne, 4, SDL_UYELLOW(VERTICAL_STRIP(self)->ruler));
+    airspeed_ladder_page_draw_arc(self, descriptor->v_no, descriptor->v_ne, 4, SDL_UYELLOW(GENERIC_LAYER(self)->canvas));
     /*White last, over any existing*/
-    airspeed_ladder_page_draw_arc(self, descriptor->v_so, descriptor->v_fe, 2, SDL_UGREY(VERTICAL_STRIP(self)->ruler));
+    airspeed_ladder_page_draw_arc(self, descriptor->v_so, descriptor->v_fe, 2, SDL_UGREY(GENERIC_LAYER(self)->canvas));
 
     /*VNE*/
-    airspeed_ladder_page_draw_arc(self, descriptor->v_ne, descriptor->v_ne+2, 4, SDL_URED(VERTICAL_STRIP(self)->ruler));
+    airspeed_ladder_page_draw_arc(self, descriptor->v_ne, descriptor->v_ne+2, 4, SDL_URED(GENERIC_LAYER(self)->canvas));
 }
 
 
@@ -92,7 +92,7 @@ static void airspeed_ladder_page_draw_arc(LadderPage *self, float start, float e
     Uint32 white;
 
     if(interval_intersect(start, end, VERTICAL_STRIP(self)->start, VERTICAL_STRIP(self)->end, &istart, &iend)){
-        surface = VERTICAL_STRIP(self)->ruler;
+        surface = GENERIC_LAYER(self)->canvas;
         white = SDL_UWHITE(surface);
 
         ystart = ladder_page_resolve_value(self, istart);

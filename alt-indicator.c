@@ -10,6 +10,7 @@
 #include "animated-gauge.h"
 #include "base-gauge.h"
 #include "buffered-gauge.h"
+#include "generic-layer.h"
 #include "misc.h"
 #include "resource-manager.h"
 #include "sdl-colors.h"
@@ -100,9 +101,9 @@ AltIndicator *alt_indicator_init(AltIndicator *self)
     text_gauge_set_color(self->talt_txt, SDL_BLACK, BACKGROUND_COLOR);
 
 #if USE_SDL_GPU
-    self->gps_flag = SDL_CreateRGBSurfaceWithFormat(0, 68-2, 21, 24, SDL_PIXELFORMAT_RGB24);
+    self->gps_flag.canvas = SDL_CreateRGBSurfaceWithFormat(0, 68-2, 21, 24, SDL_PIXELFORMAT_RGB24);
 #else
-    self->gps_flag = SDL_CreateRGBSurface(0,
+    self->gps_flag.canvas = SDL_CreateRGBSurface(0,
         68 - 2,
         21,
         buffered_gauge_get_view(BUFFERED_GAUGE(self))->format->BitsPerPixel,
@@ -112,16 +113,14 @@ AltIndicator *alt_indicator_init(AltIndicator *self)
         buffered_gauge_get_view(BUFFERED_GAUGE(self))->format->Amask
     );
 #endif
-    if(!self->gps_flag) return NULL; //TODO: Free all above allocated resources+find a pattern for that case
-    view_font_draw_text(self->gps_flag,
+    if(!self->gps_flag.canvas) return NULL; //TODO: Free all above allocated resources+find a pattern for that case
+    view_font_draw_text(self->gps_flag.canvas,
         NULL, HALIGN_CENTER | VALIGN_MIDDLE,
         "GPS",
         resource_manager_get_font(TERMINUS_16),
-        SDL_URED(self->gps_flag), SDL_UBLACK(self->gps_flag)
+        SDL_URED(self->gps_flag.canvas), SDL_UBLACK(self->gps_flag.canvas)
     );
-#if USE_SDL_GPU
-    self->tgps_flag = GPU_CopyImageFromSurface(self->gps_flag);
-#endif
+    generic_layer_build_texture(&self->gps_flag);
     return self;
 }
 
@@ -131,7 +130,7 @@ void alt_indicator_free(AltIndicator *self)
     odo_gauge_free(self->odo);
     text_gauge_free(self->talt_txt);
     text_gauge_free(self->qnh_txt);
-    SDL_FreeSurface(self->gps_flag);
+    generic_layer_dispose(&self->gps_flag);
     buffered_gauge_dispose(BUFFERED_GAUGE(self));
     free(self);
 }
@@ -171,21 +170,12 @@ static void alt_indicator_render(AltIndicator *self, Uint32 dt)
         buffered_gauge_paint_buffer(BUFFERED_GAUGE(self->qnh_txt), dt);
     }else{
         buffered_gauge_draw_outline(BUFFERED_GAUGE(self->qnh_txt), &SDL_WHITE, NULL);
-#if USE_SDL_GPU
-        buffered_gauge_blit_texture(BUFFERED_GAUGE(self), self->tgps_flag, NULL, &(SDL_Rect){
+        buffered_gauge_blit_layer(BUFFERED_GAUGE(self), &self->gps_flag, NULL, &(SDL_Rect){
             .x = 0 + 1,
             .y = BASE_GAUGE(self)->h - 20 -2 + 1,
             .h = 21 - 1,
             .w = BASE_GAUGE(self)->w - 2
         });
-#else
-        buffered_gauge_blit(BUFFERED_GAUGE(self), self->gps_flag, NULL, &(SDL_Rect){
-            .x = 0 + 1,
-            .y = BASE_GAUGE(self)->h - 20 -2 + 1,
-            .h = 21 - 1,
-            .w = BASE_GAUGE(self)->w - 2
-        });
-#endif
     }
 
     buffered_gauge_draw_outline(BUFFERED_GAUGE(self), &SDL_WHITE, NULL);

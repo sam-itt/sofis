@@ -4,16 +4,14 @@
 #include "SDL_pcf.h"
 
 #include "animated-gauge.h"
+#include "generic-layer.h"
 #include "vertical-strip.h"
 
 
 typedef struct{
     AnimatedGauge super;
 
-    SDL_Surface *cursor; /*cursor background image*/
-#if USE_SDL_GPU
-    GPU_Image *tcursor;
-#endif
+    GenericLayer cursor; /*cursor background image*/
 
     PCF_StaticFont *font;
 

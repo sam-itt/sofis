@@ -5,6 +5,7 @@
 #include <SDL2/SDL_image.h>
 
 #include "fb-page-descriptor.h"
+#include "generic-layer.h"
 
 LadderPage *fb_ladder_page_init(LadderPage *self);
 
@@ -45,19 +46,22 @@ void fb_page_descriptor_dispose(FBPageDescriptor *self)
 LadderPage *fb_ladder_page_init(LadderPage *self)
 {
     VerticalStrip *strip;
+    GenericLayer *layer;
     LadderPageDescriptor *adesc;
     FBPageDescriptor *descriptor;
 
     strip = VERTICAL_STRIP(self);
+    layer = GENERIC_LAYER(self);
     descriptor = (FBPageDescriptor *)LADDER_PAGE(self)->descriptor;
     adesc = LADDER_PAGE(self)->descriptor;
 
-    strip->ruler = IMG_Load(descriptor->filename);
-    if(!strip->ruler){
+    bool rv;
+    rv = generic_layer_init_from_file(GENERIC_LAYER(self),descriptor->filename);
+    if(!rv){
         return NULL;
     }
 
-    strip->ppv = (strip->ruler->h)/(adesc->page_size*1.0);
+    strip->ppv = generic_layer_h(layer)/(adesc->page_size*1.0);
 //    printf("FileBacked on %s ppv is %f\n",descriptor->filename,strip->ppv);
 //    printf("Page marking range is [%f, %f]\n", strip->start, strip->end);
 

@@ -13,7 +13,6 @@
 #include "render-queue.h"
 #include "sdl-colors.h"
 #include "SDL_pcf.h"
-#include "vertical-strip.h"
 #include "view.h"
 
 /*BufferGauge implements BaseGauge::render and triggers the actual
@@ -225,20 +224,22 @@ int buffered_gauge_blit_rotated_texture(BufferedGauge *self, GPU_Image *src, SDL
 
 
 /**
- * Does a blit on the gauge's relative space using a vertical strip
- * as source.
+ * @brief Does a blit on the gauge's relative space using a GenericLayer
+ * (encapsulates surface+texture) as source.
  *
- * @param src The VerticalStrip to blit on the buffer
+ * @param self a BufferedGauge
+ * @param src The GenericLayer to blit on the buffer
  * @param srcrect The portion of src to consider. NULL for whole surface.
  * @param dstrect The location in the buffer. NULL for whole buffer. This
  * destination *must* ignore the buffer's internal offset.
+ * TODO: INLINE
  */
-int buffered_gauge_blit_strip(BufferedGauge *self, VerticalStrip *src, SDL_Rect *srcrect, SDL_Rect *dstrect)
+int buffered_gauge_blit_layer(BufferedGauge *self, GenericLayer *src, SDL_Rect *srcrect, SDL_Rect *dstrect)
 {
 #if USE_SDL_GPU
-    return buffered_gauge_blit_texture(self, src->rtex, srcrect, dstrect);
+    return buffered_gauge_blit_texture(self, src->texture, srcrect, dstrect);
 #else
-    return buffered_gauge_blit(self, src->ruler, srcrect, dstrect);
+    return buffered_gauge_blit(self, src->canvas, srcrect, dstrect);
 #endif
 }
 

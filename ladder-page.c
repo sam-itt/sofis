@@ -2,6 +2,7 @@
 #include <stdlib.h>
 
 #include "SDL_surface.h"
+#include "generic-layer.h"
 #include "ladder-page.h"
 #include "sdl-colors.h"
 #include "SDL_pcf.h"
@@ -101,20 +102,22 @@ void ladder_page_etch_markings(LadderPage *self, PCF_Font *font)
     float y;
 
     VerticalStrip *strip;
+    GenericLayer *layer;
     int page_index;
 
     strip = VERTICAL_STRIP(self);
+    layer = GENERIC_LAYER(self);
 
     page_index = ladder_page_get_index(self);
 //    printf("Page %d real range is [%f, %f]\n",page_index, strip->start, strip->end);
 //
 //    printf("Writing indexes on %d starting at %d to %f\n",page_index, page_index*self->descriptor->page_size, strip->end);
-    Uint32 white = SDL_UWHITE(strip->ruler);
+    Uint32 white = SDL_UWHITE(layer->canvas);
     for(int i = page_index*self->descriptor->page_size; i <= strip->end; i += self->descriptor->vstep){
         y = ladder_page_resolve_value(self, i);
         PCF_FontWriteNumberAt(font,
             &i, TypeInt, 0,
-            white, strip->ruler,
-            (strip->ruler->w-1) - 10 - 5, y, LeftToCol | CenterOnRow);
+            white, layer->canvas,
+            (generic_layer_w(layer)-1) - 10 - 5, y, LeftToCol | CenterOnRow);
     }
 }

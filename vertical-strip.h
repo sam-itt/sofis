@@ -7,15 +7,15 @@
 #include <SDL_gpu.h>
 
 #include "SDL_render.h"
+#include "generic-layer.h"
 /**
  * Generic mapping between a range of values {@value #start},  {@value #start}
  * and an image.
+ *
+ * TODO: Replace with GenericRuler
  */
 typedef struct{
-    SDL_Surface *ruler;
-#if USE_SDL_GPU
-    GPU_Image *rtex;
-#endif
+    GenericLayer super;
 
     float ppv; /* pixels per value*/
     float start, end; /*Range*/

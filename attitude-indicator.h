@@ -3,6 +3,7 @@
 
 #include "SDL_render.h"
 #include "animated-gauge.h"
+#include "generic-layer.h"
 #include "roll-slip-gauge.h"
 
 #define MARKER_LEFT 0
@@ -33,18 +34,17 @@ typedef struct{
 	int ruler_middlex;
 //	int size;
 
-	SDL_Surface *markers[3]; //left, right, center
-	GPU_Image *tmarkers[3]; //left, right, center
+    GenericLayer markers[3]; //left, right, center
 	SDL_Rect locations[LOCATION_MAX];
 #if USE_SDL_GPU
     GPU_Image *tbuffer;
-    GPU_Image *tetched_ball;
 #else
 	SDL_Surface *buffer;
 	SDL_Renderer *renderer;
 	SDL_Texture *horizon;
 #endif
-    SDL_Surface *etched_ball;
+
+    GenericLayer etched_ball;
 }AttitudeIndicator;
 
 

@@ -6,6 +6,7 @@
 #include "animated-gauge.h"
 #include "base-gauge.h"
 #include "buffered-gauge.h"
+#include "generic-layer.h"
 #include "sdl-colors.h"
 #include "odo-gauge.h"
 
@@ -92,7 +93,7 @@ OdoGauge *odo_gauge_vainit(OdoGauge *self, int rubis, int nbarrels, va_list ap)
         self->barrels[i] = va_arg(ap, DigitBarrel*);
         self->barrels[i]->refcount++;
 
-        width += VERTICAL_STRIP(self->barrels[i])->ruler->w;
+        width += generic_layer_w(GENERIC_LAYER(self->barrels[i]));
         if(self->heights[i] == -1)
             self->heights[i] = self->barrels[i]->symbol_h*2;
         else if(self->heights[i] == -2)
@@ -179,11 +180,11 @@ void odo_gauge_render_value(OdoGauge *self, float value)
                 current_val += vparts[i] * powf(10.0, i);
             next_part = i;
         }
-        cursor.x -= VERTICAL_STRIP(self->barrels[current_rotor])->ruler->w;
+        cursor.x -= generic_layer_w(GENERIC_LAYER(self->barrels[current_rotor]));
         cursor.h = self->heights[current_rotor];
         rcenter = (BASE_GAUGE(self)->h/2 - cursor.h/2); /*This is the rotor center relative to the whole gauge size*/
         cursor.y = 0 + rcenter;
-        cursor.w = VERTICAL_STRIP(self->barrels[current_rotor])->ruler->w;
+        cursor.w = generic_layer_w(GENERIC_LAYER(self->barrels[current_rotor]));
         digit_barrel_render_value(self->barrels[current_rotor], current_val, BUFFERED_GAUGE(self), &cursor, self->rubis - rcenter);
 //        printf("setting rotor %d to %f\n",current_rotor, current_val);
         //render that value
@@ -196,10 +197,10 @@ void odo_gauge_render_value(OdoGauge *self, float value)
 
     /*Place holders for rotors that didn't render any value*/
     for(; current_rotor < self->nbarrels; current_rotor++){
-        cursor.x -= VERTICAL_STRIP(self->barrels[current_rotor])->ruler->w;
+        cursor.x -= generic_layer_w(GENERIC_LAYER(self->barrels[current_rotor]));
         cursor.h = self->heights[current_rotor];
         cursor.y = 0 + BASE_GAUGE(self)->h/2 - cursor.h/2;
-        cursor.w = VERTICAL_STRIP(self->barrels[current_rotor])->ruler->w;
+        cursor.w = generic_layer_w(GENERIC_LAYER(self->barrels[current_rotor]));
 
         buffered_gauge_fill(BUFFERED_GAUGE(self), &cursor, &SDL_BLACK, false);
     }
