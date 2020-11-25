@@ -1,0 +1,276 @@
+#include <math.h>
+#include <stdint.h>
+#include <stdio.h>
+#include <stdlib.h>
+
+#include <SDL2/SDL.h>
+#include <SDL_gpu.h>
+
+#include <SDL2/SDL_image.h>
+
+#include "SDL_rect.h"
+#include "SDL_surface.h"
+#include "elevator-gauge.h"
+
+#include "animated-gauge.h"
+#include "generic-layer.h"
+#include "generic-ruler.h"
+#include "resource-manager.h"
+#include "sdl-colors.h"
+#include "SDL_pcf.h"
+#include "misc.h"
+
+static bool elevator_gauge_build_elevator(ElevatorGauge *self, Uint32 color);
+
+static void elevator_gauge_render_value(ElevatorGauge *self, float value);
+static AnimatedGaugeOps elevator_gauge_ops = {
+   .render_value = (ValueRenderFunc)elevator_gauge_render_value
+};
+
+
+/**
+ * @brief Creates a new ElevatorGauge. Calling code is responsible
+ * for the freeing.
+ *
+ * @see elevator_gauge_init for params and return value
+ */
+ElevatorGauge *elevator_gauge_new(bool marked, Location elevator_location,
+                                  PCF_Font *font, SDL_Color color,
+                                  float from, float to, float step,
+                                  int bar_max_w, int bar_max_h,
+                                  int nzones, ColorZone *zones)
+{
+    ElevatorGauge *self;
+    bool rv;
+
+    self = calloc(1, sizeof(ElevatorGauge));
+    if(self){
+        rv = elevator_gauge_init(self,
+            marked, elevator_location,
+            font, color,
+            from, to, step,
+            bar_max_w, bar_max_h,
+            nzones, zones);
+        if(!rv){
+            free(self);
+            return NULL;
+        }
+    }
+    return self;
+}
+
+/**
+ * @brief Inits a ElevatorGauge
+ *
+ * @param self a ElevatorGauge
+ * @param marked Write values corresponding to hatch marks
+ * @param location Which side (left or right) to put the elevator relative
+ * to the ruler.
+ * @param font The font to use for markings
+ * @param color the color to use when writing hatch marks and markings
+ * @param from start of the value range
+ * @param to end of the value range
+ * @param step increment in value units (meters, degrees, etc.) of hatch
+ * marks. Passing in a negative value will create only hatch marks at the
+ * begining/end of the range. See generic_ruler_init for a discussion of
+ * valid @p step values.
+ * @param bar_max_w Maximum width of the bar itself. It can be shrinked to
+ * accomodate the needed number of hatch marks.
+ * @param bar_max_h Maximum height of the bar itself. The gauge will be
+ * larger to accomadate markings (if any) and cursor(s).
+ * @param nzones size of the @p zones array, 0 if none
+ * @param zones array of ColorZones that will be used in the gauge. NULL
+ * for none.
+ * @return @p self on success, NULL on failure.
+ *
+ * @note Array is copied, caller can pass in a temporary local array.
+ *
+ * @see generic_ruler_init
+ * @see elevator_gauge_new
+ */
+ElevatorGauge *elevator_gauge_init(ElevatorGauge *self,
+                                   bool marked, Location elevator_location,
+                                   PCF_Font *font, SDL_Color color,
+                                   float from, float to, float step,
+                                   int bar_max_w, int bar_max_h,
+                                   int nzones, ColorZone *zones)
+{
+    Location marks_location;
+    Location spine_location;
+
+    self->elevator_location = elevator_location;
+    marks_location = (self->elevator_location == Left) ? Right : Left;
+    spine_location = elevator_location;
+
+    generic_ruler_init(&(self->ruler),
+        RulerVertical, RulerGrowAgainstAxis,
+        from, to, step,
+        font, marks_location, 0,
+        bar_max_w, bar_max_h
+    );
+
+    self->nzones = nzones;
+    self->zones = calloc(self->nzones, sizeof(ColorZone));
+    if(!self->zones)
+        return NULL;
+
+    for(int i = 0; i < nzones; i++){
+        self->zones[i] = zones[i];
+    }
+
+    Uint32 fcolor;
+    fcolor =  SDL_MapRGBA(
+        GENERIC_LAYER(&self->ruler)->canvas->format,
+        color.r, color.g, color.b, color.a
+    );
+
+    /*Draws the ruler*/
+    if(self->nzones > 0){
+        generic_ruler_draw_zones(&self->ruler, spine_location, self->nzones, self->zones, 0.7);
+    }
+    generic_ruler_etch_hatches(&(self->ruler), fcolor, false, true, marks_location);
+    if(marked && font) /*Font will also be used to tag the cursors (itf)*/
+        generic_ruler_etch_markings(&(self->ruler), marks_location, font, fcolor, 0);
+    printf("markings on : %s\n",(marks_location == Left) ? "left" : "right");
+    generic_layer_build_texture(GENERIC_LAYER(&self->ruler));
+
+    elevator_gauge_build_elevator(self, fcolor);
+    if(!self->elevator)
+        return false;
+
+    self->ruler_rect = (SDL_Rect){
+        .x = self->elevator->canvas->w,
+        .y = 0,
+        .w = GENERIC_LAYER(&self->ruler)->canvas->w,
+        .h = GENERIC_LAYER(&self->ruler)->canvas->h
+    };
+
+    animated_gauge_init(ANIMATED_GAUGE(self),
+        ANIMATED_GAUGE_OPS(&elevator_gauge_ops),
+        GENERIC_LAYER(&self->ruler)->canvas->w + self->elevator->canvas->w,
+        GENERIC_LAYER(&self->ruler)->canvas->h
+    );
+    BUFFERED_GAUGE(self)->max_ops = 3;
+
+    return self;
+}
+
+/**
+ * @brief Release resources held by @p self.
+ *
+ * @param self a ElevatorGauge
+ */
+void elevator_gauge_dispose(ElevatorGauge *self)
+{
+    generic_ruler_dispose(&self->ruler);
+    if(self->elevator)
+        generic_layer_free(self->elevator);
+    if(self->zones)
+        free(self->zones);
+    animated_gauge_dispose(ANIMATED_GAUGE(self));
+}
+
+/**
+ * @brief Release any resource held by and free
+ * the memory used by @p self.
+ *
+ * @param self a ElevatorGauge
+ */
+void elevator_gauge_free(ElevatorGauge *self)
+{
+    elevator_gauge_dispose(self);
+    free(self);
+}
+
+/*
+ * @brief Creates the elevator bitmap
+ *
+ * INTERNAL USE ONLY
+ *
+ * TODO: Generate the cursor otf without using files
+ */
+static bool elevator_gauge_build_elevator(ElevatorGauge *self, Uint32 color)
+{
+    char *filename;
+    int startx, endx;
+
+    if(self->elevator_location != Left && self->elevator_location != Right){
+        printf("Unsupported location\n");
+        return false;
+    }
+
+    filename = (self->elevator_location == Left) ? "lh-cursor10.png" : "rh-cursor10.png";
+
+    SDL_Surface *triangle = IMG_Load(filename);
+    if(!triangle)
+        return NULL;
+
+    self->elevator = generic_layer_new(triangle->w, self->ruler.ruler_area.h);
+    if(!self->elevator)
+        return NULL;
+
+    /*Blit triangle at top left of elevator*/
+    SDL_BlitSurface(triangle, NULL, self->elevator->canvas, NULL);
+    /*Creates the 'tail'*/
+    startx = (self->elevator_location == Left)
+             ? 0
+             : self->elevator->canvas->w - 4;
+    endx = (self->elevator_location == Left)
+           ? 4
+           : self->elevator->canvas->w;
+    generic_layer_lock(self->elevator);
+    Uint32 *pixels = self->elevator->canvas->pixels;
+    for(int y = 4; y < self->elevator->canvas->h; y++){
+        for(int x = startx; x < endx; x++)
+            pixels[y * self->elevator->canvas->w + x] = color;
+    }
+    generic_layer_unlock(self->elevator);
+
+    generic_layer_build_texture(self->elevator);
+
+    return true;
+}
+
+
+/*
+ * @brief Implementation of AnimatedGauge::render_value
+ *
+ * Internal use only
+ *
+ * @see animated_gauge_render_value
+ */
+static void elevator_gauge_render_value(ElevatorGauge *self, float value)
+{
+    int yinc;
+    int elevator_top;
+    SDL_Rect elevator_dest;
+    SDL_Rect elevator_src;
+
+    generic_ruler_clip_value(&self->ruler, &value);
+
+    yinc = generic_ruler_get_pixel_increment_for(&self->ruler, value);
+    elevator_top = SDLExt_RectLastY(&self->ruler.ruler_area) - yinc;
+
+    /*Area to copy from the whole elevator image*/
+    elevator_src = (SDL_Rect){
+        .x = 0,
+        .y = 0,
+        .w = self->elevator->canvas->w,
+        .h = yinc + 1
+    };
+    /*Where to put it*/
+    elevator_dest = (SDL_Rect){
+        .x = (self->elevator_location == Left)
+             ? 0
+             : SDLExt_RectLastX(&self->ruler_rect) + 1,
+        .y = self->ruler_rect.y + elevator_top,
+        .w = elevator_src.w,
+        .h = elevator_src.h
+    };
+
+
+    buffered_gauge_clear(BUFFERED_GAUGE(self));
+    //TODO: See vertical-stair.c:99 and have buffered_gauge handle texture/surface switching
+    buffered_gauge_blit_texture(BUFFERED_GAUGE(self), GENERIC_LAYER(&self->ruler)->texture, NULL, &self->ruler_rect);
+    buffered_gauge_blit_texture(BUFFERED_GAUGE(self), self->elevator->texture, &elevator_src, &elevator_dest);
+}
