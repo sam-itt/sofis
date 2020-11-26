@@ -7,6 +7,8 @@
 #include "misc.h"
 #include "render-queue.h"
 
+#define ENABLE_SDL_GPU_FUNNY_COORDS 1
+
 #define is_color_key(c) ((c)->r == 255 && (c)->g == 0 && (c)->b == 255)
 //#define is_color_key(c) (0)
 #define is_null_rect(r) ((r)->x == -1 && (r)->y == -1 && (r)->w == -1 && (r)->h == -1)
@@ -116,6 +118,13 @@ bool render_queue_push_line(RenderQueue *self, SDL_Color *color, int x0, int y0,
     self->operations[self->nops].line.end.x = x1;
     self->operations[self->nops].line.end.y = y1;
 
+#if ENABLE_SDL_GPU_FUNNY_COORDS
+    /* SDL_GPU has y=0 out of the screen and w,h in the screen
+     * like x is [x1, x2[  and y ?
+     * */
+    self->operations[self->nops].line.start.y++;
+    self->operations[self->nops].line.end.y++;
+#endif
     self->nops++;
     return true;
 }
