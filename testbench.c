@@ -547,6 +547,7 @@ int main(int argc, char **argv)
     attitude_indicator_free(ai);
     basic_hud_free(hud);
     text_gauge_free(txt);
+    side_panel_free(panel);
     resource_manager_shutdown();
 #if USE_SDL_GPU
 	GPU_Quit();

@@ -386,6 +386,7 @@ int main(int argc, char **argv)
     }while(!done);
 
     basic_hud_free(hud);
+    side_panel_free(panel);
 #if defined(USE_FGCONN)
     flightgear_connector_free(fglink);
 #elif defined(USE_FGTAPE)
