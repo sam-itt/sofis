@@ -5,3 +5,6 @@
 	path = fg-io
 	url = https://github.com/sam-itt/fg-io.git
 	shallow = true
+[submodule "fg-roam"]
+	path = fg-roam
+	url = https://github.com/sam-itt/fg-roam.git

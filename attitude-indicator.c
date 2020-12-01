@@ -485,14 +485,16 @@ static void attitude_indicator_render_value(AttitudeIndicator *self, float value
         &win,
         NULL
     );*/
-	buffered_gauge_blit_rotated_texture(BUFFERED_GAUGE(self),
-       self->etched_ball.texture,
-       NULL,
-       ANIMATED_GAUGE(self->rollslip)->value,
-       &rcenter,
-       NULL,
-       &(SDL_Rect){rcenter.x - win.x, rcenter.y - win.y,0,0}
-    );
+    if(!self->hide_ball){
+        buffered_gauge_blit_rotated_texture(BUFFERED_GAUGE(self),
+           self->etched_ball.texture,
+           NULL,
+           ANIMATED_GAUGE(self->rollslip)->value,
+           &rcenter,
+           NULL,
+           &(SDL_Rect){rcenter.x - win.x, rcenter.y - win.y,0,0}
+        );
+    }
 #else
     surface = self->etched_ball.canvas;
 	if(self->rollslip->super.value != 0){

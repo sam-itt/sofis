@@ -20,6 +20,7 @@
 #include "roll-slip-gauge.h"
 #include "side-panel.h"
 
+#include "terrain-viewer.h"
 //#define USE_FGCONN 0
 #define USE_FGTAPE 1
 
@@ -55,7 +56,7 @@ typedef struct{
 
 BasicHud *hud = NULL;
 SidePanel *panel = NULL;
-
+bool g_show3d = false;
 
 
 float alt = 900.0;
@@ -139,6 +140,12 @@ bool handle_keyboard(SDL_KeyboardEvent *event, Uint32 elapsed)
                 basic_hud_set(hud, 1, ROLL, roll);
             }
             break;
+        case SDLK_SPACE:
+            if(event->state == SDL_PRESSED)
+                g_show3d = !g_show3d;
+            hud->attitude->hide_ball = (g_show3d) ? true : false;
+            break;
+
     }
     return false;
 }
@@ -223,6 +230,10 @@ int main(int argc, char **argv)
     panel = side_panel_new(-1, -1);
     SDL_Rect sprect = {0,0, BASE_GAUGE(panel)->w,BASE_GAUGE(panel)->h};
 
+    TerrainViewer *viewer;
+    viewer = terrain_viewer_new();
+
+
     done = false;
     Uint32 ticks;
     Uint32 last_ticks = 0;
@@ -297,7 +308,7 @@ int main(int argc, char **argv)
             basic_hud_set(hud,  5,
                 ALTITUDE, (double)record.altitude,
                 AIRSPEED, (double)record.airspeed,
-                VERTICAL_SPEED, record.vertical_speed,
+            VERTICAL_SPEED, record.vertical_speed * 60, /*Convert fps to fpm*/
                 PITCH, (double)record.pitch,
                 ROLL, (double)record.roll
             );
@@ -308,6 +319,18 @@ int main(int argc, char **argv)
             side_panel_set_cht(panel, record.cht);
             side_panel_set_fuel_px(panel, record.fuel_px);
             side_panel_set_fuel_qty(panel, record.fuel_qty);
+
+            float lon = fmod(record.longitude+180, 360.0) - 180;
+            record.altitude = record.altitude/3.281;
+            terrain_viewer_update_plane(viewer,
+                record.latitude, record.longitude, record.altitude + 2,
+                record.roll, record.pitch, record.heading
+            );
+            if(last_ticks == 0){ //Do an invisible frame to trigger preload
+                GPU_FlushBlitBuffer(); /*begin 3*/
+                terrain_viewer_frame(viewer);
+                GPU_ResetRendererState(); /*end 3d*/
+            }
         }
 #endif
 
@@ -316,7 +339,11 @@ int main(int argc, char **argv)
 #else
         SDL_FillRect(screenSurface, NULL, SDL_UFBLUE(screenSurface));
 #endif
-//        SDL_FillRect(screenSurface, NULL, colors[i]);
+        if(g_show3d){
+            GPU_FlushBlitBuffer(); /*begin 3*/
+            terrain_viewer_frame(viewer);
+            GPU_ResetRendererState(); /*end 3d*/
+        }
 
         base_gauge_render(BASE_GAUGE(hud), elapsed, rtarget, &whole);
         base_gauge_render(BASE_GAUGE(panel), elapsed, rtarget, &sprect);
@@ -327,8 +354,8 @@ int main(int argc, char **argv)
 #endif
         nframes++;
         acc += elapsed;
-        if(elapsed < 200){
-            SDL_Delay(200 - elapsed);
+        if(elapsed < 20){
+            SDL_Delay(20 - elapsed);
         }
 #if 0
         if(acc >= 1000){

@@ -23,6 +23,7 @@ typedef struct{
 	RollSlipGauge *rollslip;
 
 	int size; /*number of 10s markings*/
+    bool hide_ball;
 
     SDL_Rect ball_window; /*Visible portion*/
     SDL_Rect ball_all; /*Visible portion plus extended area*/
@@ -33,6 +34,7 @@ typedef struct{
 	int ruler_middle;
 	int ruler_middlex;
 //	int size;
+
 
     GenericLayer markers[3]; //left, right, center
 	SDL_Rect locations[LOCATION_MAX];
