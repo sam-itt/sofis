@@ -54,7 +54,7 @@
  *   buffered_gauge_render
  */
 
-static void animated_gauge_base_render(AnimatedGauge *self, Uint32 dt, SDL_Surface *destination, SDL_Rect *location);
+static void animated_gauge_base_render(AnimatedGauge *self, Uint32 dt, RenderTarget destination, SDL_Rect *location);
 static void animated_gauge_render(AnimatedGauge *self, Uint32 dt);
 /*
 static AnimatedGaugeOps animated_gauge_ops = {
@@ -121,7 +121,7 @@ static void animated_gauge_render(AnimatedGauge *self, Uint32 dt)
  * @param location offset in the surface
  *
  */
-static void animated_gauge_base_render(AnimatedGauge *self, Uint32 dt, SDL_Surface *destination, SDL_Rect *location)
+static void animated_gauge_base_render(AnimatedGauge *self, Uint32 dt, RenderTarget destination, SDL_Rect *location)
 {
    /* While moving, damage the superclass buffer & chain-up:
     * buffered_gauge_render will decide to call animated_gauge_render

@@ -17,7 +17,7 @@
 
 #define GROUP_SPACE 8
 
-static void side_panel_render(SidePanel *self, Uint32 dt, SDL_Surface *destination, SDL_Rect *location);
+static void side_panel_render(SidePanel *self, Uint32 dt, RenderTarget destination, SDL_Rect *location);
 static BaseGaugeOps side_panel_ops = {
     .render = (RenderFunc)side_panel_render
 };
@@ -429,13 +429,21 @@ void side_panel_set_fuel_qty(SidePanel *self, float value)
 
 #define rectf_offset(r1, r2) ((GPU_Rect){(r1)->x + (r2)->x, (r1)->y + (r2)->y, (r1)->w, (r1)->h})
 #define rect_offset(r1, r2) ((SDL_Rect){(r1)->x + (r2)->x, (r1)->y + (r2)->y, (r1)->w, (r1)->h})
-static void side_panel_render(SidePanel *self, Uint32 dt, SDL_Surface *destination, SDL_Rect *location)
+static void side_panel_render(SidePanel *self, Uint32 dt, RenderTarget destination, SDL_Rect *location)
 {
     SDL_Rect area = (SDL_Rect){0,0, BASE_GAUGE(self)->w, BASE_GAUGE(self)->h};
+#if USE_SDL_GPU
+    GPU_Rect outline = rectf_offset(&area, location);
 
-    GPU_RectangleFilled2(gpu_screen, rectf_offset(&area, location), SDL_BLACK);
-//    buffered_gauge_clear(BUFFERED_GAUGE(self));
-//    buffered_gauge_draw_outline(BUFFERED_GAUGE(self), &SDL_WHITE, NULL); /*Not really needed*/
+    outline.x++;
+    outline.y++;
+    outline.w--;
+    outline.h--;
+
+    GPU_RectangleFilled2(destination.target, rectf_offset(&area, location), SDL_BLACK);
+    GPU_Rectangle2(destination.target, outline, SDL_WHITE);
+#else
+#endif
 #if 0
     base_gauge_render(BASE_GAUGE(self->egt), dt, destination, &self->locations[EGT]);
     base_gauge_render(BASE_GAUGE(self->egt_txt), dt, destination, &self->locations[EGT_TXT]);

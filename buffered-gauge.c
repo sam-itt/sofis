@@ -18,7 +18,7 @@
 /*BufferGauge implements BaseGauge::render and triggers the actual
 rendering only if its view have been damaged.*/
 
-void buffered_gauge_render(BufferedGauge *self, Uint32 dt, SDL_Surface *destination, SDL_Rect *location);
+void buffered_gauge_render(BufferedGauge *self, Uint32 dt, RenderTarget destination, SDL_Rect *location);
 static BufferedGaugeOps buffered_gauge_ops = {
     .super = {
         .render = (RenderFunc)buffered_gauge_render
@@ -483,7 +483,7 @@ void buffered_gauge_paint_buffer(BufferedGauge *self, Uint32 dt)
     ops->render(self, dt);
 }
 
-void buffered_gauge_render(BufferedGauge *self, Uint32 dt, SDL_Surface *destination, SDL_Rect *location)
+void buffered_gauge_render(BufferedGauge *self, Uint32 dt, RenderTarget destination, SDL_Rect *location)
 {
     BufferedGaugeOps *ops;
 
@@ -492,9 +492,9 @@ void buffered_gauge_render(BufferedGauge *self, Uint32 dt, SDL_Surface *destinat
         buffered_gauge_paint_buffer(self, dt);
     }
 #if USE_SDL_GPU
-    render_queue_execute(self->queue, gpu_screen, location);
+    render_queue_execute(self->queue, destination.target, location);
 #else
-    SDL_BlitSurface(self->view, NULL, destination, location);
+    SDL_BlitSurface(self->view, NULL, destination.surface, location);
 #endif
 }
 

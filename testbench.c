@@ -53,8 +53,6 @@ TextGauge *txt = NULL;
 ElevatorGauge *elevator = NULL;
 
 
-SDL_Renderer *g_renderer = NULL;
-GPU_Target* gpu_screen = NULL;
 
 float gval = 0.0;
 float alt = 900.0;
@@ -256,21 +254,26 @@ float compute_vs(float old_alt, float new_alt, Uint32 elapsed)
 
 int main(int argc, char **argv)
 {
-    SDL_Window* window = NULL;
-    SDL_Surface* screenSurface = NULL;
     Uint32 colors[N_COLORS];
     bool done;
     int i;
     float oldv[5] = {0,0,0,0,0};
+    RenderTarget rtarget;
 
 #if USE_SDL_GPU
+    GPU_Target* gpu_screen = NULL;
+
 	GPU_SetRequiredFeatures(GPU_FEATURE_BASIC_SHADERS);
 	gpu_screen = GPU_InitRenderer(GPU_RENDERER_OPENGL_2, SCREEN_WIDTH, SCREEN_HEIGHT, GPU_DEFAULT_INIT_FLAGS);
 	if(gpu_screen == NULL){
         GPU_LogError("Initialization Error: Could not create a renderer with proper feature support for this demo.\n");
 		return 1;
     }
+    rtarget.target = gpu_screen;
 #else
+    SDL_Window* window = NULL;
+    SDL_Surface* screenSurface = NULL;
+
     if (SDL_Init(SDL_INIT_VIDEO) < 0) {
         return 1;
     }
@@ -293,6 +296,7 @@ int main(int argc, char **argv)
         printf("Error: %s\n",SDL_GetError());
         exit(-1);
     }
+    rtarget.surface = screenSurface;
     colors[0] = SDL_MapRGB(screenSurface->format, 0xFF, 0xFF, 0xFF);
     colors[1] = SDL_MapRGB(screenSurface->format, 0xFF, 0x00, 0x00);
     colors[2] = SDL_MapRGB(screenSurface->format, 0x00, 0xFF, 0x00);
@@ -464,27 +468,27 @@ int main(int argc, char **argv)
 #else
         SDL_FillRect(screenSurface, NULL, SDL_UFBLUE(screenSurface));
 #endif
-//        base_gauge_render(BASE_GAUGE(ladder), elapsed, screenSurface, &lrect);
-//        base_gauge_render(BASE_GAUGE(gauge), elapsed, screenSurface, &dst);
-//        base_gauge_render(BASE_GAUGE(wheel), elapsed, screenSurface, &wheelrect);
-//        base_gauge_render(BASE_GAUGE(odo), elapsed, screenSurface, &odorect);
+//        base_gauge_render(BASE_GAUGE(ladder), elapsed, rtarget, &lrect);
+//        base_gauge_render(BASE_GAUGE(gauge), elapsed, rtarget, &dst);
+//        base_gauge_render(BASE_GAUGE(wheel), elapsed, rtarget, &wheelrect);
+//        base_gauge_render(BASE_GAUGE(odo), elapsed, rtarget, &odorect);
 
-//        base_gauge_render(BASE_GAUGE(alt_ind), elapsed, screenSurface, &airect);
-//        base_gauge_render(BASE_GAUGE(stair), elapsed, screenSurface, &vrect);
+//        base_gauge_render(BASE_GAUGE(alt_ind), elapsed, rtarget, &airect);
+//        base_gauge_render(BASE_GAUGE(stair), elapsed, rtarget, &vrect);
 
-//        base_gauge_render(BASE_GAUGE(group), elapsed, screenSurface, &airect);
-//        base_gauge_render(BASE_GAUGE(asi), elapsed, screenSurface, &vrect);
+//        base_gauge_render(BASE_GAUGE(group), elapsed, rtarget, &airect);
+//        base_gauge_render(BASE_GAUGE(asi), elapsed, rtarget, &vrect);
 //
 
-//        base_gauge_render(BASE_GAUGE(rsg), elapsed, screenSurface, &dst);
+//        base_gauge_render(BASE_GAUGE(rsg), elapsed, rtarget, &dst);
 //        base_gauge_render(BASE_GAUGE(ai->rollslip), elapsed);
-//        base_gauge_render(BASE_GAUGE(ai), elapsed, screenSurface, NULL);
+//        base_gauge_render(BASE_GAUGE(ai), elapsed, rtarget, NULL);
 
-//        base_gauge_render(BASE_GAUGE(hud), elapsed, screenSurface, &whole);
-//        base_gauge_render(BASE_GAUGE(txt), elapsed, screenSurface, &txtrect);
-        base_gauge_render(BASE_GAUGE(panel), elapsed, screenSurface, &sprect);
-//        base_gauge_render(BASE_GAUGE(elevator), elapsed, screenSurface, &center_rect);
-//        base_gauge_render(BASE_GAUGE(fish), elapsed, screenSurface, &center_rect);
+//        base_gauge_render(BASE_GAUGE(hud), elapsed, rtarget, &whole);
+//        base_gauge_render(BASE_GAUGE(txt), elapsed, rtarget, &txtrect);
+        base_gauge_render(BASE_GAUGE(panel), elapsed, rtarget, &sprect);
+//        base_gauge_render(BASE_GAUGE(elevator), elapsed, rtarget, &center_rect);
+//        base_gauge_render(BASE_GAUGE(fish), elapsed, rtarget, &center_rect);
 #if USE_SDL_GPU
 		GPU_Flip(gpu_screen);
 #else
@@ -544,7 +548,7 @@ int main(int argc, char **argv)
     basic_hud_free(hud);
     text_gauge_free(txt);
     resource_manager_shutdown();
-#if USE_SDL_RENDERER
+#if USE_SDL_GPU
 	GPU_Quit();
 #else
     SDL_DestroyWindow(window);

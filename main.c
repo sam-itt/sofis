@@ -57,7 +57,6 @@ BasicHud *hud = NULL;
 SidePanel *panel = NULL;
 
 
-GPU_Target* gpu_screen = NULL;
 
 float alt = 900.0;
 float odo_val = 0.0;
@@ -170,21 +169,26 @@ bool handle_events(Uint32 elapsed)
 
 int main(int argc, char **argv)
 {
-    SDL_Window* window = NULL;
-    SDL_Surface* screenSurface = NULL;
     Uint32 colors[N_COLORS];
     bool done;
     int i;
     float oldv[5] = {0,0,0,0,0};
+    RenderTarget rtarget;
 
 #if USE_SDL_GPU
+    GPU_Target* gpu_screen = NULL;
+
 	GPU_SetRequiredFeatures(GPU_FEATURE_BASIC_SHADERS);
 	gpu_screen = GPU_InitRenderer(GPU_RENDERER_OPENGL_2, SCREEN_WIDTH, SCREEN_HEIGHT, GPU_DEFAULT_INIT_FLAGS);
 	if(gpu_screen == NULL){
         GPU_LogError("Initialization Error: Could not create a renderer with proper feature support for this demo.\n");
 		return 1;
     }
+    rtarget.target = gpu_screen;
 #else
+    SDL_Window* window = NULL;
+    SDL_Surface* screenSurface = NULL;
+
     if (SDL_Init(SDL_INIT_VIDEO) < 0) {
         return 1;
     }
@@ -205,7 +209,7 @@ int main(int argc, char **argv)
         printf("Error: %s\n",SDL_GetError());
         exit(-1);
     }
-
+    rtarget.surface = screenSurface;
 
     colors[0] = SDL_MapRGB(screenSurface->format, 0xFF, 0xFF, 0xFF);
     colors[1] = SDL_MapRGB(screenSurface->format, 0xFF, 0x00, 0x00);
@@ -314,8 +318,8 @@ int main(int argc, char **argv)
 #endif
 //        SDL_FillRect(screenSurface, NULL, colors[i]);
 
-        base_gauge_render(BASE_GAUGE(hud), elapsed, screenSurface, &whole);
-        base_gauge_render(BASE_GAUGE(panel), elapsed, screenSurface, &sprect);
+        base_gauge_render(BASE_GAUGE(hud), elapsed, rtarget, &whole);
+        base_gauge_render(BASE_GAUGE(panel), elapsed, rtarget, &sprect);
 #if USE_SDL_GPU
 		GPU_Flip(gpu_screen);
 #else
@@ -388,7 +392,7 @@ int main(int argc, char **argv)
     fg_tape_free(tape);
 #endif
     resource_manager_shutdown();
-#if USE_SDL_RENDERER
+#if USE_SDL_GPU
 	GPU_Quit();
 #else
     SDL_DestroyWindow(window);

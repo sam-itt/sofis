@@ -11,9 +11,6 @@
 #include "render-queue.h"
 #include "view.h"
 
-extern SDL_Renderer *g_renderer;
-extern GPU_Target* gpu_screen;
-
 typedef enum{
     BUFFER_OWN,
     BUFFER_SHARED
@@ -90,7 +87,7 @@ void buffered_gauge_font_draw_text(BufferedGauge *self,
 
 void buffered_gauge_paint_buffer(BufferedGauge *self, Uint32 dt);
 
-void buffered_gauge_render(BufferedGauge *self, Uint32 dt, SDL_Surface *destination, SDL_Rect *location);
+void buffered_gauge_render(BufferedGauge *self, Uint32 dt, RenderTarget destination, SDL_Rect *location);
 
 void buffered_gauge_get_area(BufferedGauge *self, SDL_Rect *rect);
 

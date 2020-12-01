@@ -7,7 +7,7 @@
 #include "sdl-colors.h"
 #include "SDL_pcf.h"
 
-static void alt_group_render(AltGroup *self, Uint32 dt, SDL_Surface *destination, SDL_Rect *location);
+static void alt_group_render(AltGroup *self, Uint32 dt, RenderTarget destination, SDL_Rect *location);
 static BaseGaugeOps alt_group_ops = {
     .render = (RenderFunc)alt_group_render
 };
@@ -73,7 +73,7 @@ void alt_group_set_values(AltGroup *self, float alt, float vs)
     alt_group_set_vertical_speed(self, vs);
 }
 
-static void alt_group_render(AltGroup *self, Uint32 dt, SDL_Surface *destination, SDL_Rect *location)
+static void alt_group_render(AltGroup *self, Uint32 dt, RenderTarget destination, SDL_Rect *location)
 {
     SDL_Rect offset = {0,0,0,0};
     offset.x = location->x + BASE_GAUGE(self->altimeter)->w;

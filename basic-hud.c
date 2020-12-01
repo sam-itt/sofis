@@ -11,7 +11,7 @@
 #include "basic-hud.h"
 #include "misc.h"
 
-static void basic_hud_render(BasicHud *self, Uint32 dt, SDL_Surface *destination, SDL_Rect *location);
+static void basic_hud_render(BasicHud *self, Uint32 dt, RenderTarget destination, SDL_Rect *location);
 static BaseGaugeOps basic_hud_ops = {
     .render = (RenderFunc)basic_hud_render
 };
@@ -128,7 +128,7 @@ float basic_hud_get(BasicHud *self, HudValue hv)
 }
 
 /*Currently the only supported location is 0,0 and width/height is 640x480*/
-static void basic_hud_render(BasicHud *self, Uint32 dt, SDL_Surface *destination, SDL_Rect *location)
+static void basic_hud_render(BasicHud *self, Uint32 dt, RenderTarget destination, SDL_Rect *location)
 {
 
     base_gauge_render(BASE_GAUGE(self->attitude), dt, destination, location);
