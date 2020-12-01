@@ -134,8 +134,14 @@ FishboneGauge *fishbone_gauge_init(FishboneGauge *self,
     int extra_h = SDLExt_RectMidY(&self->ruler.ruler_area) - self->cursor->canvas->w;
     /*Does Cursor go out of the area?*/
     extra_h = (extra_h < 0) ? abs(extra_h) : 0;
+    /* Check if the cursor goes outside of the ruler area when at it's leftmost
+     * position.
+     * TODO: Support GrowAgainstAxis*/
+    int first_etch = generic_ruler_get_pixel_increment_for(&self->ruler, self->ruler.start);
+    int delta = self->ruler.ruler_area.x - first_etch - generic_layer_w(self->cursor)/2;
+    delta = (delta < 0) ? abs(delta) : 0;
     self->ruler_rect = (SDL_Rect){
-        .x = 0,
+        .x = delta,
         .y = extra_h,
         .w = GENERIC_LAYER(&self->ruler)->canvas->w,
         .h = GENERIC_LAYER(&self->ruler)->canvas->h
