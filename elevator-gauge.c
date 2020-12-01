@@ -125,13 +125,21 @@ ElevatorGauge *elevator_gauge_init(ElevatorGauge *self,
     );
 
     /*Draws the ruler*/
+    bool rv;
     if(self->nzones > 0){
-        generic_ruler_draw_zones(&self->ruler, spine_location, self->nzones, self->zones, 0.7);
+        bool rv = generic_ruler_draw_zones(&self->ruler, spine_location, self->nzones, self->zones, 0.7);
+        if(!rv)
+            printf("Draw zones failed!\n");
     }
-    generic_ruler_etch_hatches(&(self->ruler), fcolor, false, true, marks_location);
-    if(marked && font) /*Font will also be used to tag the cursors (itf)*/
-        generic_ruler_etch_markings(&(self->ruler), marks_location, font, fcolor, 0);
-    printf("markings on : %s\n",(marks_location == Left) ? "left" : "right");
+    rv = generic_ruler_etch_hatches(&(self->ruler), fcolor, false, true, marks_location);
+    if(!rv)
+        printf("Draw etches failed!\n");
+
+    if(marked && font){ /*Font will also be used to tag the cursors (itf)*/
+        rv = generic_ruler_etch_markings(&(self->ruler), marks_location, font, fcolor, 0);
+        if(!rv)
+            printf("Draw markings failed!\n");
+    }
     generic_layer_build_texture(GENERIC_LAYER(&self->ruler));
 
     elevator_gauge_build_elevator(self, fcolor);
