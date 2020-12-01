@@ -11,6 +11,7 @@
 #include "animated-gauge.h"
 #include "base-gauge.h"
 #include "basic-hud.h"
+#include "fishbone-gauge.h"
 #include "ladder-gauge.h"
 #include "alt-ladder-page-descriptor.h"
 
@@ -18,6 +19,7 @@
 #include "alt-indicator.h"
 #include "resource-manager.h"
 #include "SDL_pcf.h"
+#include "side-panel.h"
 #include "text-gauge.h"
 #include "vertical-stair.h"
 #include "alt-group.h"
@@ -30,6 +32,9 @@
 
 #define SCREEN_WIDTH 640
 #define SCREEN_HEIGHT 480
+
+//#define SCREEN_WIDTH 800
+//#define SCREEN_HEIGHT 480
 
 #define N_COLORS 4
 
@@ -45,6 +50,7 @@ AirspeedIndicator *asi = NULL;
 AttitudeIndicator *ai = NULL;
 RollSlipGauge *rsg = NULL;
 TextGauge *txt = NULL;
+ElevatorGauge *elevator = NULL;
 
 
 SDL_Renderer *g_renderer = NULL;
@@ -348,7 +354,8 @@ int main(int argc, char **argv)
     i = 3;
 
     SDL_Rect dst = {SCREEN_WIDTH/2,SCREEN_HEIGHT/2,0,0};
-    SDL_Rect lrect = {150,20,0,0};
+//    SDL_Rect lrect = {150,20,0,0};
+    SDL_Rect lrect = {0,0,0,0};
     SDL_Rect wheelrect = {400,20,0,0};
     SDL_Rect odorect = {SCREEN_WIDTH/2 - 80,SCREEN_HEIGHT/2,0,0};
  //   SDL_Rect airect = {SCREEN_WIDTH/2 + 90,SCREEN_HEIGHT/2-20,0,0};
@@ -375,10 +382,67 @@ int main(int argc, char **argv)
     text_gauge_set_color(txt, SDL_BLACK, BACKGROUND_COLOR);
     SDL_Rect txtrect = {SCREEN_WIDTH/2.0, SCREEN_HEIGHT/2.0,0,0};
 
+#if 0
+    elevator = elevator_gauge_new(
+        true, Left,
+        resource_manager_get_font(TERMINUS_12),
+        SDL_WHITE,
+        300, 2700, 300,
+        20, 120, /* 10x60 on the screenshot*/
+        3,(ColorZone[]){{
+            .from = 300,
+            .to = 900,
+            .color = SDL_GREEN,
+            .flags = FromIncluded | ToIncluded
+        },{
+        .from = 900,
+        .to = 2000,
+        .color = SDL_YELLOW,
+        .flags = FromExcluded | ToIncluded
+        },{
+        .from = 2000,
+        .to = 2300,
+        .color = SDL_RED,
+        .flags = FromExcluded | ToIncluded
+        }}
+    );
+#endif
+#if 0
+    FishboneGauge *fish = fishbone_gauge_new(
+        true,
+        resource_manager_get_font(TERMINUS_12),
+        SDL_WHITE,
+        0, 25, 5,
+        150, 13, /* 76x9 on the screenshot*/
+        3,(ColorZone[]){{
+            .from = 0,
+            .to = 2,
+            .color = SDL_RED,
+            .flags = FromIncluded | ToIncluded
+        },{
+        .from = 2,
+        .to = 10,
+        .color = SDL_YELLOW,
+        .flags = FromExcluded | ToIncluded
+        },{
+        .from = 10,
+        .to = 25,
+        .color = SDL_GREEN,
+        .flags = FromExcluded | ToIncluded
+        }}
+    );
+#endif
+
     SDL_Rect airect = {439,50,0,0};
     SDL_Rect vrect = {96,70,0,0};
-    SDL_Rect whole = {0,0,640,480};
-
+    SDL_Rect whole = {0,0,SCREEN_WIDTH,SCREEN_HEIGHT};
+    //SDL_Rect center_rect = {(640-1)/2,(480-1)/2,0,0};
+    SDL_Rect center_rect = {0,0,0,0};
+#if 1
+    SidePanel *panel;
+    panel = side_panel_new(-1, -1);
+    SDL_Rect sprect = {50,0, BASE_GAUGE(panel)->w,BASE_GAUGE(panel)->h};
+#endif
 #if USE_SDL_GPU
     GPU_ClearRGB(gpu_screen, 0x11, 0x56, 0xFF);
 #else
@@ -416,8 +480,11 @@ int main(int argc, char **argv)
 //        base_gauge_render(BASE_GAUGE(ai->rollslip), elapsed);
 //        base_gauge_render(BASE_GAUGE(ai), elapsed, screenSurface, NULL);
 
-        base_gauge_render(BASE_GAUGE(hud), elapsed, screenSurface, &whole);
+//        base_gauge_render(BASE_GAUGE(hud), elapsed, screenSurface, &whole);
 //        base_gauge_render(BASE_GAUGE(txt), elapsed, screenSurface, &txtrect);
+        base_gauge_render(BASE_GAUGE(panel), elapsed, screenSurface, &sprect);
+//        base_gauge_render(BASE_GAUGE(elevator), elapsed, screenSurface, &center_rect);
+//        base_gauge_render(BASE_GAUGE(fish), elapsed, screenSurface, &center_rect);
 #if USE_SDL_GPU
 		GPU_Flip(gpu_screen);
 #else

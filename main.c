@@ -18,6 +18,7 @@
 #include "resource-manager.h"
 
 #include "roll-slip-gauge.h"
+#include "side-panel.h"
 
 //#define USE_FGCONN 0
 #define USE_FGTAPE 1
@@ -36,6 +37,14 @@ typedef struct{
     float heading;
     float airspeed; //kts
     float vertical_speed; //vertical speed //feets per second
+
+    float rpm;
+    float fuel_flow;
+    float oil_temp;
+    float oil_press;
+    float cht;
+    float fuel_px;
+    float fuel_qty;
 }TapeRecord;
 #endif
 
@@ -45,6 +54,8 @@ typedef struct{
 #define N_COLORS 4
 
 BasicHud *hud = NULL;
+SidePanel *panel = NULL;
+
 
 GPU_Target* gpu_screen = NULL;
 
@@ -205,6 +216,9 @@ int main(int argc, char **argv)
     SDL_Rect whole = {0,0,640,480};
     hud = basic_hud_new();
 
+    panel = side_panel_new(-1, -1);
+    SDL_Rect sprect = {0,0, BASE_GAUGE(panel)->w,BASE_GAUGE(panel)->h};
+
     done = false;
     Uint32 ticks;
     Uint32 last_ticks = 0;
@@ -219,7 +233,7 @@ int main(int argc, char **argv)
     FlightgearPacket packet;
 #elif defined(USE_FGTAPE)
     FGTape *tape;
-    FGTapeSignal signals[8];
+    FGTapeSignal signals[15];
     TapeRecord record;
     int found;
 
@@ -235,9 +249,16 @@ int main(int argc, char **argv)
         "/orientation[0]/heading-deg[0]",
         "/velocities[0]/airspeed-kt[0]",
 	    "/velocities[0]/vertical-speed-fps[0]",
+        "/engines[0]/engine[0]/rpm[0]",
+        "/engines[0]/engine[0]/fuel-flow-gph[0]",
+        "/engines[0]/engine[0]/oil-temperature-degf[0]",
+        "/engines[0]/engine[0]/oil-pressure-psi[0]",
+        "/engines[0]/engine[0]/cht-degf[0]",
+        "/engines[0]/engine[0]/fuel-px-psi[0]",
+        "/consumables[0]/fuel[0]/tank[0]/level-gal_us[0]",
         NULL
     );
-    printf("TapeRecord: found %d out of %d signals\n",found, 8);
+    printf("TapeRecord: found %d out of %d signals\n",found, 15);
 
     int start_pos = 120; /*Starting position in the tape*/
 //    start_pos = 0;
@@ -267,17 +288,23 @@ int main(int argc, char **argv)
         }
 #elif defined(USE_FGTAPE)
         if(dtms - last_dtms >= (1000/25)){ //One update per 1/25 second
-            fg_tape_get_data_at(tape, dtms / 1000.0, 8, signals, &record);
+            fg_tape_get_data_at(tape, dtms / 1000.0, 15, signals, &record);
             last_dtms = dtms;
+            basic_hud_set(hud,  5,
+                ALTITUDE, (double)record.altitude,
+                AIRSPEED, (double)record.airspeed,
+                VERTICAL_SPEED, record.vertical_speed,
+                PITCH, (double)record.pitch,
+                ROLL, (double)record.roll
+            );
+            side_panel_set_rpm(panel, record.rpm);
+            side_panel_set_fuel_flow(panel, record.fuel_flow);
+            side_panel_set_oil_temp(panel, record.oil_temp);
+            side_panel_set_oil_press(panel, record.oil_press);
+            side_panel_set_cht(panel, record.cht);
+            side_panel_set_fuel_px(panel, record.fuel_px);
+            side_panel_set_fuel_qty(panel, record.fuel_qty);
         }
-        basic_hud_set(hud,  5,
-            ALTITUDE, (double)record.altitude,
-            AIRSPEED, (double)record.airspeed,
-            VERTICAL_SPEED, (double)record.vertical_speed,
-            PITCH, (double)record.pitch,
-            ROLL, (double)record.roll
-        );
-
 #endif
 
 #if USE_SDL_GPU
@@ -288,7 +315,7 @@ int main(int argc, char **argv)
 //        SDL_FillRect(screenSurface, NULL, colors[i]);
 
         base_gauge_render(BASE_GAUGE(hud), elapsed, screenSurface, &whole);
-
+        base_gauge_render(BASE_GAUGE(panel), elapsed, screenSurface, &sprect);
 #if USE_SDL_GPU
 		GPU_Flip(gpu_screen);
 #else
