@@ -78,6 +78,12 @@ GenericRuler *generic_ruler_init(GenericRuler *self,
     }
 
     self->hatch_step = (step > 0) ? step : self->end;
+    if(fmodf(self->end,self->hatch_step) != 0){
+        printf("Warning: range end (%f) is not a multiple of hatch_step(%f), rendering will break\n",
+            self->end,
+            self->hatch_step
+        );
+    }
 
     /*Sophie's algorithm*/
     int nintervals = (self->end - self->start) / self->hatch_step;
@@ -153,19 +159,19 @@ bool generic_ruler_get_size_request(GenericRuler *self, int8_t precision, PCF_Fo
     left = right = top = bottom = 0;
     if(self->orientation == RulerHorizontal){
         if(self->direction == RulerGrowAlongAxis){
-            snprintf(vbuffer, 10, "%*f", precision, self->start);
+            snprintf(vbuffer, 10, "%*g", precision, self->start);
             PCF_FontGetSizeRequestRect(font, vbuffer, &m_rect);
             left = SDLExt_RectMidX(&m_rect) - m_rect.x; //We need 'left' more pixels on the left
 
-            snprintf(vbuffer, 10, "%*f", precision, self->end);
+            snprintf(vbuffer, 10, "%*g", precision, self->end);
             PCF_FontGetSizeRequestRect(font, vbuffer, &m_rect);
             right = SDLExt_RectLastX(&m_rect) - SDLExt_RectMidX(&m_rect);//We need 'right' more pixels on the right
         }else{
-            snprintf(vbuffer, 10, "%*f", precision, self->end);
+            snprintf(vbuffer, 10, "%*g", precision, self->end);
             PCF_FontGetSizeRequestRect(font, vbuffer, &m_rect);
             left = SDLExt_RectMidX(&m_rect) - m_rect.x; //We need 'left' more pixels on the left
 
-            snprintf(vbuffer, 10, "%*f", precision, self->start);
+            snprintf(vbuffer, 10, "%*g", precision, self->start);
             PCF_FontGetSizeRequestRect(font, vbuffer, &m_rect);
             right = SDLExt_RectLastX(&m_rect) - SDLExt_RectMidX(&m_rect);//We need 'right' more pixels on the right
         }
@@ -180,19 +186,19 @@ bool generic_ruler_get_size_request(GenericRuler *self, int8_t precision, PCF_Fo
         }
     }else if(self->orientation == RulerVertical){
         if(self->direction == RulerGrowAlongAxis){
-            snprintf(vbuffer, 10, "%*f", precision, self->start);
+            snprintf(vbuffer, 10, "%*g", precision, self->start);
             PCF_FontGetSizeRequestRect(font, vbuffer, &m_rect);
             top = SDLExt_RectMidY(&m_rect) - m_rect.y;
 
-            snprintf(vbuffer, 10, "%*f", precision, self->end);
+            snprintf(vbuffer, 10, "%*g", precision, self->end);
             PCF_FontGetSizeRequestRect(font, vbuffer, &m_rect);
             bottom = SDLExt_RectLastY(&m_rect) - SDLExt_RectMidY(&m_rect);
         }else{
-            snprintf(vbuffer, 10, "%*f", precision, self->start);
+            snprintf(vbuffer, 10, "%*g", precision, self->start);
             PCF_FontGetSizeRequestRect(font, vbuffer, &m_rect);
             bottom = SDLExt_RectLastY(&m_rect) - SDLExt_RectMidY(&m_rect);
 
-            snprintf(vbuffer, 10, "%*f", precision, self->end);
+            snprintf(vbuffer, 10, "%*g", precision, self->end);
             PCF_FontGetSizeRequestRect(font, vbuffer, &m_rect);
             top = SDLExt_RectMidY(&m_rect) - m_rect.y;
         }
@@ -244,8 +250,8 @@ int generic_ruler_get_pixel_increment_for(GenericRuler *self, float value)
         value = self->end;
 
     if(fmod(value, self->hatch_step) == 0){ /*Value is a big graduation*/
-        value = fmod(value, fabs(round(self->end - self->start)) + 1);
-        int ngrads = value/self->hatch_step;
+//        value = fmod(value, fabs(round(self->end - self->start)) + 1);
+        int ngrads = value/self->hatch_step - (self->start/self->hatch_step);
         return ngrads * self->ppv * self->hatch_step;
     }else{
         if(self->orientation == RulerHorizontal)
@@ -416,7 +422,7 @@ bool generic_ruler_etch_hatches(GenericRuler *self, Uint32 color, bool etch_spin
             else
                 printf("Unsupported line position for Horizontal orientation\n");
             if(y < 0)
-                return false;
+                return false; //TODO:Unlock pixels
             for(int x = self->ruler_area.x; x <= SDLExt_RectLastX(&self->ruler_area); x++)
                 pixels[y * GENERIC_LAYER(self)->canvas->w + x] = color;
         }
@@ -445,17 +451,18 @@ bool generic_ruler_etch_hatches(GenericRuler *self, Uint32 color, bool etch_spin
             else
                 printf("Unsupported line position for Vertical orientation\n");
             if(x < 0)
-                return false;
+                return false; //TODO:Unlock pixels
             for(int y = self->ruler_area.y; y <= SDLExt_RectLastY(&self->ruler_area); y++)
                 pixels[y * GENERIC_LAYER(self)->canvas->w + x] = color;
         }
         /*Hatch marks*/
         if(etch_hatches){
-            for(float i = 0; i <= self->end; i += self->hatch_step){
+            for(float i = self->start; i <= self->end; i += self->hatch_step){
                 increment = generic_ruler_get_pixel_increment_for(self, i);
                 pcursor = (self->direction == RulerGrowAlongAxis)
                           ? self->ruler_area.y + increment
                           : SDLExt_RectLastY(&self->ruler_area) - increment;
+                printf("Drawing %f hatch at y = %d\n",i, pcursor);
                 for(int x = self->ruler_area.x; x < self->ruler_area.x + self->ruler_area.w; x++){
                     pixels[pcursor * GENERIC_LAYER(self)->canvas->w + x] = color;
                 }
@@ -463,7 +470,7 @@ bool generic_ruler_etch_hatches(GenericRuler *self, Uint32 color, bool etch_spin
         }
     }else{
         printf("Unsupported orientation\n");
-        return false;
+        return false; //TODO:Unlock pixels
     }
     generic_layer_unlock(GENERIC_LAYER(self));
     return true;
@@ -489,10 +496,7 @@ bool generic_ruler_etch_markings(GenericRuler *self, Location markings_location,
 {
     int pcursor; /*Pixel cursor*/
     int increment;
-    Uint32 *pixels;
 
-    generic_layer_lock(GENERIC_LAYER(self));
-    pixels = GENERIC_LAYER(self)->canvas->pixels;
     if(self->orientation == RulerHorizontal){
         for(float i = self->start; i <= self->end; i += self->hatch_step){
             increment = generic_ruler_get_pixel_increment_for(self, i);
@@ -521,8 +525,9 @@ bool generic_ruler_etch_markings(GenericRuler *self, Location markings_location,
             }
         }
     }else if(self->orientation == RulerVertical){
-        for(float i = 0; i <= self->end; i += self->hatch_step){
+        for(float i = self->start; i <= self->end; i += self->hatch_step){
             increment = generic_ruler_get_pixel_increment_for(self, i);
+            printf("increment for %f is %d\n",i, increment);
             pcursor = (self->direction == RulerGrowAlongAxis)
                       ? self->ruler_area.y + increment
                       : SDLExt_RectLastY(&self->ruler_area) - increment;
