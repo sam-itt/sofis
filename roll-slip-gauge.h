@@ -1,5 +1,5 @@
-#include "SDL_surface.h"
 #ifndef ROLL_SLIP_GAUGE_H
+#define ROLL_SLIP_GAUGE_H
 
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_image.h>
@@ -26,5 +26,4 @@ RollSlipGauge *roll_slip_gauge_init(RollSlipGauge *self);
 void roll_slip_gauge_dispose(RollSlipGauge *self);
 void roll_slip_gauge_free(RollSlipGauge *self);
 
-#define ROLL_SLIP_GAUGE_H
 #endif /* ROLL_SLIP_GAUGE_H */
