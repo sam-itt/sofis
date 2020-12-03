@@ -305,12 +305,13 @@ int main(int argc, char **argv)
         if(dtms - last_dtms >= (1000/25)){ //One update per 1/25 second
             fg_tape_get_data_at(tape, dtms / 1000.0, 15, signals, &record);
             last_dtms = dtms;
-            basic_hud_set(hud,  5,
+            basic_hud_set(hud,  6,
                 ALTITUDE, (double)record.altitude,
                 AIRSPEED, (double)record.airspeed,
             VERTICAL_SPEED, record.vertical_speed * 60, /*Convert fps to fpm*/
                 PITCH, (double)record.pitch,
-                ROLL, (double)record.roll
+                ROLL, (double)record.roll,
+                HEADING, (double)record.heading
             );
             side_panel_set_rpm(panel, record.rpm);
             side_panel_set_fuel_flow(panel, record.fuel_flow);

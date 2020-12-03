@@ -5,6 +5,7 @@
 #include "alt-group.h"
 #include "attitude-indicator.h"
 #include "airspeed-indicator.h"
+#include "rich-compass-gauge.h"
 
 typedef enum{
     ALTITUDE,
@@ -13,6 +14,7 @@ typedef enum{
     PITCH,
     ROLL,
     SLIP,
+    HEADING,
 
     HUD_VALUE_MAX
 }HudValue;
@@ -20,6 +22,7 @@ typedef enum{
 enum{
     ALT_GROUP,
     SPEED,
+    COMPASS,
 
     LOC_MAX
 };
@@ -30,6 +33,7 @@ typedef struct{
     AltGroup *altgroup;
     AirspeedIndicator *airspeed;
     AttitudeIndicator *attitude;
+    RichCompassGauge *compass;
 
     SDL_Rect locations[LOC_MAX];
 }BasicHud;

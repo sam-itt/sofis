@@ -11,6 +11,7 @@
 #include "animated-gauge.h"
 #include "base-gauge.h"
 #include "basic-hud.h"
+#include "compass-gauge.h"
 #include "fishbone-gauge.h"
 #include "ladder-gauge.h"
 #include "alt-ladder-page-descriptor.h"
@@ -29,6 +30,7 @@
 #include "roll-slip-gauge.h"
 
 #include "sdl-colors.h"
+#include "rich-compass-gauge.h"
 
 #define SCREEN_WIDTH 640
 #define SCREEN_HEIGHT 480
@@ -51,7 +53,7 @@ AttitudeIndicator *ai = NULL;
 RollSlipGauge *rsg = NULL;
 TextGauge *txt = NULL;
 ElevatorGauge *elevator = NULL;
-
+RichCompassGauge *compass = NULL;
 
 
 float gval = 0.0;
@@ -64,6 +66,7 @@ float ias = 10.0;
 float pitch = 0.0;
 float roll = 0.0;
 char txtbuf[256];
+float heading = 0.0;
 
 #define ODO_INC 1
 #define VARIO_INC 100
@@ -72,6 +75,7 @@ char txtbuf[256];
 #define PITCH_INC 1;
 #define ROLL_INC 1;
 #define GVAL_INC 10.0;
+#define HEADING_INC 5.0;
 
 float compute_vs(float old_alt, float new_alt, Uint32 elapsed);
 
@@ -212,6 +216,16 @@ bool handle_keyboard(SDL_KeyboardEvent *event, Uint32 elapsed)
                 basic_hud_set(hud, 1, ROLL, roll);
             }
             break;
+        case SDLK_e:
+            if(event->state == SDL_PRESSED){
+                heading += HEADING_INC;
+                heading = fmod(heading, 360.0);
+                if(heading < 0)
+                    heading += 360.0;
+                animated_gauge_set_value(ANIMATED_GAUGE(compass->compass), heading);
+            }
+            break;
+
 
     }
     return false;
@@ -386,6 +400,8 @@ int main(int argc, char **argv)
     text_gauge_set_color(txt, SDL_BLACK, BACKGROUND_COLOR);
     SDL_Rect txtrect = {SCREEN_WIDTH/2.0, SCREEN_HEIGHT/2.0,0,0};
 
+    //compass = compass_gauge_new();
+    compass = rich_compass_gauge_new();
 #if 0
     elevator = elevator_gauge_new(
         true, Left,
@@ -440,8 +456,8 @@ int main(int argc, char **argv)
     SDL_Rect airect = {439,50,0,0};
     SDL_Rect vrect = {96,70,0,0};
     SDL_Rect whole = {0,0,SCREEN_WIDTH,SCREEN_HEIGHT};
-    //SDL_Rect center_rect = {(640-1)/2,(480-1)/2,0,0};
-    SDL_Rect center_rect = {0,0,0,0};
+    SDL_Rect center_rect = {(640-1)/2,(480-1)/2,0,0};
+//    SDL_Rect center_rect = {0,0,0,0};
 #if 1
     SidePanel *panel;
     panel = side_panel_new(-1, -1);
@@ -486,9 +502,10 @@ int main(int argc, char **argv)
 
 //        base_gauge_render(BASE_GAUGE(hud), elapsed, rtarget, &whole);
 //        base_gauge_render(BASE_GAUGE(txt), elapsed, rtarget, &txtrect);
-        base_gauge_render(BASE_GAUGE(panel), elapsed, rtarget, &sprect);
+//        base_gauge_render(BASE_GAUGE(panel), elapsed, rtarget, &sprect);
 //        base_gauge_render(BASE_GAUGE(elevator), elapsed, rtarget, &center_rect);
 //        base_gauge_render(BASE_GAUGE(fish), elapsed, rtarget, &center_rect);
+        base_gauge_render(BASE_GAUGE(compass), elapsed, rtarget, &center_rect);
 #if USE_SDL_GPU
 		GPU_Flip(gpu_screen);
 #else
@@ -548,6 +565,7 @@ int main(int argc, char **argv)
     basic_hud_free(hud);
     text_gauge_free(txt);
     side_panel_free(panel);
+    rich_compass_gauge_free(compass);
     resource_manager_shutdown();
 #if USE_SDL_GPU
 	GPU_Quit();

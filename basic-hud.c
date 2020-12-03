@@ -10,6 +10,7 @@
 #include "base-gauge.h"
 #include "basic-hud.h"
 #include "misc.h"
+#include "rich-compass-gauge.h"
 
 static void basic_hud_render(BasicHud *self, Uint32 dt, RenderTarget destination, SDL_Rect *location);
 static BaseGaugeOps basic_hud_ops = {
@@ -39,9 +40,16 @@ BasicHud *basic_hud_init(BasicHud *self)
 
     self->airspeed = airspeed_indicator_new(50,60,85,155,200);
     self->attitude = attitude_indicator_new(640, 480);
+    self->compass = rich_compass_gauge_new();
 
     self->locations[ALT_GROUP] = (SDL_Rect){460,53,0,0};
     self->locations[SPEED] = (SDL_Rect){96,72,0,0};
+    self->locations[COMPASS] = (SDL_Rect){
+        .x = 640/2 - BASE_GAUGE(self->compass)->w/2,
+        .y = (480-1) - BASE_GAUGE(self->compass)->h,
+        .w = BASE_GAUGE(self->compass)->w,
+        .h = BASE_GAUGE(self->compass)->h
+    };
 
     base_gauge_init(
         BASE_GAUGE(self),
@@ -58,6 +66,7 @@ void basic_hud_dispose(BasicHud *self)
     alt_group_free(self->altgroup);
     airspeed_indicator_free(self->airspeed);
     attitude_indicator_free(self->attitude);
+    rich_compass_gauge_free(self->compass);
 }
 
 void basic_hud_free(BasicHud *self)
@@ -100,6 +109,12 @@ void basic_hud_set_values(BasicHud *self, int nvalues, va_list ap)
           case ROLL:
             attitude_indicator_set_roll(self->attitude, -1.0*val);
             break;
+          case HEADING:
+            animated_gauge_set_value(ANIMATED_GAUGE(self->compass->compass), val);
+            break;
+          case HUD_VALUE_MAX: /*Fall through*/
+          default:
+            break;
         }
     }
 }
@@ -123,6 +138,13 @@ float basic_hud_get(BasicHud *self, HudValue hv)
       case ROLL:
         return self->attitude->rollslip->super.value;
         break;
+      case HEADING:
+        return ANIMATED_GAUGE(self->compass->compass)->value;
+        break;
+      case HUD_VALUE_MAX: /*Fall through*/
+      default:
+        break;
+
     }
     return NAN;
 }
@@ -142,4 +164,5 @@ static void basic_hud_render(BasicHud *self, Uint32 dt, RenderTarget destination
 
     base_gauge_render(BASE_GAUGE(self->altgroup), dt, destination, &self->locations[ALT_GROUP]);
     base_gauge_render(BASE_GAUGE(self->airspeed), dt, destination, &self->locations[SPEED]);
+    base_gauge_render(BASE_GAUGE(self->compass), dt, destination, &self->locations[COMPASS]);
 }
