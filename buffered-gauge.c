@@ -7,6 +7,7 @@
 #include "SDL_rect.h"
 #include "SDL_render.h"
 #include "SDL_surface.h"
+#include "SDL_timer.h"
 #include "base-gauge.h"
 #include "buffered-gauge.h"
 #include "misc.h"
@@ -14,6 +15,8 @@
 #include "sdl-colors.h"
 #include "SDL_pcf.h"
 #include "view.h"
+
+#include <time.h>
 
 /*BufferGauge implements BaseGauge::render and triggers the actual
 rendering only if its view have been damaged.*/
@@ -39,6 +42,22 @@ BufferedGauge *buffered_gauge_init(BufferedGauge *self, BufferedGaugeOps *ops, i
 
 void buffered_gauge_dispose(BufferedGauge *self)
 {
+#if ENABLE_PERF_COUNTERS
+    printf("Gauge %p, cache misses: %u, hits: %u\n",self, self->cache_misses, self->cache_hits);
+    printf("Average time spent buffering(%d misses): %f\n",
+        self->cache_misses,
+        (self->buffering_time*1.0)/(self->cache_misses*1.0)
+    );
+    printf("Average time spent blitting(%d calls): %f\n",
+        self->ncalls,
+        (self->blit_time*1.0)/(self->ncalls*1.0)
+    );
+    printf("Average total duration of a cache miss: %f\n",
+        (self->buffering_time*1.0)/(self->cache_misses*1.0) + (self->blit_time*1.0)/(self->ncalls*1.0)
+    );
+#endif
+
+//    printf("Gauge %p, cache hit\n",self, self->cache_hits);
     if(self->view)
         SDL_FreeSurface(self->view);
     if(self->queue)
@@ -486,15 +505,34 @@ void buffered_gauge_paint_buffer(BufferedGauge *self, Uint32 dt)
 void buffered_gauge_render(BufferedGauge *self, Uint32 dt, RenderTarget destination, SDL_Rect *location)
 {
     BufferedGaugeOps *ops;
+    Uint32 t1,t2;
 
     if(self->damaged){
         self->damaged = false; /*Set it before so that it can be overrided by the gauge*/
+#if ENABLE_PERF_COUNTERS
+        t1 = SDL_GetTicks();
+#endif
         buffered_gauge_paint_buffer(self, dt);
+#if ENABLE_PERF_COUNTERS
+        t2 = SDL_GetTicks();
+        self->cache_misses++;
+        self->buffering_time += t2-t1;
+#endif
+    }else{
+#if ENABLE_PERF_COUNTERS
+        self->cache_hits++;
+#endif
     }
+    t1 = SDL_GetTicks();
 #if USE_SDL_GPU
     render_queue_execute(self->queue, destination.target, location);
 #else
     SDL_BlitSurface(self->view, NULL, destination.surface, location);
+#endif
+#if ENABLE_PERF_COUNTERS
+    t2 = SDL_GetTicks();
+    self->blit_time += t2-t1;
+    self->ncalls++;
 #endif
 }
 
