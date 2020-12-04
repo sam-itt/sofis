@@ -41,6 +41,17 @@ typedef struct{
 
     RenderQueue *queue;
     int max_ops;
+
+#if ENABLE_PERF_COUNTERS
+    /*perf counters*/
+    uint32_t cache_hits;
+    uint32_t cache_misses;
+    uint32_t nrenderops;
+
+    uint32_t buffering_time;
+    uint32_t blit_time;
+    uint32_t ncalls;
+#endif
 }BufferedGauge;
 
 #define BUFFERED_GAUGE(self) ((BufferedGauge*)(self))
