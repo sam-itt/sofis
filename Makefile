@@ -23,11 +23,12 @@ CFLAGS=-g3 -O0 `pkg-config glib-2.0 sdl2 SDL2_image --cflags` \
 	   -DSKY_ROOT=\"/home/samuel/dev/efis-hud/fg-roam/src\" \
 	   -DTEX_ROOT=\"/home/samuel/dev/textures\" \
 	   -DENABLE_PERF_COUNTERS=1
-LDFLAGS=-lz -lm `pkg-config glib-2.0 sdl2 SDL2_image --libs` -Wl,--as-needed -lSDL2_gpu -lGL -lGLU -lefence
+LDFLAGS=-lz -lm `pkg-config glib-2.0 sdl2 SDL2_image --libs` -Wl,--as-needed -lSDL2_gpu -lGL -lGLU
 EXEC=test-sdl
 #SRC= $(wildcard $(SRCDIR)/*.c)
 #SRC= $(filter-out $(SRCDIR)/main.c $(SRCDIR)/testbench.c, $(wildcard $(SRCDIR)/*.c))
-SRC = testbench.c resource-manager.c base-animation.c generic-layer.c base-gauge.c digit-barrel.c misc.c odo-gauge.c view.c vertical-strip.c
+SRC = testbench.c resource-manager.c base-animation.c generic-layer.c base-gauge.c digit-barrel.c misc.c odo-gauge.c view.c vertical-strip.c \
+	  ladder-page.c ladder-gauge.c ladder-page-factory.c alt-ladder-page-descriptor.c fb-page-descriptor.c
 SRC+= $(wildcard $(SRCDIR)/sdl-pcf/src/*.c)
 SRC+= $(filter-out $(FGCONN)/fg-connector-test.c, $(wildcard $(FGCONN)/*.c))
 SRC+= $(filter-out $(FGTAPE)/fg-tape-reader.c, $(wildcard $(FGTAPE)/*.c))

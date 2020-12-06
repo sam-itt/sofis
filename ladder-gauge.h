@@ -2,22 +2,39 @@
 #define LADDER_GAUGE_H
 #include <stdbool.h>
 
+#include "base-gauge.h"
 #include "ladder-page.h"
-#include "animated-gauge.h"
 #include "misc.h"
 
 #define N_PAGES 4
 
+typedef struct{
+    GenericLayer *layer;
+    SDL_Rect src;
+    SDL_Rect dst;
+}LadderPagePatch;
 
 typedef struct{
-    AnimatedGauge super;
+    LadderPagePatch patches[3]; /*Up to 3: top, middle, bottom*/
+    uintf8_t npatches;
 
+    int rubis_y;
+    int pskip;
+}LadderGaugeState;
+
+
+typedef struct{
+    BaseGauge super;
+
+    float value;
     int rubis;
 
     LadderPage *pages[N_PAGES];
     uintf8_t base;
 
     LadderPageDescriptor *descriptor;
+
+    LadderGaugeState state;
 }LadderGauge;
 
 
@@ -25,4 +42,5 @@ LadderGauge *ladder_gauge_new(LadderPageDescriptor *descriptor, int rubis);
 LadderGauge *ladder_gauge_init(LadderGauge *self, LadderPageDescriptor *descriptor, int rubis);
 void ladder_gauge_free(LadderGauge *self);
 
+void ladder_gauge_set_value(LadderGauge *self, float value, bool animated);
 #endif /* LADDER_GAUGE_H */

@@ -78,4 +78,6 @@ void base_gauge_fill(BaseGauge *self, RenderContext *ctx,
 void base_gauge_draw_rubis(BaseGauge *self, RenderContext *ctx,
                            int y, SDL_Color *color, int pskip);
 
+void base_gauge_draw_outline(BaseGauge *self, RenderContext *ctx,
+                             SDL_Color *color, SDL_Rect *area);
 #endif /* BASE_GAUGE_H */

@@ -43,7 +43,7 @@
 
 /*BasicHud *hud = NULL;*/
 OdoGauge *gauge = NULL;
-/*LadderGauge *ladder = NULL;*/
+LadderGauge *ladder = NULL;
 OdoGauge *wheel = NULL;
 OdoGauge *odo = NULL;
 /*AltIndicator *alt_ind = NULL;*/
@@ -124,7 +124,7 @@ bool handle_keyboard(SDL_KeyboardEvent *event, Uint32 elapsed)
             if(event->state == SDL_PRESSED){
                 /*vs = compute_vs(alt, alt+ALT_INC, elapsed);*/
                 alt += ALT_INC;
-                /*animated_gauge_set_value(ANIMATED_GAUGE(ladder), alt);*/
+                ladder_gauge_set_value(ladder, alt, true);
                 odo_gauge_set_value(wheel, alt, true);
 /*                alt_indicator_set_value(alt_ind, alt);*/
                 /*//alt_group_set_altitude(group, alt);*/
@@ -138,7 +138,7 @@ bool handle_keyboard(SDL_KeyboardEvent *event, Uint32 elapsed)
             if(event->state == SDL_PRESSED){
                 /*vs = compute_vs(alt, alt-ALT_INC, elapsed);*/
                 alt -= ALT_INC;
-                /*animated_gauge_set_value(ANIMATED_GAUGE(ladder), alt);*/
+                ladder_gauge_set_value(ladder, alt, true);
                 odo_gauge_set_value(wheel, alt, true);
 /*                alt_indicator_set_value(alt_ind, alt);*/
                 /*//alt_group_set_altitude(group, alt);*/
@@ -329,8 +329,8 @@ int main(int argc, char **argv)
     );
     odo_gauge_set_value(gauge, gval, true);
 
-/*    ladder = ladder_gauge_new((LadderPageDescriptor *)alt_ladder_page_descriptor_new(), -1);*/
-    /*animated_gauge_set_value(ANIMATED_GAUGE(ladder), alt);*/
+    ladder = ladder_gauge_new((LadderPageDescriptor *)alt_ladder_page_descriptor_new(), -1);
+    ladder_gauge_set_value(ladder, alt, true);
 
     PCF_Font *fnt = resource_manager_get_font(TERMINUS_18);
     DigitBarrel *db = digit_barrel_new(fnt, 0, 9.999, 1);
@@ -378,8 +378,8 @@ int main(int argc, char **argv)
     i = 3;
 
     SDL_Rect dst = {SCREEN_WIDTH/2,SCREEN_HEIGHT/2,0,0};
-//    SDL_Rect lrect = {150,20,0,0};
-    SDL_Rect lrect = {0,0,0,0};
+    SDL_Rect lrect = {150,20,0,0};
+//    SDL_Rect lrect = {0,0,0,0};
     SDL_Rect wheelrect = {400,20,0,0};
     SDL_Rect odorect = {SCREEN_WIDTH/2 - 80,SCREEN_HEIGHT/2,0,0};
  //   SDL_Rect airect = {SCREEN_WIDTH/2 + 90,SCREEN_HEIGHT/2-20,0,0};
@@ -490,7 +490,7 @@ int main(int argc, char **argv)
 #else
         SDL_FillRect(screenSurface, NULL, SDL_UFBLUE(screenSurface));
 #endif
-//        base_gauge_render(BASE_GAUGE(ladder), elapsed, rtarget, &lrect);
+        base_gauge_render(BASE_GAUGE(ladder), elapsed, &(RenderContext){rtarget, &lrect, NULL});
 //void base_gauge_render(BaseGauge *self, Uint32 dt, RenderTarget destination, SDL_Rect *location, SDL_Rect *portion);
         base_gauge_render(BASE_GAUGE(gauge), elapsed, &(RenderContext){rtarget, &dst, NULL});
         base_gauge_render(BASE_GAUGE(wheel), elapsed, &(RenderContext){rtarget, &wheelrect, NULL});
@@ -524,10 +524,10 @@ int main(int argc, char **argv)
         }
 #endif
         if(acc >= 10000){
- /*           if(ANIMATED_GAUGE(ladder)->value != oldv[0]){*/
-                /*printf("Ladder value: %f\n",ANIMATED_GAUGE(ladder)->value);*/
-                /*oldv[0] = ANIMATED_GAUGE(ladder)->value;*/
-            /*}*/
+            if(ladder->value != oldv[0]){
+                printf("Ladder value: %f\n",ladder->value);
+                oldv[0] = ladder->value;
+            }
             /*if(ANIMATED_GAUGE(gauge)->value != oldv[1]){*/
                 /*printf("Rotary gauge value: %f\n",ANIMATED_GAUGE(gauge)->value);*/
                 /*oldv[1] = ANIMATED_GAUGE(gauge)->value;*/
@@ -562,7 +562,7 @@ int main(int argc, char **argv)
     odo_gauge_free(gauge);
     odo_gauge_free(wheel);
     odo_gauge_free(odo);
-/*    ladder_gauge_free(ladder);*/
+    ladder_gauge_free(ladder);
     /*alt_group_free(group);*/
     /*airspeed_indicator_free(asi);*/
     /*alt_indicator_free(alt_ind);*/

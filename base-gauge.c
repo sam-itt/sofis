@@ -121,6 +121,7 @@ void base_gauge_render(BaseGauge *self, Uint32 dt, RenderContext *ctx)
         };
         /* TODO during refactor: portion will be NULL during the refactor, afterwise compute
          * the correct portion for the child if needed */
+        /*TODO refactor: Unroll recursivity*/
         base_gauge_render(self->children[i], dt, &(RenderContext){
             .target = ctx->target,
             .location = &child_location,
@@ -167,6 +168,7 @@ int base_gauge_blit_texture(BaseGauge *self, RenderContext *ctx,
                             GPU_Image *src, SDL_Rect *srcrect,
                             SDL_Rect *dstrect)
 {
+    /*TODO: direct GPU_Rect for SDL_gpu*/
     SDL_Rect fdst; /*Final destination*/
 
     if(dstrect){
@@ -216,6 +218,7 @@ int base_gauge_blit(BaseGauge *self, RenderContext *ctx,
                      SDL_Surface *src, SDL_Rect *srcrect,
                      SDL_Rect *dstrect)
 {
+    /*TODO: direct GPU_Rect for SDL_gpu*/
     SDL_Rect fdst; /*Final destination*/
 
     if(dstrect){
@@ -236,6 +239,7 @@ int base_gauge_blit(BaseGauge *self, RenderContext *ctx,
 void base_gauge_fill(BaseGauge *self, RenderContext *ctx,
                      SDL_Rect *area, void *color, bool packed)
 {
+    /*TODO: direct GPU_Rect for SDL_gpu*/
     SDL_Rect farea; /*final area*/
 
     if(area){
@@ -319,6 +323,35 @@ void base_gauge_draw_rubis(BaseGauge *self, RenderContext *ctx,
     GPU_Line(ctx->target.target, restartx, liney, endx, liney, *color);
 #else
     view_draw_rubis(ctx->target.surface, y, color, pskip, &area);
+#endif
+}
+
+void base_gauge_draw_outline(BaseGauge *self, RenderContext *ctx, SDL_Color *color, SDL_Rect *area)
+{
+    /*TODO: direct GPU_Rect for SDL_gpu*/
+    SDL_Rect farea; /*final area*/
+
+    if(area){
+        farea = rect_offset(area, ctx->location);
+    }else{
+        farea = (SDL_Rect){
+            .x = 0,
+            .y = 0,
+            .w = base_gauge_w(self),
+            .h = base_gauge_h(self)
+        };
+        farea = rect_offset(&farea, ctx->location);
+    }
+#if USE_SDL_GPU
+    /*SDL_GPU treats coordinates as inclusive*/
+    farea.x++;
+    farea.y++;
+    farea.w--;
+    farea.h--;
+
+    GPU_Rectangle2(ctx->target.target, rectf(&farea), *color);
+#else
+    view_draw_outline(ctx->target.surface, color, &farea);
 #endif
 }
 

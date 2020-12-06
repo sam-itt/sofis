@@ -10,11 +10,10 @@
 #include "sdl-colors.h"
 
 
-#define SPIN_DURATION 1000 //millisecond
+#define SPIN_DURATION 1000 //milliseconds
 
 static void odo_gauge_render(OdoGauge *self, Uint32 dt, RenderContext *ctx);
 static void odo_gauge_update_state(OdoGauge *self, Uint32 dt);
-
 static BaseGaugeOps odo_gauge_ops = {
    .render = (RenderFunc)odo_gauge_render,
    .update_state = (StateUpdateFunc)odo_gauge_update_state
