@@ -12,7 +12,14 @@ typedef union{
     GPU_Target* target;
 }RenderTarget /*__attribute__ ((__transparent_union__))*/;
 
-typedef void (*RenderFunc)(void *self, Uint32 dt, RenderTarget destination, SDL_Rect *location, SDL_Rect *portion);
+typedef struct{
+    RenderTarget target;
+    SDL_Rect *location; /*Location within the target, in target coord space*/
+
+    SDL_Rect *portion; /*Portion of the gauge to render*/
+}RenderContext;
+
+typedef void (*RenderFunc)(void *self, Uint32 dt, RenderContext *ctx);
 typedef void (*StateUpdateFunc)(void *self, Uint32 dt);
 
 typedef struct{
@@ -55,25 +62,20 @@ bool base_gauge_add_child(BaseGauge *self, BaseGauge *child, int x, int y);
 bool base_gauge_add_animation(BaseGauge *self, BaseAnimation *animation);
 
 
-void base_gauge_render(BaseGauge *self, Uint32 dt, RenderTarget destination, SDL_Rect *location, SDL_Rect *portion);
+void base_gauge_render(BaseGauge *self, Uint32 dt, RenderContext *ctx);
 
-
-int base_gauge_blit_layer(BaseGauge *self, RenderTarget target,
-                          SDL_Rect *location, GenericLayer *src,
-                          SDL_Rect *srcrect, SDL_Rect *dstrect,
-                          SDL_Rect *portion);
-int base_gauge_blit_texture(BaseGauge *self,
-                            GPU_Target *target, SDL_Rect *location,
+int base_gauge_blit_layer(BaseGauge *self, RenderContext *ctx,
+                          GenericLayer *src,
+                          SDL_Rect *srcrect, SDL_Rect *dstrect);
+int base_gauge_blit_texture(BaseGauge *self, RenderContext *ctx,
                             GPU_Image *src, SDL_Rect *srcrect,
-                            SDL_Rect *dstrect, SDL_Rect *portion);
-int base_gauge_blit(BaseGauge *self, SDL_Surface *target, SDL_Rect *location,
-                     SDL_Surface *src, SDL_Rect *srcrect,
-                     SDL_Rect *dstrect, SDL_Rect *portion);
-
-void base_gauge_fill(BaseGauge *self, RenderTarget target, SDL_Rect *location,
-                     SDL_Rect *area, void *color, bool packed, SDL_Rect *portion);
-
-void base_gauge_draw_rubis(BaseGauge *self, RenderTarget target, SDL_Rect *location,
-                           int y, SDL_Color *color, int pskip, SDL_Rect *portion);
+                            SDL_Rect *dstrect);
+int base_gauge_blit(BaseGauge *self, RenderContext *ctx,
+                    SDL_Surface *src, SDL_Rect *srcrect,
+                    SDL_Rect *dstrect);
+void base_gauge_fill(BaseGauge *self, RenderContext *ctx,
+                     SDL_Rect *area, void *color, bool packed);
+void base_gauge_draw_rubis(BaseGauge *self, RenderContext *ctx,
+                           int y, SDL_Color *color, int pskip);
 
 #endif /* BASE_GAUGE_H */

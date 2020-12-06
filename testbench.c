@@ -492,9 +492,9 @@ int main(int argc, char **argv)
 #endif
 //        base_gauge_render(BASE_GAUGE(ladder), elapsed, rtarget, &lrect);
 //void base_gauge_render(BaseGauge *self, Uint32 dt, RenderTarget destination, SDL_Rect *location, SDL_Rect *portion);
-        base_gauge_render(BASE_GAUGE(gauge), elapsed, rtarget, &dst, NULL);
-        base_gauge_render(BASE_GAUGE(wheel), elapsed, rtarget, &wheelrect, NULL);
-        base_gauge_render(BASE_GAUGE(odo), elapsed, rtarget, &odorect, NULL);
+        base_gauge_render(BASE_GAUGE(gauge), elapsed, &(RenderContext){rtarget, &dst, NULL});
+        base_gauge_render(BASE_GAUGE(wheel), elapsed, &(RenderContext){rtarget, &wheelrect, NULL});
+        base_gauge_render(BASE_GAUGE(odo), elapsed, &(RenderContext){rtarget, &odorect, NULL});
 
 //        base_gauge_render(BASE_GAUGE(alt_ind), elapsed, rtarget, &airect);
 //        base_gauge_render(BASE_GAUGE(stair), elapsed, rtarget, &vrect);

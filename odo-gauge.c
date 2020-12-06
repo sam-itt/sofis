@@ -12,10 +12,8 @@
 
 #define SPIN_DURATION 1000 //millisecond
 
-void odo_gauge_render(OdoGauge *self, Uint32 dt, RenderTarget destination, SDL_Rect *location, SDL_Rect *portion);
-void odo_gauge_update_state(OdoGauge *self, Uint32 dt);
-
-void odo_gauge_render_value(OdoGauge *self, float value);
+static void odo_gauge_render(OdoGauge *self, Uint32 dt, RenderContext *ctx);
+static void odo_gauge_update_state(OdoGauge *self, Uint32 dt);
 
 static BaseGaugeOps odo_gauge_ops = {
    .render = (RenderFunc)odo_gauge_render,
@@ -170,23 +168,23 @@ bool odo_gauge_set_value(OdoGauge *self, float value, bool animated)
 }
 
 /*TODO during refactor: static? */
-void odo_gauge_render(OdoGauge *self, Uint32 dt, RenderTarget destination, SDL_Rect *location, SDL_Rect *portion)
+void odo_gauge_render(OdoGauge *self, Uint32 dt, RenderContext *ctx)
 {
     DigitBarrelState *bstate;
     for(int i = 0; i < self->state.nbarrel_states; i++){
         bstate = &self->state.barrel_states[i];
         if(bstate->top)
-            base_gauge_blit_layer(BASE_GAUGE(self), destination, location, bstate->top, &bstate->top_rect, &bstate->top_rect_to, portion);
+            base_gauge_blit_layer(BASE_GAUGE(self), ctx, bstate->top, &bstate->top_rect, &bstate->top_rect_to);
         if(bstate->middle)
-            base_gauge_blit_layer(BASE_GAUGE(self), destination, location, bstate->middle, &bstate->middle_rect, &bstate->middle_rect_to, portion);
+            base_gauge_blit_layer(BASE_GAUGE(self), ctx, bstate->middle, &bstate->middle_rect, &bstate->middle_rect_to);
         if(bstate->bottom)
-            base_gauge_blit_layer(BASE_GAUGE(self), destination, location, bstate->bottom, &bstate->bottom_rect, &bstate->bottom_rect_to, portion);
+            base_gauge_blit_layer(BASE_GAUGE(self), ctx, bstate->bottom, &bstate->bottom_rect, &bstate->bottom_rect_to);
     }
     for(int i = 0; i < self->state.nfill_rects; i++){
-        base_gauge_fill(BASE_GAUGE(self), destination, location, &self->state.fill_rects[i], &SDL_BLACK, false, NULL);
+        base_gauge_fill(BASE_GAUGE(self), ctx, &self->state.fill_rects[i], &SDL_BLACK, false);
     }
-    base_gauge_draw_rubis(BASE_GAUGE(self), destination, location, self->state.rubis_y,
-                          &SDL_RED, self->state.pskip, NULL);
+    base_gauge_draw_rubis(BASE_GAUGE(self), ctx, self->state.rubis_y,
+                          &SDL_RED, self->state.pskip);
 }
 
 /*TODO during refactor: static? */
@@ -264,68 +262,3 @@ void odo_gauge_update_state(OdoGauge *self, Uint32 dt)
     self->state.rubis_y = self->rubis;
     self->state.pskip = round(base_gauge_w(BASE_GAUGE(self))/2.0);
 }
-
-#if 0
-void odo_gauge_render_value(OdoGauge *self, float value)
-{
-    float vparts[6]; /*up to 999.999 ft*/
-    int nparts;
-    int current_part = 0;
-    int current_rotor = 0;
-    int current_rotor_rank = 0;
-    float current_val;
-    int next_part;
-    int i;
-    int rcenter;
-    SDL_Rect cursor;
-
-    cursor = (SDL_Rect){BASE_GAUGE(self)->w,0,BASE_GAUGE(self)->w,BASE_GAUGE(self)->h};
-
-    /* If the buffer is shared, it's up to the "parent"
-     * to clear portions when appropriate
-     * */
-    if(BUFFERED_GAUGE(self)->type == BUFFER_OWN)
-        buffered_gauge_clear(BUFFERED_GAUGE(self));
-
-    nparts = number_split(value, vparts, 6);
-//    printf("doing value %f, splitted in to %d parts\n",value,nparts);
-    do{
-//        current_rotor_rank = current_rotor;
-        current_rotor_rank += floor(log10(VERTICAL_STRIP(self->barrels[current_rotor])->end));
-//        printf("current_part: %d, current_rotor_rank: %d\n",current_part,current_rotor_rank);
-        if(current_part == current_rotor_rank){
-            current_val = vparts[current_part];
-            next_part = current_part + 1;
-        }else{
-            current_val = 0;
-            for(i = current_part; i <= current_rotor_rank && i < nparts ; i++)
-                current_val += vparts[i] * powf(10.0, i);
-            next_part = i;
-        }
-        cursor.x -= generic_layer_w(GENERIC_LAYER(self->barrels[current_rotor]));
-        cursor.h = self->heights[current_rotor];
-        rcenter = (BASE_GAUGE(self)->h/2 - cursor.h/2); /*This is the rotor center relative to the whole gauge size*/
-        cursor.y = 0 + rcenter;
-        cursor.w = generic_layer_w(GENERIC_LAYER(self->barrels[current_rotor]));
-        digit_barrel_render_value(self->barrels[current_rotor], current_val, BUFFERED_GAUGE(self), &cursor, self->rubis - rcenter);
-//        printf("setting rotor %d to %f\n",current_rotor, current_val);
-        //render that value
-        //next part, next rotor
-        current_part = next_part;
-        current_rotor++;
-        current_rotor_rank++;
-//        printf("current_part: %d, nparts: %d\n",current_part,nparts);
-    }while(current_part < nparts);
-
-    /*Place holders for rotors that didn't render any value*/
-    for(; current_rotor < self->nbarrels; current_rotor++){
-        cursor.x -= generic_layer_w(GENERIC_LAYER(self->barrels[current_rotor]));
-        cursor.h = self->heights[current_rotor];
-        cursor.y = 0 + BASE_GAUGE(self)->h/2 - cursor.h/2;
-        cursor.w = generic_layer_w(GENERIC_LAYER(self->barrels[current_rotor]));
-
-        buffered_gauge_fill(BUFFERED_GAUGE(self), &cursor, &SDL_BLACK, false);
-    }
-    buffered_gauge_draw_rubis(BUFFERED_GAUGE(self), self->rubis, &SDL_RED, round(BASE_GAUGE(self)->w/2.0));
-}
-#endif

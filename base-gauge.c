@@ -12,8 +12,6 @@ BaseGauge *base_gauge_init(BaseGauge *self, BaseGaugeOps *ops, int w, int h)
     self->state.frame.w = w;
     self->state.frame.h = h;
 
-
-
     self->ops = ops;
     self->dirty = true;
 
@@ -94,7 +92,7 @@ bool base_gauge_add_animation(BaseGauge *self, BaseAnimation *animation)
 }
 
 
-void base_gauge_render(BaseGauge *self, Uint32 dt, RenderTarget destination, SDL_Rect *location, SDL_Rect *portion)
+void base_gauge_render(BaseGauge *self, Uint32 dt, RenderContext *ctx)
 {
     for(int i = 0; i < self->nanimations; i++){
         if(!self->animations[i]->finished){
@@ -110,11 +108,11 @@ void base_gauge_render(BaseGauge *self, Uint32 dt, RenderTarget destination, SDL
             self->ops->update_state(self, dt);
         self->dirty = false;
     }
-    self->ops->render(self, dt, destination, location, portion);
+    self->ops->render(self, dt, ctx);
     for(int i = 0; i < self->nchildren; i++){
         SDL_Rect child_location = {
-            .x = location->x + self->children[i]->state.frame.x,
-            .y = location->y + self->children[i]->state.frame.x,
+            .x = ctx->location->x + self->children[i]->state.frame.x,
+            .y = ctx->location->y + self->children[i]->state.frame.x,
             /*The following are only here to prevent distortion when using
              * SDL_Renderer/SDL_Gpu/OpenGL */
             .w = self->children[i]->state.frame.w,
@@ -122,7 +120,11 @@ void base_gauge_render(BaseGauge *self, Uint32 dt, RenderTarget destination, SDL
         };
         /* TODO during refactor: portion will be NULL during the refactor, afterwise compute
          * the correct portion for the child if needed */
-        base_gauge_render(self->children[i], dt, destination, &child_location, portion);
+        base_gauge_render(self->children[i], dt, &(RenderContext){
+            .target = ctx->target,
+            .location = &child_location,
+            .portion = ctx->portion
+        });
     }
 }
 
@@ -145,30 +147,28 @@ void base_gauge_render(BaseGauge *self, Uint32 dt, RenderTarget destination, SDL
  *
  * TODO: INLINE
  */
-int base_gauge_blit_layer(BaseGauge *self, RenderTarget target,
-                          SDL_Rect *location, GenericLayer *src,
-                          SDL_Rect *srcrect, SDL_Rect *dstrect,
-                          SDL_Rect *portion)
+int base_gauge_blit_layer(BaseGauge *self, RenderContext *ctx,
+                          GenericLayer *src,
+                          SDL_Rect *srcrect, SDL_Rect *dstrect)
 {
 #if USE_SDL_GPU
-    return base_gauge_blit_texture(self, target.target, location, src->texture, srcrect, dstrect, portion);
+    return base_gauge_blit_texture(self, ctx, src->texture, srcrect, dstrect);
 #else
-    return base_gauge_blit(self, target.surface, location, src->canvas, srcrect, dstrect, portion);
+    return base_gauge_blit(self, ctx, src->canvas, srcrect, dstrect);
 #endif
 }
 
 #define rectf_offset(r1, r2) ((GPU_Rect){(r1)->x + (r2)->x, (r1)->y + (r2)->y, (r1)->w, (r1)->h})
 #define rect_offset(r1, r2) ((SDL_Rect){(r1)->x + (r2)->x, (r1)->y + (r2)->y, (r1)->w, (r1)->h})
 #define rectf(r) (GPU_Rect){(r)->x, (r)->y, (r)->w, (r)->h}
-int base_gauge_blit_texture(BaseGauge *self,
-                            GPU_Target *target, SDL_Rect *location,
+int base_gauge_blit_texture(BaseGauge *self, RenderContext *ctx,
                             GPU_Image *src, SDL_Rect *srcrect,
-                            SDL_Rect *dstrect, SDL_Rect *portion)
+                            SDL_Rect *dstrect)
 {
     SDL_Rect fdst; /*Final destination*/
 
     if(dstrect){
-        fdst = rect_offset(dstrect, location);
+        fdst = rect_offset(dstrect, ctx->location);
     }else{
         fdst = (SDL_Rect){
             .x = 0,
@@ -176,7 +176,7 @@ int base_gauge_blit_texture(BaseGauge *self,
             .w = base_gauge_w(self),
             .h = base_gauge_h(self)
         };
-        fdst = rect_offset(&fdst, location);
+        fdst = rect_offset(&fdst, ctx->location);
     }
 
 #if 1
@@ -207,18 +207,18 @@ int base_gauge_blit_texture(BaseGauge *self,
         src_rectf = &rectf(srcrect);
     }
 
-    GPU_Blit(src, src_rectf, target, x, y);
+    GPU_Blit(src, src_rectf, ctx->target.target, x, y);
     return 0;
 }
 
-int base_gauge_blit(BaseGauge *self, SDL_Surface *target, SDL_Rect *location,
+int base_gauge_blit(BaseGauge *self, RenderContext *ctx,
                      SDL_Surface *src, SDL_Rect *srcrect,
-                     SDL_Rect *dstrect, SDL_Rect *portion)
+                     SDL_Rect *dstrect)
 {
     SDL_Rect fdst; /*Final destination*/
 
     if(dstrect){
-        fdst = rect_offset(dstrect, location);
+        fdst = rect_offset(dstrect, ctx->location);
     }else{
         fdst = (SDL_Rect){
             .x = 0,
@@ -226,18 +226,19 @@ int base_gauge_blit(BaseGauge *self, SDL_Surface *target, SDL_Rect *location,
             .w = base_gauge_w(self),
             .h = base_gauge_h(self)
         };
-        fdst = rect_offset(&fdst, location);
+        fdst = rect_offset(&fdst, ctx->location);
     }
 
-    return SDL_BlitSurface(src, srcrect, target, &fdst);
+    return SDL_BlitSurface(src, srcrect, ctx->target.surface, &fdst);
 }
 
-void base_gauge_fill(BaseGauge *self, RenderTarget target, SDL_Rect *location, SDL_Rect *area, void *color, bool packed, SDL_Rect *portion)
+void base_gauge_fill(BaseGauge *self, RenderContext *ctx,
+                     SDL_Rect *area, void *color, bool packed)
 {
     SDL_Rect farea; /*final area*/
 
     if(area){
-        farea = rect_offset(area, location);
+        farea = rect_offset(area, ctx->location);
     }else{
         farea = (SDL_Rect){
             .x = 0,
@@ -245,7 +246,7 @@ void base_gauge_fill(BaseGauge *self, RenderTarget target, SDL_Rect *location, S
             .w = base_gauge_w(self),
             .h = base_gauge_h(self)
         };
-        farea = rect_offset(&farea, location);
+        farea = rect_offset(&farea, ctx->location);
     }
 
 #if USE_SDL_GPU
@@ -255,20 +256,19 @@ void base_gauge_fill(BaseGauge *self, RenderTarget target, SDL_Rect *location, S
         printf("Packed colors not supported with SDL_gpu\n");
     }
 
-    GPU_RectangleFilled2(target.target, rectf(&farea), *(SDL_Color*)color);
+    GPU_RectangleFilled2(ctx->target.target, rectf(&farea), *(SDL_Color*)color);
 #else
-
     if(!color){
-        SDL_FillRect(target.surface, &farea, SDL_UCKEY(target.surface));
+        SDL_FillRect(ctx->target.surface, &farea, SDL_UCKEY(ctx->target.surface));
         return;
     }
 
     if(packed){
-        SDL_FillRect(target.surface, &farea, *((Uint32*)color));
+        SDL_FillRect(ctx->target.surface, &farea, *((Uint32*)color));
     }else{
-        SDL_FillRect(target.surface,
+        SDL_FillRect(ctx->target.surface,
             &farea,
-            SDL_MapRGBA(target.surface->format,
+            SDL_MapRGBA(ctx->target.surface->format,
                 ((SDL_Color*)color)->r,
                 ((SDL_Color*)color)->g,
                 ((SDL_Color*)color)->b,
@@ -279,8 +279,8 @@ void base_gauge_fill(BaseGauge *self, RenderTarget target, SDL_Rect *location, S
 #endif
 }
 
-void base_gauge_draw_rubis(BaseGauge *self, RenderTarget target, SDL_Rect *location,
-                           int y, SDL_Color *color, int pskip, SDL_Rect *portion)
+void base_gauge_draw_rubis(BaseGauge *self, RenderContext *ctx,
+                           int y, SDL_Color *color, int pskip)
 {
     SDL_Rect area;
 
@@ -290,7 +290,7 @@ void base_gauge_draw_rubis(BaseGauge *self, RenderTarget target, SDL_Rect *locat
         .w = base_gauge_w(self),
         .h = base_gauge_h(self)
     };
-    area = rect_offset(&area, location);
+    area = rect_offset(&area, ctx->location);
 
 #if USE_SDL_GPU
     int startx, stopx;
@@ -314,10 +314,10 @@ void base_gauge_draw_rubis(BaseGauge *self, RenderTarget target, SDL_Rect *locat
      * */
     liney++;
 #endif
-    GPU_Line(target.target, startx, liney, stopx, liney, *color);
-    GPU_Line(target.target, restartx, liney, endx, liney, *color);
+    GPU_Line(ctx->target.target, startx, liney, stopx, liney, *color);
+    GPU_Line(ctx->target.target, restartx, liney, endx, liney, *color);
 #else
-    view_draw_rubis(target.surface, y, color, pskip, &area);
+    view_draw_rubis(ctx->target.surface, y, color, pskip, &area);
 #endif
 }
 
