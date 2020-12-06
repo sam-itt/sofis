@@ -4,6 +4,7 @@
 #include <SDL2/SDL.h>
 #include <SDL_gpu.h>
 
+#include "SDL_pcf.h"
 #include "base-animation.h"
 #include "generic-layer.h"
 
@@ -80,4 +81,9 @@ void base_gauge_draw_rubis(BaseGauge *self, RenderContext *ctx,
 
 void base_gauge_draw_outline(BaseGauge *self, RenderContext *ctx,
                              SDL_Color *color, SDL_Rect *area);
+
+void base_gauge_draw_static_font_glyph(BaseGauge *self, RenderContext *ctx,
+                                       PCF_StaticFont *font,
+                                       SDL_Point *src, SDL_Point *dst);
+
 #endif /* BASE_GAUGE_H */

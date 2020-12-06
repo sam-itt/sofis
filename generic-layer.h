@@ -32,4 +32,5 @@ void generic_layer_dispose(GenericLayer *self);
 void generic_layer_free(GenericLayer *self);
 
 bool generic_layer_build_texture(GenericLayer *self);
+void generic_layer_update_texture(GenericLayer *self);
 #endif /* GENERIC_LAYER_H */

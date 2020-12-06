@@ -355,3 +355,34 @@ void base_gauge_draw_outline(BaseGauge *self, RenderContext *ctx, SDL_Color *col
 #endif
 }
 
+/*TODO: inline without vars*/
+void base_gauge_draw_static_font_glyph(BaseGauge *self, RenderContext *ctx,
+                                       PCF_StaticFont *font,
+                                       SDL_Point *src, SDL_Point *dst)
+{
+    SDL_Rect dst_rect; /*final destination*/
+    SDL_Rect src_rect;
+
+    src_rect = (SDL_Rect){
+        .x = src->x,
+        .y = src->y,
+        .w = font->metrics.characterWidth,
+        .h = font->metrics.ascent + font->metrics.descent
+    };
+
+    dst_rect = (SDL_Rect){
+        .x = dst->x,
+        .y = dst->y,
+        .w = font->metrics.characterWidth,
+        .h = font->metrics.ascent + font->metrics.descent
+    };
+
+#if USE_SDL_GPU
+    if(!font->texture) /*TODO refactor: Have this a pre-requisite*/
+        PCF_StaticFontCreateTexture(font);
+
+    base_gauge_blit_texture(self, ctx, font->texture, &src_rect, &dst_rect);
+#else
+    base_gauge_blit(self, ctx, font->raster, src_rect, dst_rect)
+#endif
+}

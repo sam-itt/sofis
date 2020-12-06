@@ -5,11 +5,7 @@
 #include <SDL2/SDL.h>
 #include <SDL_gpu.h>
 
-#include "SDL_events.h"
-#include "SDL_hints.h"
-#include "SDL_pixels.h"
-#include "SDL_render.h"
-#include "animated-gauge.h"
+//#include "animated-gauge.h"
 #include "base-gauge.h"
 #include "basic-hud.h"
 #include "compass-gauge.h"
@@ -52,7 +48,7 @@ OdoGauge *odo = NULL;
 /*AirspeedIndicator *asi = NULL;*/
 /*AttitudeIndicator *ai = NULL;*/
 /*RollSlipGauge *rsg = NULL;*/
-/*TextGauge *txt = NULL;*/
+TextGauge *txt = NULL;
 /*ElevatorGauge *elevator = NULL;*/
 /*RichCompassGauge *compass = NULL;*/
 
@@ -130,8 +126,8 @@ bool handle_keyboard(SDL_KeyboardEvent *event, Uint32 elapsed)
                 /*//alt_group_set_altitude(group, alt);*/
                 /*alt_group_set_values(group, alt, vs);*/
                 /*basic_hud_set(hud, 1, ALTITUDE, alt);*/
-                /*sprintf(txtbuf, "Altitude: %0.2f", alt);*/
-                /*text_gauge_set_value(txt, txtbuf);*/
+                sprintf(txtbuf, "Altitude: %0.2f", alt);
+                text_gauge_set_value(txt, txtbuf);
             }
             break;
         case SDLK_DOWN:
@@ -144,8 +140,8 @@ bool handle_keyboard(SDL_KeyboardEvent *event, Uint32 elapsed)
                 /*//alt_group_set_altitude(group, alt);*/
                 /*alt_group_set_values(group, alt, vs);*/
                 /*basic_hud_set(hud, 1, ALTITUDE, alt);*/
-                /*sprintf(txtbuf, "Altitude: %0.2f", alt);*/
-                /*text_gauge_set_value(txt, txtbuf);*/
+                sprintf(txtbuf, "Altitude: %0.2f", alt);
+                text_gauge_set_value(txt, txtbuf);
             }
             break;
         case SDLK_l:
@@ -229,6 +225,7 @@ bool handle_keyboard(SDL_KeyboardEvent *event, Uint32 elapsed)
         case SDLK_SPACE:
             if(event->state == SDL_PRESSED){
                 printf("Alt is: %f\n", alt);
+                printf("TextGauge value: %s\n", txt->value);
             }
             break;
 
@@ -394,17 +391,24 @@ int main(int argc, char **argv)
 
     /*hud = basic_hud_new();*/
 
-    /*txt = text_gauge_new("HI THERE", true, 300, 30);*/
-    /*text_gauge_set_static_font(txt,*/
-        /*resource_manager_get_static_font(TERMINUS_24,*/
-            /*&SDL_WHITE,*/
-            /*2, PCF_ALPHA, PCF_DIGITS*/
-        /*)*/
-    /*);*/
+    txt = text_gauge_new("HI THERE", true, 300, 30);
+#if 1
+    text_gauge_set_static_font(txt,
+        resource_manager_get_static_font(TERMINUS_24,
+            &SDL_WHITE,
+            3, PCF_ALPHA, PCF_DIGITS, ".:"
+        )
+    );
+#else
+    text_gauge_set_font(txt,
+        resource_manager_get_font(TERMINUS_24)
+    );
+#endif
 
-    /*text_gauge_set_color(txt, SDL_WHITE, TEXT_COLOR);*/
-    /*text_gauge_set_color(txt, SDL_BLACK, BACKGROUND_COLOR);*/
-    /*SDL_Rect txtrect = {SCREEN_WIDTH/2.0, SCREEN_HEIGHT/2.0,0,0};*/
+
+    text_gauge_set_color(txt, SDL_WHITE, TEXT_COLOR);
+    text_gauge_set_color(txt, SDL_BLACK, BACKGROUND_COLOR);
+    SDL_Rect txtrect = {SCREEN_WIDTH/2.0, SCREEN_HEIGHT/2.0,0,0};
 
     /*//compass = compass_gauge_new();*/
     /*compass = rich_compass_gauge_new();*/
@@ -508,7 +512,7 @@ int main(int argc, char **argv)
 //        base_gauge_render(BASE_GAUGE(ai), elapsed, rtarget, NULL);
 
 //        base_gauge_render(BASE_GAUGE(hud), elapsed, rtarget, &whole);
-//        base_gauge_render(BASE_GAUGE(txt), elapsed, rtarget, &txtrect);
+        base_gauge_render(BASE_GAUGE(txt), elapsed, &(RenderContext){rtarget, &txtrect, NULL});
 //        base_gauge_render(BASE_GAUGE(panel), elapsed, rtarget, &sprect);
 //        base_gauge_render(BASE_GAUGE(elevator), elapsed, rtarget, &center_rect);
 //        base_gauge_render(BASE_GAUGE(fish), elapsed, rtarget, &center_rect);
@@ -570,7 +574,7 @@ int main(int argc, char **argv)
     /*roll_slip_gauge_free(rsg);*/
     /*attitude_indicator_free(ai);*/
     /*basic_hud_free(hud);*/
-    /*text_gauge_free(txt);*/
+    text_gauge_free(txt);
     /*side_panel_free(panel);*/
     /*rich_compass_gauge_free(compass);*/
     resource_manager_shutdown();

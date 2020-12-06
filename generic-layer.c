@@ -199,3 +199,25 @@ bool generic_layer_build_texture(GenericLayer *self)
 #endif
 }
 
+/**
+ * @brief Updates the texture from the content of the canvas.
+ *
+ * Must be called when you want any modifications done to the
+ * surface done after the call to generic_layer_build_texture
+ * to be visible by the GPU.
+ *
+ * @param self a GenericLayer
+ *
+ * @see generic_layer_build_texture
+ */
+void generic_layer_update_texture(GenericLayer *self)
+{
+#if USE_SDL_GPU
+    if(self->texture)
+        GPU_UpdateImage(self->texture, NULL, self->canvas, NULL);
+    else
+        generic_layer_build_texture(self);
+#endif
+}
+
+
