@@ -136,7 +136,7 @@ void odo_gauge_free(OdoGauge *self)
         free(self->state.barrel_states);
     if(self->state.fill_rects)
         free(self->state.fill_rects);
-//    animated_gauge_dispose(ANIMATED_GAUGE(self));
+    base_gauge_dispose(BASE_GAUGE(self));
     free(self);
 }
 
@@ -154,7 +154,7 @@ bool odo_gauge_set_value(OdoGauge *self, float value, bool animated)
         if(BASE_GAUGE(self)->nanimations == 0){
             animation = base_animation_new(TYPE_FLOAT, 1, &self->value);
             base_gauge_add_animation(BASE_GAUGE(self), animation);
-            printf("created new animation\n");
+            base_animation_unref(animation);/*base_gauge takes ownership*/
         }else{
             animation = BASE_GAUGE(self)->animations[0];
         }
@@ -167,18 +167,13 @@ bool odo_gauge_set_value(OdoGauge *self, float value, bool animated)
     return rv;
 }
 
-/*TODO during refactor: static? */
-void odo_gauge_render(OdoGauge *self, Uint32 dt, RenderContext *ctx)
+static void odo_gauge_render(OdoGauge *self, Uint32 dt, RenderContext *ctx)
 {
     DigitBarrelState *bstate;
     for(int i = 0; i < self->state.nbarrel_states; i++){
         bstate = &self->state.barrel_states[i];
-        if(bstate->top)
-            base_gauge_blit_layer(BASE_GAUGE(self), ctx, bstate->top, &bstate->top_rect, &bstate->top_rect_to);
-        if(bstate->middle)
-            base_gauge_blit_layer(BASE_GAUGE(self), ctx, bstate->middle, &bstate->middle_rect, &bstate->middle_rect_to);
-        if(bstate->bottom)
-            base_gauge_blit_layer(BASE_GAUGE(self), ctx, bstate->bottom, &bstate->bottom_rect, &bstate->bottom_rect_to);
+        for(int j = 0; j < bstate->npatches; j++)
+            base_gauge_blit_layer(BASE_GAUGE(self), ctx, bstate->layer, &bstate->patches[j].src, &bstate->patches[j].dst);
     }
     for(int i = 0; i < self->state.nfill_rects; i++){
         base_gauge_fill(BASE_GAUGE(self), ctx, &self->state.fill_rects[i], &SDL_BLACK, false);
@@ -187,8 +182,7 @@ void odo_gauge_render(OdoGauge *self, Uint32 dt, RenderContext *ctx)
                           &SDL_RED, self->state.pskip);
 }
 
-/*TODO during refactor: static? */
-void odo_gauge_update_state(OdoGauge *self, Uint32 dt)
+static void odo_gauge_update_state(OdoGauge *self, Uint32 dt)
 {
     float vparts[6]; /*up to 999.999 ft*/
     int nparts;

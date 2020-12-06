@@ -6,6 +6,7 @@
 #include "base-gauge.h"
 
 #define ALLOC_CHUNK 4
+#define ENABLE_SDL_GPU_FUNNY_COORDS 1
 
 BaseGauge *base_gauge_init(BaseGauge *self, BaseGaugeOps *ops, int w, int h)
 {
@@ -130,6 +131,7 @@ void base_gauge_render(BaseGauge *self, Uint32 dt, RenderContext *ctx)
 
 /*******TAKEN FROM BUFFERED_GAUGE**************/
 
+
 /**
  * @brief Does a blit from the gauge to @p location using a GenericLayer
  * (encapsulates surface+texture) as source.
@@ -191,7 +193,6 @@ int base_gauge_blit_texture(BaseGauge *self, RenderContext *ctx,
 //    printf("After clipping: ");
 //    SDLExt_RectDump(&fdst);
 #endif
-
     GPU_Rect *dst_rectf, *src_rectf;
     float x,y;
 

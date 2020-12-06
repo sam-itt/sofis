@@ -9,17 +9,16 @@
 #include "buffered-gauge.h"
 
 typedef struct{
-    GenericLayer *top;
-    SDL_Rect top_rect;
-    SDL_Rect top_rect_to;
+    SDL_Rect src;
+    SDL_Rect dst;
+}DigitBarrelPatch;
 
-    GenericLayer *middle;
-    SDL_Rect middle_rect;
-    SDL_Rect middle_rect_to;
-
-    GenericLayer *bottom;
-    SDL_Rect bottom_rect;
-    SDL_Rect bottom_rect_to;
+typedef struct{
+    GenericLayer *layer; /*All patches have the same source*/
+    /*TODO: Check if we can get away with 2: Is there a case
+     * when all 3 are needed?*/
+    DigitBarrelPatch patches[3]; /*Up to 3: top, middle, bottom*/
+    uintf8_t npatches;
 }DigitBarrelState;
 
 typedef struct{
