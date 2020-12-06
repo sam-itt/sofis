@@ -135,7 +135,7 @@ float digit_barrel_resolve_value(DigitBarrel *self, float value)
     return round(y);
 }
 
-
+#if 0
 /*
  * Rubis is the offset in region where to align the value fomr the spinner.
  * if its negative, the rubis will be (vertical) the center dst: the y index
@@ -197,6 +197,76 @@ void digit_barrel_render_value(DigitBarrel *self, float value, BufferedGauge *ds
         buffered_gauge_blit_layer(dst, layer, &patch, &dst_region);
     }
 }
+#endif
+
+/*
+ * Rubis is the offset in region where to align the value fomr the spinner.
+ * if its negative, the rubis will be (vertical) the center dst: the y index
+ * in the value spinner representing @param value will be aligned with the middle
+ *
+ */
+void digit_barrel_state_value(DigitBarrel *self, float value, SDL_Rect *region, float rubis, DigitBarrelState *state)
+{
+    float y;
+    SDL_Rect dst_region = {region->x,region->y,region->w,region->h};
+    VerticalStrip *strip;
+    GenericLayer *layer;
+
+    strip = VERTICAL_STRIP(self);
+    layer = GENERIC_LAYER(self);
+
+    /*translate @param value to an index in the spinner texture*/
+    y = digit_barrel_resolve_value(self, value);
+    rubis = (rubis < 0) ? region->h / 2.0 : rubis;
+    SDL_Rect portion = {
+        .x = 0,
+        .y = round(y - rubis),
+        .w = generic_layer_w(layer),
+        .h = region->h
+    };
+    /* Ensures that portion.y + portion.h doesn't got past image bounds:
+     * w/h are ignored by SDL_BlitSurface, but when using SDL_Renderers wrong
+     * values will stretch the image.
+     */
+    if(portion.y + portion.h > generic_layer_h(layer))
+        portion.h = generic_layer_h(layer) - portion.y;
+
+
+    if(portion.y < 0){ //Fill top
+        SDL_Rect patch = {
+            .x = 0,
+            .y = generic_layer_h(layer) + portion.y, //means - portion.y as portion.y < 0 here
+            .w = generic_layer_w(layer),
+            .h = generic_layer_h(layer) - patch.y
+        };
+        state->top = layer;/*TODO refactor: optimize only one layer*/
+        state->top_rect = patch,
+        state->top_rect_to = dst_region;
+
+        dst_region.y = patch.h;
+        portion.y = 0;
+        portion.h -= patch.h;
+    }
+    state->middle = layer; /*TODO refactor: optimize only one layer*/
+    state->middle_rect = portion;
+    state->middle_rect_to = dst_region;
+
+    if(portion.y + region->h > generic_layer_h(layer)){// fill bottom
+        float taken = generic_layer_h(layer) - portion.y; //number of pixels taken from the bottom of values pict
+        float delta = region->h - taken;
+        dst_region.y += taken;
+        SDL_Rect patch = {
+            .x = 0,
+            .y = 0,
+            .w = generic_layer_w(layer),
+            .h = delta
+        };
+        state->bottom = layer;/*TODO refactor: optimize only one layer*/
+        state->bottom_rect = patch;
+        state->bottom_rect_to = dst_region;
+    }
+}
+
 
 void digit_barrel_draw_etch_marks(DigitBarrel *self)
 {
