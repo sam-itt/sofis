@@ -1,25 +1,22 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include <SDL_gpu.h>
-
-#include "animated-gauge.h"
 #include "base-gauge.h"
-#include "buffered-gauge.h"
-#include "side-panel.h"
-
 #include "elevator-gauge.h"
 #include "fishbone-gauge.h"
+#include "side-panel.h"
+
 #include "misc.h"
 #include "resource-manager.h"
 #include "sdl-colors.h"
-#include "text-gauge.h"
 
 #define GROUP_SPACE 8
 
-static void side_panel_render(SidePanel *self, Uint32 dt, RenderTarget destination, SDL_Rect *location);
+static void side_panel_render(SidePanel *self, Uint32 dt, RenderContext *ctx);
+static void side_panel_update_state(SidePanel *self, Uint32 dt);
 static BaseGaugeOps side_panel_ops = {
-    .render = (RenderFunc)side_panel_render
+   .render = (RenderFunc)side_panel_render,
+   .update_state = (StateUpdateFunc)side_panel_update_state
 };
 
 SidePanel *side_panel_new(int width, int height)
@@ -116,16 +113,16 @@ SidePanel *side_panel_init(SidePanel *self, int width, int height)
     self->locations[RPM] = (SDL_Rect){
         .x = 0,
         .y = SDLExt_RectLastY(&self->locations[EGT_TXT]) + 4,
-        .w = BASE_GAUGE(self->rpm)->w,
-        .h = BASE_GAUGE(self->rpm)->h
+        .w = base_gauge_w(BASE_GAUGE(self->rpm)),
+        .h = base_gauge_h(BASE_GAUGE(self->rpm))
     };
     self->locations[RPM_TXT] = (SDL_Rect){
         .x = 0,
         .y = SDLExt_RectLastY(&self->locations[RPM]) + 2,
-        .w = BASE_GAUGE(self->rpm_txt)->w,
-        .h = BASE_GAUGE(self->rpm_txt)->h
-
+        .w = base_gauge_w(BASE_GAUGE(self->rpm_txt)),
+        .h = base_gauge_h(BASE_GAUGE(self->rpm_txt))
     };
+
 
     /*Fuel flow*/
     self->fuel_flow_txt = text_gauge_new("FUEL FLOW", false, 92 - 10, 12);
@@ -145,15 +142,16 @@ SidePanel *side_panel_init(SidePanel *self, int width, int height)
     self->locations[FUEL_FLOW_TXT] = (SDL_Rect){
         .x = 0,
         .y = SDLExt_RectLastY(&self->locations[RPM_TXT]) + GROUP_SPACE,
-        .w = BASE_GAUGE(self->fuel_flow_txt)->w,
-        .h = BASE_GAUGE(self->fuel_flow_txt)->h
+        .w = base_gauge_w(BASE_GAUGE(self->fuel_flow_txt)),
+        .h = base_gauge_h(BASE_GAUGE(self->fuel_flow_txt))
     };
     self->locations[FUEL_FLOW_VALUE] = (SDL_Rect){
         .x = 0,
         .y = SDLExt_RectLastY(&self->locations[FUEL_FLOW_TXT]) + 2,
-        .w = BASE_GAUGE(self->fuel_flow_value)->w,
-        .h = BASE_GAUGE(self->fuel_flow_value)->h
+        .w = base_gauge_w(BASE_GAUGE(self->fuel_flow_value)),
+        .h = base_gauge_h(BASE_GAUGE(self->fuel_flow_value))
     };
+
 
     /*Oil temperature*/
     self->oil_temp_txt  = text_gauge_new("OIL TEMP", false, 92 - 10, 12);
@@ -187,15 +185,16 @@ SidePanel *side_panel_init(SidePanel *self, int width, int height)
     self->locations[OIL_TEMP_TXT] = (SDL_Rect){
         .x = 0,
         .y = SDLExt_RectLastY(&self->locations[FUEL_FLOW_VALUE]) + GROUP_SPACE,
-        .w = BASE_GAUGE(self->oil_temp_txt)->w,
-        .h = BASE_GAUGE(self->oil_temp_txt)->h
+        .w = base_gauge_w(BASE_GAUGE(self->oil_temp_txt)),
+        .h = base_gauge_h(BASE_GAUGE(self->oil_temp_txt))
     };
     self->locations[OIL_TEMP] = (SDL_Rect){
         .x = 0,
         .y = SDLExt_RectLastY(&self->locations[OIL_TEMP_TXT]) +2,
-        .w = BASE_GAUGE(self->oil_temp)->w,
-        .h = BASE_GAUGE(self->oil_temp)->h
+        .w = base_gauge_w(BASE_GAUGE(self->oil_temp)),
+        .h = base_gauge_h(BASE_GAUGE(self->oil_temp))
     };
+
 
     /*Oil pressure*/
     self->oil_press_txt  = text_gauge_new("OIL PRESS", false, 92 - 10, 12);
@@ -234,15 +233,16 @@ SidePanel *side_panel_init(SidePanel *self, int width, int height)
     self->locations[OIL_PRESS_TXT] = (SDL_Rect){
         .x = 0,
         .y = SDLExt_RectLastY(&self->locations[OIL_TEMP]) + GROUP_SPACE,
-        .w = BASE_GAUGE(self->oil_press_txt)->w,
-        .h = BASE_GAUGE(self->oil_press_txt)->h
+        .w = base_gauge_w(BASE_GAUGE(self->oil_press_txt)),
+        .h = base_gauge_h(BASE_GAUGE(self->oil_press_txt))
     };
     self->locations[OIL_PRESS] = (SDL_Rect){
         .x = 0,
         .y = SDLExt_RectLastY(&self->locations[OIL_PRESS_TXT]) +2,
-        .w = BASE_GAUGE(self->oil_press)->w,
-        .h = BASE_GAUGE(self->oil_press)->h
+        .w = base_gauge_w(BASE_GAUGE(self->oil_press)),
+        .h = base_gauge_h(BASE_GAUGE(self->oil_press))
     };
+
 
     /*CHT*/
     self->cht_txt  = text_gauge_new("CHT", false, 92 - 10, 12);
@@ -276,15 +276,16 @@ SidePanel *side_panel_init(SidePanel *self, int width, int height)
     self->locations[CHT_TXT] = (SDL_Rect){
         .x = 0,
         .y = SDLExt_RectLastY(&self->locations[OIL_PRESS]) + GROUP_SPACE,
-        .w = BASE_GAUGE(self->cht_txt)->w,
-        .h = BASE_GAUGE(self->cht_txt)->h
+        .w = base_gauge_w(BASE_GAUGE(self->cht_txt)),
+        .h = base_gauge_h(BASE_GAUGE(self->cht_txt))
     };
     self->locations[CHT] = (SDL_Rect){
         .x = 0,
         .y = SDLExt_RectLastY(&self->locations[CHT_TXT]) +2,
-        .w = BASE_GAUGE(self->cht)->w,
-        .h = BASE_GAUGE(self->cht)->h
+        .w = base_gauge_w(BASE_GAUGE(self->cht)),
+        .h = base_gauge_h(BASE_GAUGE(self->cht))
     };
+
 
     /*Fuel pressure*/
     self->fuel_px_txt  = text_gauge_new("FUEL PRESSURE", false, 92 - 10, 12);
@@ -318,15 +319,16 @@ SidePanel *side_panel_init(SidePanel *self, int width, int height)
     self->locations[FUEL_PX_TXT] = (SDL_Rect){
         .x = 0,
         .y = SDLExt_RectLastY(&self->locations[CHT]) + GROUP_SPACE,
-        .w = BASE_GAUGE(self->fuel_px_txt)->w,
-        .h = BASE_GAUGE(self->fuel_px_txt)->h
+        .w = base_gauge_w(BASE_GAUGE(self->fuel_px_txt)),
+        .h = base_gauge_h(BASE_GAUGE(self->fuel_px_txt))
     };
     self->locations[FUEL_PX] = (SDL_Rect){
         .x = 0,
         .y = SDLExt_RectLastY(&self->locations[FUEL_PX_TXT]) +2,
-        .w = BASE_GAUGE(self->fuel_px)->w,
-        .h = BASE_GAUGE(self->fuel_px)->h
+        .w = base_gauge_w(BASE_GAUGE(self->fuel_px)),
+        .h = base_gauge_h(BASE_GAUGE(self->fuel_px))
     };
+
 
     /*Fuel QTY*/
     self->fuel_qty_txt  = text_gauge_new("FUEL QTY GAL", false, 92 - 10, 12);
@@ -360,18 +362,19 @@ SidePanel *side_panel_init(SidePanel *self, int width, int height)
     self->locations[FUEL_QTY_TXT] = (SDL_Rect){
         .x = 0,
         .y = SDLExt_RectLastY(&self->locations[FUEL_PX]) + GROUP_SPACE,
-        .w = BASE_GAUGE(self->fuel_qty_txt)->w,
-        .h = BASE_GAUGE(self->fuel_qty_txt)->h
+        .w = base_gauge_w(BASE_GAUGE(self->fuel_qty_txt)),
+        .h = base_gauge_h(BASE_GAUGE(self->fuel_qty_txt))
     };
     self->locations[FUEL_QTY] = (SDL_Rect){
         .x = 0,
         .y = SDLExt_RectLastY(&self->locations[FUEL_QTY_TXT]) +2,
-        .w = BASE_GAUGE(self->fuel_qty)->w,
-        .h = BASE_GAUGE(self->fuel_qty)->h
+        .w = base_gauge_w(BASE_GAUGE(self->fuel_qty)),
+        .h = base_gauge_h(BASE_GAUGE(self->fuel_qty))
 
     };
+
 #if 1
-    SDL_Rect reference = {0,0,BASE_GAUGE(self)->w,BASE_GAUGE(self)->h};
+    SDL_Rect reference = {0,0,base_gauge_w(BASE_GAUGE(self)),base_gauge_h(BASE_GAUGE(self))};
     for(int i = 0; i < NSidePanelLocations; i++){
         int tmpy = self->locations[i].y;
         SDLExt_RectAlign(&self->locations[i], &reference, HALIGN_CENTER);
@@ -379,6 +382,62 @@ SidePanel *side_panel_init(SidePanel *self, int width, int height)
 
     }
 #endif
+    base_gauge_add_child(BASE_GAUGE(self), BASE_GAUGE(self->rpm_txt),
+        self->locations[RPM_TXT].x,
+        self->locations[RPM_TXT].y
+    );
+    base_gauge_add_child(BASE_GAUGE(self), BASE_GAUGE(self->rpm),
+        self->locations[RPM].x,
+        self->locations[RPM].y
+    );
+    base_gauge_add_child(BASE_GAUGE(self), BASE_GAUGE(self->fuel_flow_txt),
+        self->locations[FUEL_FLOW_TXT].x,
+        self->locations[FUEL_FLOW_TXT].y
+    );
+    base_gauge_add_child(BASE_GAUGE(self), BASE_GAUGE(self->fuel_flow_value),
+        self->locations[FUEL_FLOW_VALUE].x,
+        self->locations[FUEL_FLOW_VALUE].y
+    );
+    base_gauge_add_child(BASE_GAUGE(self), BASE_GAUGE(self->oil_temp_txt),
+        self->locations[OIL_TEMP_TXT].x,
+        self->locations[OIL_TEMP_TXT].y
+    );
+    base_gauge_add_child(BASE_GAUGE(self), BASE_GAUGE(self->oil_temp),
+        self->locations[OIL_TEMP].x,
+        self->locations[OIL_TEMP].y
+    );
+    base_gauge_add_child(BASE_GAUGE(self), BASE_GAUGE(self->oil_press_txt),
+        self->locations[OIL_PRESS_TXT].x,
+        self->locations[OIL_PRESS_TXT].y
+    );
+    base_gauge_add_child(BASE_GAUGE(self), BASE_GAUGE(self->oil_press),
+        self->locations[OIL_PRESS].x,
+        self->locations[OIL_PRESS].y
+    );
+    base_gauge_add_child(BASE_GAUGE(self), BASE_GAUGE(self->cht_txt),
+        self->locations[CHT_TXT].x,
+        self->locations[CHT_TXT].y
+    );
+    base_gauge_add_child(BASE_GAUGE(self), BASE_GAUGE(self->cht),
+        self->locations[CHT].x,
+        self->locations[CHT].y
+    );
+    base_gauge_add_child(BASE_GAUGE(self), BASE_GAUGE(self->fuel_px_txt),
+        self->locations[FUEL_PX_TXT].x,
+        self->locations[FUEL_PX_TXT].y
+    );
+    base_gauge_add_child(BASE_GAUGE(self), BASE_GAUGE(self->fuel_px),
+        self->locations[FUEL_PX].x,
+        self->locations[FUEL_PX].y
+    );
+    base_gauge_add_child(BASE_GAUGE(self), BASE_GAUGE(self->fuel_qty_txt),
+        self->locations[FUEL_QTY_TXT].x,
+        self->locations[FUEL_QTY_TXT].y
+    );
+    base_gauge_add_child(BASE_GAUGE(self), BASE_GAUGE(self->fuel_qty),
+        self->locations[FUEL_QTY].x,
+        self->locations[FUEL_QTY].y
+    );
     return self;
 }
 
@@ -436,7 +495,7 @@ void side_panel_set_rpm(SidePanel *self, float value)
 {
     char buffer[10];
 
-    animated_gauge_set_value(ANIMATED_GAUGE(self->rpm), value);
+    elevator_gauge_set_value(self->rpm, value, true);
 
     snprintf(buffer, 10, "%04d RPM", (int)value);
     text_gauge_set_value(self->rpm_txt, buffer);
@@ -452,70 +511,37 @@ void side_panel_set_fuel_flow(SidePanel *self, float value)
 
 void side_panel_set_oil_temp(SidePanel *self, float value)
 {
-
-    animated_gauge_set_value(ANIMATED_GAUGE(self->oil_temp), value);
+    fishbone_gauge_set_value(self->oil_temp, value, true);
 }
 
 void side_panel_set_oil_press(SidePanel *self, float value)
 {
-
-    animated_gauge_set_value(ANIMATED_GAUGE(self->oil_press), value);
+    fishbone_gauge_set_value(self->oil_press, value, true);
 }
 
 void side_panel_set_cht(SidePanel *self, float value)
 {
-    animated_gauge_set_value(ANIMATED_GAUGE(self->cht), value);
+    fishbone_gauge_set_value(self->cht, value, true);
 }
 
 void side_panel_set_fuel_px(SidePanel *self, float value)
 {
-    animated_gauge_set_value(ANIMATED_GAUGE(self->fuel_px), value);
+    fishbone_gauge_set_value(self->fuel_px, value, true);
 }
 
 void side_panel_set_fuel_qty(SidePanel *self, float value)
 {
-    animated_gauge_set_value(ANIMATED_GAUGE(self->fuel_qty), value);
+    fishbone_gauge_set_value(self->fuel_qty, value, true);
 }
 
-#define rectf_offset(r1, r2) ((GPU_Rect){(r1)->x + (r2)->x, (r1)->y + (r2)->y, (r1)->w, (r1)->h})
-#define rect_offset(r1, r2) ((SDL_Rect){(r1)->x + (r2)->x, (r1)->y + (r2)->y, (r1)->w, (r1)->h})
-static void side_panel_render(SidePanel *self, Uint32 dt, RenderTarget destination, SDL_Rect *location)
+static void side_panel_update_state(SidePanel *self, Uint32 dt)
 {
-    SDL_Rect area = (SDL_Rect){0,0, BASE_GAUGE(self)->w, BASE_GAUGE(self)->h};
-#if USE_SDL_GPU
-    GPU_Rect outline = rectf_offset(&area, location);
 
-    outline.x++;
-    outline.y++;
-    outline.w--;
-    outline.h--;
 
-    GPU_RectangleFilled2(destination.target, rectf_offset(&area, location), SDL_BLACK);
-    GPU_Rectangle2(destination.target, outline, SDL_WHITE);
-#else
-#endif
-#if 0
-    base_gauge_render(BASE_GAUGE(self->egt), dt, destination, &self->locations[EGT]);
-    base_gauge_render(BASE_GAUGE(self->egt_txt), dt, destination, &self->locations[EGT_TXT]);
-#endif
-    base_gauge_render(BASE_GAUGE(self->rpm), dt, destination, &rect_offset(&self->locations[RPM], location));
-    base_gauge_render(BASE_GAUGE(self->rpm_txt), dt, destination, &rect_offset(&self->locations[RPM_TXT], location));
+}
 
-    base_gauge_render(BASE_GAUGE(self->fuel_flow_txt), dt, destination, &rect_offset(&self->locations[FUEL_FLOW_TXT], location));
-    base_gauge_render(BASE_GAUGE(self->fuel_flow_value), dt, destination, &rect_offset(&self->locations[FUEL_FLOW_VALUE], location));
-
-    base_gauge_render(BASE_GAUGE(self->oil_temp), dt, destination, &rect_offset(&self->locations[OIL_TEMP], location));
-    base_gauge_render(BASE_GAUGE(self->oil_temp_txt), dt, destination, &rect_offset(&self->locations[OIL_TEMP_TXT], location));
-
-    base_gauge_render(BASE_GAUGE(self->oil_press), dt, destination, &rect_offset(&self->locations[OIL_PRESS], location));
-    base_gauge_render(BASE_GAUGE(self->oil_press_txt), dt, destination, &rect_offset(&self->locations[OIL_PRESS_TXT], location));
-
-    base_gauge_render(BASE_GAUGE(self->cht), dt, destination, &rect_offset(&self->locations[CHT], location));
-    base_gauge_render(BASE_GAUGE(self->cht_txt), dt, destination, &rect_offset(&self->locations[CHT_TXT], location));
-
-    base_gauge_render(BASE_GAUGE(self->fuel_px), dt, destination, &rect_offset(&self->locations[FUEL_PX], location));
-    base_gauge_render(BASE_GAUGE(self->fuel_px_txt), dt, destination, &rect_offset(&self->locations[FUEL_PX_TXT], location));
-
-    base_gauge_render(BASE_GAUGE(self->fuel_qty), dt, destination, &rect_offset(&self->locations[FUEL_QTY], location));
-    base_gauge_render(BASE_GAUGE(self->fuel_qty_txt), dt, destination, &rect_offset(&self->locations[FUEL_QTY_TXT], location));
+static void side_panel_render(SidePanel *self, Uint32 dt, RenderContext *ctx)
+{
+    base_gauge_fill(BASE_GAUGE(self),ctx, NULL, &SDL_BLACK, false);
+    base_gauge_draw_outline(BASE_GAUGE(self), ctx, &SDL_WHITE, NULL);
 }

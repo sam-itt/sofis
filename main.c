@@ -4,23 +4,14 @@
 
 #include <SDL2/SDL.h>
 
-#include "animated-gauge.h"
+#include "SDL_timer.h"
 #include "basic-hud.h"
-#include "ladder-gauge.h"
-#include "alt-ladder-page-descriptor.h"
-
-#include "odo-gauge.h"
-#include "alt-indicator.h"
-#include "vertical-stair.h"
-#include "alt-group.h"
-#include "airspeed-indicator.h"
-#include "attitude-indicator.h"
+#include "side-panel.h"
 #include "resource-manager.h"
 
-#include "roll-slip-gauge.h"
-#include "side-panel.h"
-
+#if ENABLE_3D
 #include "terrain-viewer.h"
+#endif
 //#define USE_FGCONN 0
 #define USE_FGTAPE 1
 
@@ -228,11 +219,11 @@ int main(int argc, char **argv)
     hud = basic_hud_new();
 
     panel = side_panel_new(-1, -1);
-    SDL_Rect sprect = {0,0, BASE_GAUGE(panel)->w,BASE_GAUGE(panel)->h};
-
+    SDL_Rect sprect = {0,0, base_gauge_w(BASE_GAUGE(panel)),base_gauge_h(BASE_GAUGE(panel))};
+#if ENABLE_3D
     TerrainViewer *viewer;
     viewer = terrain_viewer_new();
-
+#endif
 
     done = false;
     Uint32 ticks;
@@ -282,6 +273,9 @@ int main(int argc, char **argv)
 
     Uint32 startms, dtms, last_dtms;
     Uint32 nframes = 0;
+    Uint32 render_start, render_end;
+    Uint32 total_render_time = 0;
+    Uint32 nrender_calls = 0;
 
     startms = SDL_GetTicks();
     do{
@@ -320,7 +314,7 @@ int main(int argc, char **argv)
             side_panel_set_cht(panel, record.cht);
             side_panel_set_fuel_px(panel, record.fuel_px);
             side_panel_set_fuel_qty(panel, record.fuel_qty);
-
+#if ENABLE_3D
             float lon = fmod(record.longitude+180, 360.0) - 180;
             record.altitude = record.altitude/3.281;
             terrain_viewer_update_plane(viewer,
@@ -332,6 +326,7 @@ int main(int argc, char **argv)
                 terrain_viewer_frame(viewer);
                 GPU_ResetRendererState(); /*end 3d*/
             }
+#endif
         }
 #endif
 
@@ -340,14 +335,19 @@ int main(int argc, char **argv)
 #else
         SDL_FillRect(screenSurface, NULL, SDL_UFBLUE(screenSurface));
 #endif
+#if ENABLE_3D
         if(g_show3d){
             GPU_FlushBlitBuffer(); /*begin 3*/
             terrain_viewer_frame(viewer);
             GPU_ResetRendererState(); /*end 3d*/
         }
-
-        base_gauge_render(BASE_GAUGE(hud), elapsed, rtarget, &whole);
-        base_gauge_render(BASE_GAUGE(panel), elapsed, rtarget, &sprect);
+#endif
+        render_start = SDL_GetTicks();
+        base_gauge_render(BASE_GAUGE(hud), elapsed, &(RenderContext){rtarget, &whole, NULL});
+        base_gauge_render(BASE_GAUGE(panel), elapsed, &(RenderContext){rtarget, &sprect, NULL});
+        render_end = SDL_GetTicks();
+        total_render_time += render_end - render_start;
+        nrender_calls++;
 #if USE_SDL_GPU
 		GPU_Flip(gpu_screen);
 #else
@@ -413,6 +413,7 @@ int main(int argc, char **argv)
         last_ticks = ticks;
     }while(!done);
 
+    printf("Average rendering time (%d samples): %f ticks\n", nrender_calls, total_render_time*1.0/nrender_calls);
     basic_hud_free(hud);
     side_panel_free(panel);
 #if defined(USE_FGCONN)

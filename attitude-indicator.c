@@ -7,25 +7,26 @@
 #include "SDL_rect.h"
 #include "SDL_render.h"
 #include "SDL_surface.h"
-#include "animated-gauge.h"
 #include "attitude-indicator.h"
+#include "base-animation.h"
 #include "base-gauge.h"
-#include "buffered-gauge.h"
 #include "generic-layer.h"
 #include "misc.h"
 #include "resource-manager.h"
+#include "roll-slip-gauge.h"
 #include "sdl-colors.h"
 #include "SDL_pcf.h"
 
 #define sign(x) (((x) > 0) - ((x) < 0))
 
-static void attitude_indicator_render_value(AttitudeIndicator *self, float value);
-static SDL_Surface *attitude_indicator_get_etched_ball(AttitudeIndicator *self);
-static AnimatedGaugeOps attitude_indicator_ops = {
-   .render_value = (ValueRenderFunc)attitude_indicator_render_value
+static void attitude_indicator_render(AttitudeIndicator *self, Uint32 dt, RenderContext *ctx);
+static void attitude_indicator_update_state(AttitudeIndicator *self, Uint32 dt);
+static BaseGaugeOps attitude_indicator_ops = {
+   .render = (RenderFunc)attitude_indicator_render,
+   .update_state = (StateUpdateFunc)attitude_indicator_update_state
 };
 
-
+static SDL_Surface *attitude_indicator_get_etched_ball(AttitudeIndicator *self);
 
 AttitudeIndicator *attitude_indicator_new(int width, int height)
 {
@@ -44,11 +45,10 @@ AttitudeIndicator *attitude_indicator_new(int width, int height)
 
 AttitudeIndicator *attitude_indicator_init(AttitudeIndicator *self, int width, int height)
 {
-    animated_gauge_init(ANIMATED_GAUGE(self), ANIMATED_GAUGE_OPS(&attitude_indicator_ops), width, height);
-    BUFFERED_GAUGE(self)->max_ops = 4;
+    base_gauge_init(BASE_GAUGE(self), &attitude_indicator_ops, width, height);
 
-	self->common_center.x = round((BASE_GAUGE(self)->w)/2.0);
-	self->common_center.y = round(BASE_GAUGE(self)->h*0.4);
+	self->common_center.x = round((base_gauge_w(BASE_GAUGE(self)))/2.0);
+	self->common_center.y = round(base_gauge_h(BASE_GAUGE(self))*0.4);
 	self->size = 2; /*In tens of degrees, here 20deg (+/-)*/
 
     /*TODO: Failure*/
@@ -59,11 +59,15 @@ AttitudeIndicator *attitude_indicator_init(AttitudeIndicator *self, int width, i
         generic_layer_build_texture(&self->markers[i]);
 
 	self->rollslip = roll_slip_gauge_new();
+    base_gauge_add_child(BASE_GAUGE(self), BASE_GAUGE(self->rollslip),
+        self->locations[ROLL_SLIP].x,
+        self->locations[ROLL_SLIP].y
+    );
 
 	self->locations[MARKER_LEFT] = (SDL_Rect){
 	/*The left marker has its arrow pointing right and the arrow X is at marker->w-1*/
 		self->common_center.x - 78 - (generic_layer_w(&self->markers[0])-1),
-		round(BASE_GAUGE(self)->h*0.4) - round(generic_layer_h(&self->markers[0])/2.0) +1,
+		round(base_gauge_h(BASE_GAUGE(self))*0.4) - round(generic_layer_h(&self->markers[0])/2.0) +1,
 		generic_layer_w(&self->markers[MARKER_LEFT]), generic_layer_h(&self->markers[MARKER_LEFT])
 	};
 	self->locations[MARKER_RIGHT] = (SDL_Rect){
@@ -73,39 +77,67 @@ AttitudeIndicator *attitude_indicator_init(AttitudeIndicator *self, int width, i
 	};
 	self->locations[MARKER_CENTER] = (SDL_Rect){
 		self->common_center.x - round((generic_layer_w(&self->markers[2])-1)/2.0),
-		round(BASE_GAUGE(self)->h*0.4) +1,
+		round(base_gauge_h(BASE_GAUGE(self))*0.4) +1,
 		generic_layer_w(&self->markers[MARKER_CENTER]), generic_layer_h(&self->markers[MARKER_CENTER])
 	};
 
 	self->locations[ROLL_SLIP] = (SDL_Rect){
-		self->common_center.x - round((BASE_GAUGE(self->rollslip)->w-1)/2.0),
+		self->common_center.x - round((base_gauge_h(BASE_GAUGE(self->rollslip))-1)/2.0),
 		7,
 		0,0
 	};
-#if USE_SDL_GPU
-    self->tbuffer = GPU_CreateImage(width*2, height*2, GPU_FORMAT_RGBA);
-#else
-	self->buffer = SDL_CreateRGBSurfaceWithFormat(0, width*2, height*2, 32, SDL_PIXELFORMAT_RGBA32);
-	self->renderer =  SDL_CreateSoftwareRenderer(self->buffer);
+    base_gauge_add_child(BASE_GAUGE(self), BASE_GAUGE(self->rollslip),
+        self->locations[ROLL_SLIP].x,
+        self->locations[ROLL_SLIP].y
+    );
+
+#if !USE_SDL_GPU
+	self->state.rbuffer = SDL_CreateRGBSurfaceWithFormat(0, width*2, height*2, 32, SDL_PIXELFORMAT_RGBA32);
+	self->renderer =  SDL_CreateSoftwareRenderer(self->state.rbuffer);
 #endif
     attitude_indicator_get_etched_ball(self);
+
     return self;
+}
+
+static bool attitude_indicator_init_animations(AttitudeIndicator *self)
+{
+    /* We need to pre-create animations as there can/will be two
+     * of them and we need to know which one is which*/
+    BaseAnimation *animation;
+    bool rv;
+
+    animation = base_animation_new(TYPE_FLOAT, 2,
+        &self->roll,
+        &SFV_GAUGE(self->rollslip)->value
+    );
+    if(!animation)
+        return false;
+    rv = base_gauge_add_animation(BASE_GAUGE(self), animation);
+    base_animation_unref(animation);/*base_gauge takes ownership*/
+    if(!rv)
+        return false;
+
+    animation = base_animation_new(TYPE_FLOAT, 1, &self->pitch);
+    if(!animation)
+        return false;
+    rv = base_gauge_add_animation(BASE_GAUGE(self), animation);
+    base_animation_unref(animation);/*base_gauge takes ownership*/
+
+    return rv;
 }
 
 void attitude_indicator_dispose(AttitudeIndicator *self)
 {
-	animated_gauge_dispose(ANIMATED_GAUGE(self));
+	base_gauge_dispose(BASE_GAUGE(self));
 
 	roll_slip_gauge_free(self->rollslip);
 	for(int i = 0; i < 3; i++){
         generic_layer_dispose(&self->markers[i]);
 	}
-#if USE_SDL_GPU
-    if(self->tbuffer)
-        GPU_FreeImage(self->tbuffer);
-#else
-	if(self->buffer)
-		SDL_FreeSurface(self->buffer);
+#if !USE_SDL_GPU
+	if(self->state.buffer)
+		SDL_FreeSurface(self->state.buffer);
 	SDL_DestroyRenderer(self->renderer);
 #endif
     generic_layer_dispose(&self->etched_ball);
@@ -117,11 +149,58 @@ void attitude_indicator_free(AttitudeIndicator *self)
 	free(self);
 }
 
-void attitude_indicator_set_roll(AttitudeIndicator *self, float value)
+bool attitude_indicator_set_roll(AttitudeIndicator *self, float value, bool animated)
 {
-	animated_gauge_set_value(ANIMATED_GAUGE(self->rollslip), value);
-	BUFFERED_GAUGE(self)->damaged = true;
+    BaseAnimation *animation;
+    bool rv;
+
+//    animated = false;
+    if(animated){
+        if(BASE_GAUGE(self)->nanimations == 0){
+            rv = attitude_indicator_init_animations(self);
+            if(!rv)
+                goto fallback;
+        }
+        animation = BASE_GAUGE(self)->animations[AI_ROLL_ANIMATION];
+        base_animation_start(animation, self->roll, value, DEFAULT_DURATION);
+    }else{
+fallback:
+        self->roll = value;
+        roll_slip_gauge_set_value(self->rollslip, value, false);
+        BASE_GAUGE(self)->dirty = true;
+    }
+    return true;
+ }
+
+bool attitude_indicator_set_pitch(AttitudeIndicator *self, float value, bool animated)
+{
+    BaseAnimation *animation;
+    bool rv;
+//    animated = false;
+
+	value = (value > self->size*10) ? self->size*10 + 5 : value;
+	value = (value < self->size*-10) ? self->size*-10 - 5: value;
+
+
+//    printf("%s %p value: %f\n",__FUNCTION__, self, value);
+    if(animated){
+        if(BASE_GAUGE(self)->nanimations == 0){
+            rv = attitude_indicator_init_animations(self);
+            if(!rv)
+                goto fallback;
+        }
+        animation = BASE_GAUGE(self)->animations[AI_PITCH_ANIMATION];
+        base_animation_start(animation, self->pitch, value, DEFAULT_DURATION);
+    }else{
+fallback:
+        if(value != self->pitch){
+            self->pitch = value;
+            BASE_GAUGE(self)->dirty = true;
+        }
+    }
+    return true;
 }
+
 
 Uint32 interpolate_color_p(const SDL_PixelFormat *format, Uint32 from, Uint32 to, float progress)
 {
@@ -170,8 +249,8 @@ SDL_Surface *attitude_indicator_draw_ball(AttitudeIndicator *self)
 
     self->ball_window = (SDL_Rect){
         .x = 0, .y = 0,
-        .w = BASE_GAUGE(self)->w,
-        .h = BASE_GAUGE(self)->h
+        .w = base_gauge_w(BASE_GAUGE(self)),
+        .h = base_gauge_h(BASE_GAUGE(self))
     };
 
     self->ball_all = (SDL_Rect){
@@ -439,83 +518,70 @@ static SDL_Surface *attitude_indicator_get_etched_ball(AttitudeIndicator *self)
 	return self->etched_ball.canvas;
 }
 
-static void attitude_indicator_render_value(AttitudeIndicator *self, float value)
+static void attitude_indicator_update_state(AttitudeIndicator *self, Uint32 dt)
 {
-	SDL_Surface *surface;
-	SDL_Rect ball_pos;
+    BaseAnimation *animation;
 
-
-//	printf("Attitude indicator rendering value %0.2f\n",value);
-
-	value = (value > self->size*10) ? self->size*10 + 5 : value;
-	value = (value < self->size*-10) ? self->size*-10 - 5: value;
-
-    value = value * -1.0;
-    buffered_gauge_clear(BUFFERED_GAUGE(self));
-
+    if(BASE_GAUGE(self)->nanimations > 0){
+        animation = BASE_GAUGE(self)->animations[0];
+        if(!animation->finished){
+            BASE_GAUGE(self->rollslip)->dirty = true;
+        }
+    }
 
     /*First find out a view-sized window into the larger ball buffer for a 0deg pitch*/
-    SDL_Rect win = {
-        .x = self->ball_center.x - (round(BASE_GAUGE(self)->w/2.0) -1), /*Is ball_window useless?*/
-        .y = self->ball_center.y - (round(BASE_GAUGE(self)->h*0.4) -1),
-        .w = BASE_GAUGE(self)->w,
-        .h = BASE_GAUGE(self)->h
+    self->state.win = (SDL_Rect){
+        .x = self->ball_center.x - (round(base_gauge_w(BASE_GAUGE(self))/2.0) -1), /*Is ball_window useless?*/
+        .y = self->ball_center.y - (round(base_gauge_h(BASE_GAUGE(self))*0.4) -1),
+        .w = base_gauge_w(BASE_GAUGE(self)),
+        .h = base_gauge_h(BASE_GAUGE(self))
     };
     /*Then apply to correct y offset to account for pitch*/
-    win.y += attitude_indicator_resolve_increment(self, value);
-    /* Now that we have the correct window, rotate it to account for roll
+    self->state.win.y += attitude_indicator_resolve_increment(self, self->pitch * -1.0);
+    /* Now that we have the correct self->state.window, rotate it to account for roll
      * The rotation center must be 40% of the height and middle width
      * */
-    SDL_Point rcenter = {
-        .x = win.x + (round(win.w/2.0)-1),
-        .y = win.y + (round(win.h*0.4)-1)
+    self->state.rcenter = (SDL_Point){
+        .x = self->state.win.x + (round(self->state.win.w/2.0)-1),
+        .y = self->state.win.y + (round(self->state.win.h*0.4)-1)
     };
+
+    self->state.dst_clip = (SDL_Rect){
+        self->state.rcenter.x - self->state.win.x,
+        self->state.rcenter.y - self->state.win.y,
+        0,0
+    };
+#if !USE_SDL_GPU
+	if(self->roll != 0){
+        SDL_Texture *tex = SDL_CreateTextureFromSurface(self->renderer, self->etched_ball.canvas);
+        SDL_RenderCopyEx(self->renderer, tex, NULL, NULL, self->roll, &rcenter, SDL_FLIP_NONE);
+		SDL_DestroyTexture(tex);
+	}else{
+        SDL_BlitSurface(self->etched_ball.canvas, NULL, self->state.rbuffer, NULL);
+    }
+#endif
+}
+
+static void attitude_indicator_render(AttitudeIndicator *self, Uint32 dt, RenderContext *ctx)
+{
 #if USE_SDL_GPU
-/*    SDL_SetRenderTarget(g_renderer, self->tbuffer);
-    SDL_RenderCopyEx(g_renderer,
-        attitude_indicator_get_etched_ball_texure(self),
-        NULL,
-        NULL,
-        ANIMATED_GAUGE(self->rollslip)->value,
-        &rcenter,
-        SDL_FLIP_NONE);
-    SDL_SetRenderTarget(g_renderer, NULL);
-    buffered_gauge_blit_texture(BUFFERED_GAUGE(self),
-        self->tbuffer,
-        &win,
-        NULL
-    );*/
     if(!self->hide_ball){
-        buffered_gauge_blit_rotated_texture(BUFFERED_GAUGE(self),
-           self->etched_ball.texture,
-           NULL,
-           ANIMATED_GAUGE(self->rollslip)->value,
-           &rcenter,
-           NULL,
-           &(SDL_Rect){rcenter.x - win.x, rcenter.y - win.y,0,0}
-        );
+        base_gauge_blit_rotated_texture(BASE_GAUGE(self), ctx,
+            self->etched_ball.texture,
+            NULL,
+            self->roll,
+            &self->state.rcenter,
+            NULL,
+            &self->state.dst_clip);
     }
 #else
-    surface = self->etched_ball.canvas;
-	if(self->rollslip->super.value != 0){
-        SDL_Texture *tex = SDL_CreateTextureFromSurface(self->renderer, surface);
-        SDL_RenderCopyEx(self->renderer, tex, NULL, NULL, self->rollslip->super.value, &rcenter, SDL_FLIP_NONE);
-		SDL_DestroyTexture(tex);
-        surface = self->buffer;
-	}
-    buffered_gauge_blit(BUFFERED_GAUGE(self), surface, &win, NULL);
+    base_gauge_blit(BASE_GAUGE(self), ctx,
+        self->state.rbuffer,
+        &self->state.win,
+        NULL
+    );
 #endif
-	/*Place the roll indicator*/
-    /* Temp fix, the function triggering the rendering of AttitudeIndicator must also manually render self->rollslip
-     * as it needs to animate its value which is not known here.
-     *
-     * TODO: Either compose AttitudeIndicator with the two gauges artifical horizon and rollslip gauge, or
-     * extract rollslip from attitudeindicator, or something else
-     * */
-//	SDL_BlitSurface(self->rollslip->super.view, NULL, tview, &self->locations[ROLL_SLIP]);
-
-	/*Then place markers in the middle of the *screen* markers don't move*/
-    buffered_gauge_blit_layer(BUFFERED_GAUGE(self), &self->markers[MARKER_LEFT], NULL, &self->locations[MARKER_LEFT]);
-    buffered_gauge_blit_layer(BUFFERED_GAUGE(self), &self->markers[MARKER_RIGHT], NULL, &self->locations[MARKER_RIGHT]);
-    buffered_gauge_blit_layer(BUFFERED_GAUGE(self), &self->markers[MARKER_CENTER], NULL, &self->locations[MARKER_CENTER]);
+    base_gauge_blit_layer(BASE_GAUGE(self), ctx, &self->markers[MARKER_LEFT], NULL, &self->locations[MARKER_LEFT]);
+    base_gauge_blit_layer(BASE_GAUGE(self), ctx, &self->markers[MARKER_RIGHT], NULL, &self->locations[MARKER_RIGHT]);
+    base_gauge_blit_layer(BASE_GAUGE(self), ctx, &self->markers[MARKER_CENTER], NULL, &self->locations[MARKER_CENTER]);
 }

@@ -2,22 +2,31 @@
 #define ROLL_SLIP_GAUGE_H
 
 #include <SDL2/SDL.h>
-#include <SDL2/SDL_image.h>
 
-#include "animated-gauge.h"
+#include "sfv-gauge.h"
+#include "generic-layer.h"
 
 typedef struct{
-	AnimatedGauge super;
+#if !USE_SDL_GPU
+    SDL_Surface *rbuffer; /*rotation buffer*/
+#endif
+}RollSlipGaugeState;
 
-	SDL_Surface *arc;
+typedef struct{
+	SfvGauge super;
+
+    GenericLayer arc;
 
 #if USE_SDL_GPU
 	GPU_Image *arrow;
-    GPU_Image *tarc;
 #else
     SDL_Texture *arrow;
 	SDL_Renderer *renderer;
 #endif
+    SDL_Rect arrow_rect;
+    SDL_Point arrow_center;
+
+    RollSlipGaugeState state;
 }RollSlipGauge;
 
 
@@ -26,4 +35,5 @@ RollSlipGauge *roll_slip_gauge_init(RollSlipGauge *self);
 void roll_slip_gauge_dispose(RollSlipGauge *self);
 void roll_slip_gauge_free(RollSlipGauge *self);
 
+bool roll_slip_gauge_set_value(RollSlipGauge *self, float value, bool animated);
 #endif /* ROLL_SLIP_GAUGE_H */

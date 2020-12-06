@@ -1,7 +1,7 @@
 #ifndef AIRSPEED_INDICATOR_H
 #define AIRSPEED_INDICATOR_H
 
-#include "buffered-gauge.h"
+#include "base-gauge.h"
 #include "ladder-gauge.h"
 #include "odo-gauge.h"
 #include "airspeed-page-descriptor.h"
@@ -10,7 +10,7 @@
 #define RHO_0 1.225 /* kg/m3, Sea level ISA */
 
 typedef struct{
-    BufferedGauge super;
+    BaseGauge super;
 
     LadderGauge *ladder;
     OdoGauge *odo;

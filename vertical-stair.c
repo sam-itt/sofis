@@ -2,24 +2,22 @@
 #include <stdlib.h>
 
 #include <SDL2/SDL_image.h>
-
-#include "SDL_pixels.h"
-#include "SDL_render.h"
-#include "SDL_surface.h"
-#include "animated-gauge.h"
-#include "buffered-gauge.h"
-#include "generic-layer.h"
-#include "misc.h"
-#include "resource-manager.h"
 #include "SDL_pcf.h"
+
+#include "base-gauge.h"
+#include "generic-layer.h"
 #include "vertical-stair.h"
+#include "resource-manager.h"
 #include "sdl-colors.h"
+#include "misc.h"
 
-
-static void vertical_stair_render_value(VerticalStair *self, float value);
-static AnimatedGaugeOps vertical_stair_ops = {
-   .render_value = (ValueRenderFunc)vertical_stair_render_value
+static void vertical_stair_render(VerticalStair *self, Uint32 dt, RenderContext *ctx);
+static void vertical_stair_update_state(VerticalStair *self, Uint32 dt);
+static BaseGaugeOps vertical_stair_ops = {
+   .render = (RenderFunc)vertical_stair_render,
+   .update_state = (StateUpdateFunc)vertical_stair_update_state
 };
+
 
 VerticalStair *vertical_stair_new(const char *bg_img, const char *cursor_img, PCF_StaticFont *font)
 {
@@ -34,7 +32,6 @@ VerticalStair *vertical_stair_new(const char *bg_img, const char *cursor_img, PC
     }
     return self;
 }
-
 
 VerticalStair *vertical_stair_init(VerticalStair *self, const char *bg_img, const char *cursor_img, PCF_StaticFont *font)
 {
@@ -55,19 +52,18 @@ VerticalStair *vertical_stair_init(VerticalStair *self, const char *bg_img, cons
     generic_layer_build_texture(GENERIC_LAYER(&self->scale));
     generic_layer_build_texture(&self->cursor);
 
-    animated_gauge_init(ANIMATED_GAUGE(self),
-        ANIMATED_GAUGE_OPS(&vertical_stair_ops),
+    base_gauge_init(BASE_GAUGE(self),
+        &vertical_stair_ops,
         generic_layer_w(&self->cursor),
         generic_layer_h(GENERIC_LAYER(&self->scale))
     );
-    BUFFERED_GAUGE(self)->max_ops = 8;
 
     return self;
 }
 
 void vertical_stair_dispose(VerticalStair *self)
 {
-    animated_gauge_dispose(ANIMATED_GAUGE(self));
+    base_gauge_dispose(BASE_GAUGE(self));
     vertical_strip_dispose(&self->scale);
     generic_layer_dispose(&self->cursor);
     if(self->font)
@@ -80,53 +76,69 @@ void vertical_stair_free(VerticalStair *self)
     free(self);
 }
 
-static void vertical_stair_render_value(VerticalStair *self, float value)
+bool vertical_stair_set_value(VerticalStair *self, float value, bool animated)
+{
+    return sfv_gauge_set_value(SFV_GAUGE(self), value, animated);
+}
+
+
+static void vertical_stair_update_state(VerticalStair *self, Uint32 dt)
 {
     float y;
+    char number[VS_VALUE_MAX_LEN];
     int ivalue;
-    char number[6]; //5 digits plus \0
-    SDL_Rect cloc; /*Cursor location*/
-    SDL_Rect dst;
+    int len;
 
-    ivalue = round(value);
-    snprintf(number, 6, "% -d", ivalue);
-    vertical_strip_clip_value(&self->scale, &value);
+//    printf("%s %p value: %f\n", __FUNCTION__, self, SFV_GAUGE(self)->value);
+    ivalue = round(SFV_GAUGE(self)->value);
+    len = snprintf(number, VS_VALUE_MAX_LEN, "% -d", ivalue);
+    vertical_strip_clip_value(&self->scale, &SFV_GAUGE(self)->value);
 
-    buffered_gauge_clear(BUFFERED_GAUGE(self));
-    buffered_gauge_blit_layer(BUFFERED_GAUGE(self),
-        GENERIC_LAYER(&self->scale),
-        NULL,
-        &(SDL_Rect){0, 0,
+    y = vertical_strip_resolve_value(&self->scale, SFV_GAUGE(self)->value, true);
+    y = round(round(y) - generic_layer_h(&self->cursor)/2.0);
+    self->state.cloc = (SDL_Rect){
+        1, y,
+        generic_layer_w(&self->cursor),
+        generic_layer_h(&self->cursor)
+    };
+
+    PCF_StaticFontGetSizeRequestRect(self->font, number, &self->state.tloc);
+    SDLExt_RectAlign(&self->state.tloc,
+        &self->state.cloc,
+        HALIGN_LEFT | VALIGN_MIDDLE
+    );
+    self->state.tloc.x += self->font->metrics.characterWidth;
+
+    SDL_Rect glyph, cursor;
+    cursor = self->state.tloc;
+    self->state.nchars = PCF_StaticFontPreWriteString(self->font,
+        len, number,
+        &cursor,
+        VS_VALUE_MAX_LEN-1, self->state.chars
+    );
+}
+
+static void vertical_stair_render(VerticalStair *self, Uint32 dt, RenderContext *ctx)
+{
+    base_gauge_blit_layer(BASE_GAUGE(self), ctx,
+        GENERIC_LAYER(&self->scale), NULL,
+        &(SDL_Rect){
+            0, 0,
             generic_layer_w(GENERIC_LAYER(&self->scale)),
             generic_layer_h(GENERIC_LAYER(&self->scale))
         }
     );
 
-    y = vertical_strip_resolve_value(&self->scale, value, true);
-    y = round(round(y) - generic_layer_h(&self->cursor)/2.0);
-    cloc = (SDL_Rect){
-        1, y,
-        generic_layer_w(&self->cursor),
-        generic_layer_h(&self->cursor)
-    };
-    buffered_gauge_blit_layer(BUFFERED_GAUGE(self), &self->cursor, NULL, &cloc);
+    base_gauge_blit_layer(BASE_GAUGE(self), ctx,
+        &self->cursor, NULL, &self->state.cloc
+    );
 
-    PCF_StaticFontGetSizeRequestRect(self->font, number, &dst);
-    SDLExt_RectAlign(&dst, &cloc, HALIGN_LEFT | VALIGN_MIDDLE);
-    dst.x += self->font->metrics.characterWidth;
-#if USE_SDL_GPU
-    buffered_gauge_static_font_draw_text(BUFFERED_GAUGE(self),
-        &dst, 0,
-        number,
-        self->font,
-        0xFFFF00FF
-    );
-#else
-    buffered_gauge_static_font_draw_text(BUFFERED_GAUGE(self),
-        &dst, 0,
-        number,
-        self->font,
-        SDL_UCKEY(BUFFERED_GAUGE(self)->view)
-    );
-#endif
+    for(int i = 0; i < self->state.nchars; i++){
+        base_gauge_draw_static_font_glyph(BASE_GAUGE(self),
+            ctx,
+            self->font,
+            &self->state.chars[i].src,
+            &self->state.chars[i].dst
+        );
+    }
 }

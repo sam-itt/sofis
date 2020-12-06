@@ -7,21 +7,22 @@
 #include <SDL_gpu.h>
 
 #include "SDL_rect.h"
+#include "base-gauge.h"
 #include "fishbone-gauge.h"
 
-#include "animated-gauge.h"
 #include "generic-ruler.h"
 #include "resource-manager.h"
 #include "sdl-colors.h"
 #include "SDL_pcf.h"
 #include "misc.h"
 
-
 #define view_set_pixel(surface, x, y, color) (Uint32 *)((surface)->pixels)[(y)*(surface)->width+(x)] = (color)
 
-static void fishbone_gauge_render_value(FishboneGauge *self, float value);
-static AnimatedGaugeOps fishbone_gauge_ops = {
-   .render_value = (ValueRenderFunc)fishbone_gauge_render_value
+static void fishbone_gauge_render(FishboneGauge *self, Uint32 dt, RenderContext *ctx);
+static void fishbone_gauge_update_state(FishboneGauge *self, Uint32 dt);
+static BaseGaugeOps fishbone_gauge_ops = {
+   .render = (RenderFunc)fishbone_gauge_render,
+   .update_state = (StateUpdateFunc)fishbone_gauge_update_state
 };
 
 
@@ -146,19 +147,18 @@ FishboneGauge *fishbone_gauge_init(FishboneGauge *self,
         .w = GENERIC_LAYER(&self->ruler)->canvas->w,
         .h = GENERIC_LAYER(&self->ruler)->canvas->h
     };
-    self->cursor_rect = (SDL_Rect){
+    self->state.cursor_rect = (SDL_Rect){
         .x = 0,
         .y = 0,
         .w = self->cursor->canvas->w,
         .h = self->cursor->canvas->h
     };
 
-    animated_gauge_init(ANIMATED_GAUGE(self),
-        ANIMATED_GAUGE_OPS(&fishbone_gauge_ops),
+    base_gauge_init(BASE_GAUGE(self),
+        &fishbone_gauge_ops,
         GENERIC_LAYER(&self->ruler)->canvas->w,
         GENERIC_LAYER(&self->ruler)->canvas->h + extra_h
     );
-    BUFFERED_GAUGE(self)->max_ops = 3;
 
     return self;
 }
@@ -175,7 +175,7 @@ void fishbone_gauge_dispose(FishboneGauge *self)
         generic_layer_free(self->cursor);
     if(self->zones)
         free(self->zones);
-    animated_gauge_dispose(ANIMATED_GAUGE(self));
+    base_gauge_dispose(BASE_GAUGE(self));
 }
 
 /**
@@ -190,27 +190,38 @@ void fishbone_gauge_free(FishboneGauge *self)
     free(self);
 }
 
-/*
- * @brief Implementation of AnimatedGauge::render_value
- *
- * Internal use only
- *
- * @see animated_gauge_render_value
- */
-static void fishbone_gauge_render_value(FishboneGauge *self, float value)
+bool fishbone_gauge_set_value(FishboneGauge *self, float value, bool animated)
+{
+    bool rv = true;
+    BaseAnimation *animation;
+
+    generic_ruler_clip_value(&self->ruler, &value);
+
+    return sfv_gauge_set_value(SFV_GAUGE(self), value, animated);
+}
+
+static void fishbone_gauge_update_state(FishboneGauge *self, Uint32 dt)
 {
     int xinc;
     int cursor_center;
-    generic_ruler_clip_value(&self->ruler, &value);
 
-    xinc = generic_ruler_get_pixel_increment_for(&self->ruler, value);
+    xinc = generic_ruler_get_pixel_increment_for(&self->ruler, SFV_GAUGE(self)->value);
 
     cursor_center = self->cursor->canvas->w/2;
 
-    self->cursor_rect.x =  (self->ruler.ruler_area.x + xinc) + self->ruler_rect.x  - cursor_center;
+    self->state.cursor_rect.x = (self->ruler.ruler_area.x + xinc)
+                                + self->ruler_rect.x
+                                - cursor_center;
+}
 
-    buffered_gauge_clear(BUFFERED_GAUGE(self));
-    //TODO: See vertical-stair.c:99 and have buffered_gauge handle texture/surface switching
-    buffered_gauge_blit_texture(BUFFERED_GAUGE(self), GENERIC_LAYER(&self->ruler)->texture, NULL, &self->ruler_rect);
-    buffered_gauge_blit_texture(BUFFERED_GAUGE(self), self->cursor->texture, NULL, &self->cursor_rect);
+static void fishbone_gauge_render(FishboneGauge *self, Uint32 dt, RenderContext *ctx)
+{
+    base_gauge_blit_layer(BASE_GAUGE(self), ctx,
+        GENERIC_LAYER(&self->ruler),
+        NULL,
+        &self->ruler_rect);
+    base_gauge_blit_layer(BASE_GAUGE(self), ctx,
+        self->cursor,
+        NULL,
+        &self->state.cursor_rect);
 }

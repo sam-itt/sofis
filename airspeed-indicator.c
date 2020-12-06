@@ -1,21 +1,20 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "SDL_surface.h"
+#include "SDL_pcf.h"
+
 #include "airspeed-indicator.h"
 #include "airspeed-page-descriptor.h"
+#include "base-animation.h"
 #include "base-gauge.h"
-#include "buffered-gauge.h"
-#include "misc.h"
 #include "resource-manager.h"
 #include "sdl-colors.h"
-#include "SDL_pcf.h"
-#include "text-gauge.h"
-#include "view.h"
+#include "misc.h"
 
-static void airspeed_indicator_render(AirspeedIndicator *self, Uint32 dt);
-static BufferedGaugeOps airspeed_indicator_ops = {
-    .render = (BufferRenderFunc)airspeed_indicator_render
+static void airspeed_indicator_update_state(AirspeedIndicator *self, Uint32 dt);
+static BaseGaugeOps airspeed_indicator_ops = {
+   .render = (RenderFunc)NULL,
+   .update_state = (StateUpdateFunc)airspeed_indicator_update_state
 };
 
 
@@ -40,14 +39,11 @@ AirspeedIndicator *airspeed_indicator_init(AirspeedIndicator *self, speed_t v_so
     DigitBarrel *db;
     PCF_Font *fnt;
 
-    buffered_gauge_init(BUFFERED_GAUGE(self), &airspeed_indicator_ops, 68, 240+20);
-    BUFFERED_GAUGE(self)->max_ops = 22;
+    base_gauge_init(BASE_GAUGE(self), &airspeed_indicator_ops, 68, 240+20);
 
     descriptor = airspeed_page_descriptor_new( v_so,  v_s1,  v_fe,  v_no,  v_ne);
     self->ladder = ladder_gauge_new((LadderPageDescriptor *)descriptor, -1);
-    buffered_gauge_share_buffer(BUFFERED_GAUGE(self->ladder),
-        BUFFERED_GAUGE(self),
-        0, 0);
+    base_gauge_add_child(BASE_GAUGE(self), BASE_GAUGE(self->ladder), 0, 0);
 
     fnt = resource_manager_get_font(TERMINUS_18);
     db = digit_barrel_new(fnt, 0, 9.999, 1);
@@ -56,13 +52,11 @@ AirspeedIndicator *airspeed_indicator_init(AirspeedIndicator *self, speed_t v_so
             -2, db,
             -2, db
     );
-    buffered_gauge_share_buffer(BUFFERED_GAUGE(self->odo),
-        BUFFERED_GAUGE(self->ladder),
+    base_gauge_add_child(BASE_GAUGE(self), BASE_GAUGE(self->odo),
         25,
-        (BASE_GAUGE(self->ladder)->h-1)/2.0 - BASE_GAUGE(self->odo)->h/2.0 +1
+        (base_gauge_h(BASE_GAUGE(self->ladder))-1)/2.0
+         - base_gauge_h(BASE_GAUGE(self->odo))/2.0 + 1
     );
-
-    buffered_gauge_clear(BUFFERED_GAUGE(self));
 
     self->txt = text_gauge_new(NULL, true, 68, 21);
     self->txt->alignment = HALIGN_CENTER | VALIGN_MIDDLE;
@@ -72,10 +66,9 @@ AirspeedIndicator *airspeed_indicator_init(AirspeedIndicator *self, speed_t v_so
             2, "TASKT-", PCF_DIGITS
         )
     );
-    buffered_gauge_share_buffer(BUFFERED_GAUGE(self->txt),
-        BUFFERED_GAUGE(self),
+    base_gauge_add_child(BASE_GAUGE(self), BASE_GAUGE(self->txt),
         0,
-        BASE_GAUGE(self)->h - 20 - 1
+        base_gauge_h(BASE_GAUGE(self)) - 20 - 1
     );
     text_gauge_set_color(self->txt, SDL_BLACK, BACKGROUND_COLOR);
 
@@ -88,7 +81,7 @@ void airspeed_indicator_dispose(AirspeedIndicator *self)
     ladder_gauge_free(self->ladder);
     odo_gauge_free(self->odo);
     text_gauge_free(self->txt);
-    buffered_gauge_dispose(BUFFERED_GAUGE(self));
+    base_gauge_dispose(BASE_GAUGE(self));
 }
 
 void airspeed_indicator_free(AirspeedIndicator *self)
@@ -108,19 +101,32 @@ bool airspeed_indicator_set_value(AirspeedIndicator *self, float value)
     snprintf(number, 10, "TAS %03dKT", self->tas);
     text_gauge_set_value(self->txt, number);
 
-    animated_gauge_set_value(ANIMATED_GAUGE(self->ladder), value);
-    BUFFERED_GAUGE(self)->damaged = true;
-    return odo_gauge_set_value(self->odo, value);
+    /*TODO after refactor: Create TapeGauge*/
+    BaseAnimation *animation;
+    if(BASE_GAUGE(self)->nanimations == 0){
+        animation = base_animation_new(TYPE_FLOAT, 2,
+            &SFV_GAUGE(self->ladder)->value,
+            &SFV_GAUGE(self->odo)->value
+        );
+        base_gauge_add_animation(BASE_GAUGE(self), animation);
+        base_animation_unref(animation);/*base_gauge takes ownership*/
+    }else{
+        animation = BASE_GAUGE(self)->animations[0];
+    }
+    base_animation_start(animation, SFV_GAUGE(self->ladder)->value, value, DEFAULT_DURATION);
+
+    return true;
 }
 
-static void airspeed_indicator_render(AirspeedIndicator *self, Uint32 dt)
+static void airspeed_indicator_update_state(AirspeedIndicator *self, Uint32 dt)
 {
-    buffered_gauge_clear(BUFFERED_GAUGE(self));
-    buffered_gauge_draw_outline(BUFFERED_GAUGE(self), &SDL_WHITE, NULL); /*Not really needed*/
+    BaseAnimation *animation;
 
-    buffered_gauge_paint_buffer(BUFFERED_GAUGE(self->ladder), dt);
-    buffered_gauge_paint_buffer(BUFFERED_GAUGE(self->odo), dt);
-    buffered_gauge_paint_buffer(BUFFERED_GAUGE(self->txt), dt);
-    if(animated_gauge_moving(ANIMATED_GAUGE(self->ladder)) || animated_gauge_moving(ANIMATED_GAUGE(self->odo)))
-        BUFFERED_GAUGE(self)->damaged = true;
+    if(BASE_GAUGE(self)->nanimations > 0){
+        animation = BASE_GAUGE(self)->animations[0];
+        if(!animation->finished){
+            BASE_GAUGE(self->ladder)->dirty = true;
+            BASE_GAUGE(self->odo)->dirty = true;
+        }
+    }
 }

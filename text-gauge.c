@@ -3,17 +3,23 @@
 #include <string.h>
 #include <stdarg.h>
 
-#include "SDL_pixels.h"
-#include "buffered-gauge.h"
-#include "sdl-colors.h"
+#include "SDL_gpu.h"
 #include "SDL_pcf.h"
+#include "SDL_pixels.h"
+#include "SDL_rect.h"
+#include "base-gauge.h"
+#include "generic-layer.h"
 #include "text-gauge.h"
+#include "sdl-colors.h"
+#include "misc.h"
 
-static void text_gauge_render(TextGauge *self, Uint32 dt);
-
-static BufferedGaugeOps text_gauge_ops = {
-    .render = (BufferRenderFunc)text_gauge_render
+static void text_gauge_update_state(TextGauge *self, Uint32 dt);
+static void text_gauge_render(TextGauge *self, Uint32 dt, RenderContext *ctx);
+static BaseGaugeOps text_gauge_ops = {
+   .render = (RenderFunc)text_gauge_render,
+   .update_state = (StateUpdateFunc)text_gauge_update_state
 };
+
 
 TextGauge *text_gauge_new(const char *value, bool outlined, int w, int h)
 {
@@ -31,8 +37,8 @@ TextGauge *text_gauge_new(const char *value, bool outlined, int w, int h)
 
 TextGauge *text_gauge_init(TextGauge *self, const char *value, bool outlined, int w, int h)
 {
-    buffered_gauge_init(BUFFERED_GAUGE(self),
-        BUFFERED_GAUGE_OPS(&text_gauge_ops),
+    base_gauge_init(BASE_GAUGE(self),
+        &text_gauge_ops,
         w, h
     );
 
@@ -44,7 +50,7 @@ TextGauge *text_gauge_init(TextGauge *self, const char *value, bool outlined, in
 
 void text_gauge_free(TextGauge *self)
 {
-    buffered_gauge_dispose(BUFFERED_GAUGE(self));
+    base_gauge_dispose(BASE_GAUGE(self));
 
     if(self->value)
         free(self->value);
@@ -52,6 +58,12 @@ void text_gauge_free(TextGauge *self)
         PCF_FreeStaticFont(self->font.static_font);
     else
         PCF_CloseFont(self->font.font);
+    if(self->state.chars)
+        free(self->state.chars);
+#if USE_SDL_GPU
+    if(self->buffer)
+        generic_layer_free(self->buffer);
+#endif
     free(self);
 }
 
@@ -86,16 +98,10 @@ void text_gauge_set_static_font(TextGauge *self, PCF_StaticFont *font)
 
 void text_gauge_set_color(TextGauge *self, SDL_Color color, Uint8 which)
 {
-    Uint32 icol;
-#if USE_SDL_RENDERER
-    icol = (Uint32)((color.a << 24) + (color.r << 16) + (color.g << 8) + (color.b << 0));
-#else
-    icol = SDL_MapRGBA(buffered_gauge_get_view(BUFFERED_GAUGE(self))->format, color.r, color.g, color.b, color.a);
-#endif
     if(which == TEXT_COLOR)
-        self->text_color = icol;
+        self->text_color = color;
     else
-        self->bg_color = icol;
+        self->bg_color = color;
 }
 
 bool text_gauge_set_value(TextGauge *self, const char *value)
@@ -109,28 +115,122 @@ bool text_gauge_set_value(TextGauge *self, const char *value)
         tmp = realloc(self->value, (newlen+1) * sizeof(char));
         if(!tmp) return false;
         self->value = tmp;
+        self->asize = newlen;
     }
+
+    if(newlen > self->state.achars){
+        void *tmp;
+        tmp = realloc(self->state.chars, newlen * sizeof(PCF_StaticFontPatch));
+        if(!tmp) return false;
+        self->state.chars = tmp;
+
+        self->state.achars = newlen;
+    }
+
     strcpy(self->value, value);
     self->len = newlen;
     self->value[self->len] = '\0';
 
-    BUFFERED_GAUGE(self)->damaged = true;
+    BASE_GAUGE(self)->dirty = true;
     return true;
 }
 
-static void text_gauge_render(TextGauge *self, Uint32 dt)
+static inline void text_gauge_static_font_update_state(TextGauge *self, Uint32 dt)
+{
+    SDL_Rect farea;
+    SDL_Rect glyph, cursor;
+    PCF_StaticFont *sfont;
+
+    if(!self->state.chars)
+        return;
+
+    sfont = self->font.static_font;
+
+    farea = (SDL_Rect){
+        .x = 0,
+        .y = 0,
+        .w = base_gauge_w(BASE_GAUGE(self)),
+        .h = base_gauge_h(BASE_GAUGE(self))
+    };
+
+    PCF_StaticFontGetSizeRequestRect(sfont, self->value, &cursor);
+    SDLExt_RectAlign(&cursor, &farea, self->alignment);
+    self->state.nchars = PCF_StaticFontPreWriteString(sfont,
+        self->len, self->value,
+        &cursor,
+        self->state.achars, self->state.chars
+    );
+}
+
+static inline void text_gauge_regular_font_update_state(TextGauge *self, Uint32 dt)
+{
+    if(!self->buffer){
+        self->buffer = generic_layer_new(base_gauge_w(BASE_GAUGE(self)), base_gauge_h(BASE_GAUGE(self)));
+    }
+
+    view_font_draw_text(self->buffer->canvas, NULL,
+        self->alignment, self->value,
+        self->font.font,
+        SDL_MapRGBA(self->buffer->canvas->format,
+            self->text_color.r, self->text_color.g,
+            self->text_color.b, self->text_color.a
+        ),
+        SDL_MapRGBA(self->buffer->canvas->format,
+            self->bg_color.r, self->bg_color.g,
+            self->bg_color.b, self->bg_color.a
+        )
+    );
+    generic_layer_update_texture(self->buffer);
+    printf("redrawn backbuffer\n");
+}
+
+static void text_gauge_update_state(TextGauge *self, Uint32 dt)
 {
     if(!self->font.font) return; /*Wait until either font has been set*/
 
-    if(self->value){
-        if(self->font.is_static)
-            buffered_gauge_static_font_draw_text(BUFFERED_GAUGE(self), NULL, self->alignment, self->value, self->font.static_font, self->bg_color);
-        else
-            buffered_gauge_font_draw_text(BUFFERED_GAUGE(self), NULL, self->alignment, self->value, self->font.font, self->text_color, self->bg_color);
+    if(self->font.is_static){
+        text_gauge_static_font_update_state(self, dt);
     }else{
-        buffered_gauge_fill(BUFFERED_GAUGE(self), NULL, &self->bg_color, true);
+        text_gauge_regular_font_update_state(self, dt);
     }
+}
+
+static inline void text_gauge_static_font_render(TextGauge *self, Uint32 dt,
+                                                 RenderContext *ctx)
+{
+
+    base_gauge_fill(BASE_GAUGE(self), ctx, NULL, &self->bg_color, false);
+    if(self->outlined)
+        base_gauge_draw_outline(BASE_GAUGE(self), ctx, &SDL_WHITE, NULL);
+
+    for(int i = 0; i < self->state.nchars; i++){
+        base_gauge_draw_static_font_glyph(BASE_GAUGE(self),
+            ctx,
+            self->font.static_font,
+            &self->state.chars[i].src,
+            &self->state.chars[i].dst
+        );
+    }
+}
+
+static inline void text_gauge_regular_font_render(TextGauge *self, Uint32 dt,
+                                                 RenderContext *ctx)
+{
+
+    base_gauge_fill(BASE_GAUGE(self), ctx, NULL, &self->bg_color, false);
+    base_gauge_blit_layer(BASE_GAUGE(self), ctx, self->buffer, NULL, NULL);
 
     if(self->outlined)
-        buffered_gauge_draw_outline(BUFFERED_GAUGE(self), &SDL_WHITE, NULL);
+        base_gauge_draw_outline(BASE_GAUGE(self), ctx, &SDL_WHITE, NULL);
+}
+
+static void text_gauge_render(TextGauge *self, Uint32 dt, RenderContext *ctx)
+{
+    if(!self->font.font) return; /*Wait until either font has been set*/
+
+    if(self->font.is_static){
+        text_gauge_static_font_render(self, dt, ctx);
+    }else{
+        text_gauge_regular_font_render(self, dt, ctx);
+    }
 }

@@ -6,7 +6,7 @@ FGCONN=$(FG_IO)/flightgear-connector
 FGTAPE=$(FG_IO)/fg-tape
 FG_ROAM=$(SRCDIR)/fg-roam
 CGLM=$(FG_ROAM)/lib/cglm/include
-
+ENABLE_3D=0
 
 CC=gcc
 CFLAGS=-g3 -O0 `pkg-config glib-2.0 sdl2 SDL2_image --cflags` \
@@ -22,7 +22,8 @@ CFLAGS=-g3 -O0 `pkg-config glib-2.0 sdl2 SDL2_image --cflags` \
 	   -DTERRAIN_ROOT=\"/home/samuel/dev/Terrain\" \
 	   -DSKY_ROOT=\"/home/samuel/dev/efis-hud/fg-roam/src\" \
 	   -DTEX_ROOT=\"/home/samuel/dev/textures\" \
-	   -DENABLE_PERF_COUNTERS=1
+	   -DENABLE_PERF_COUNTERS=1 \
+	   -DENABLE_3D=$(ENABLE_3D)
 LDFLAGS=-lz -lm `pkg-config glib-2.0 sdl2 SDL2_image --libs` -Wl,--as-needed -lSDL2_gpu -lGL -lGLU
 EXEC=test-sdl
 #SRC= $(wildcard $(SRCDIR)/*.c)
@@ -30,7 +31,9 @@ SRC= $(filter-out $(SRCDIR)/main.c $(SRCDIR)/testbench.c, $(wildcard $(SRCDIR)/*
 SRC+= $(wildcard $(SRCDIR)/sdl-pcf/src/*.c)
 SRC+= $(filter-out $(FGCONN)/fg-connector-test.c, $(wildcard $(FGCONN)/*.c))
 SRC+= $(filter-out $(FGTAPE)/fg-tape-reader.c, $(wildcard $(FGTAPE)/*.c))
+ifeq ($(ENABLE_3D), 1)
 SRC+= $(filter-out $(FG_ROAM)/src/view-gl.c, $(wildcard $(FG_ROAM)/src/*.c))
+endif
 OBJ= $(SRC:.c=.o)
 MAIN_OBJ=main.o
 TEST_OBJ=testbench.o

@@ -1,8 +1,7 @@
 #ifndef ATTITUDE_INDICATOR_H
 #define ATTITUDE_INDICATOR_H
 
-#include "SDL_render.h"
-#include "animated-gauge.h"
+#include "base-gauge.h"
 #include "generic-layer.h"
 #include "roll-slip-gauge.h"
 
@@ -12,13 +11,27 @@
 #define ROLL_SLIP 3
 #define LOCATION_MAX 5
 
-typedef struct{
-	int x,y;
-}Point2D;
+typedef enum{
+    AI_ROLL_ANIMATION,
+    AI_PITCH_ANIMATION,
+    N_AI_ANIMATIONS
+}AIttitudeIndicatorAnimation;
 
 typedef struct{
-    AnimatedGauge super;
-	Point2D common_center;
+    SDL_Point rcenter;
+    SDL_Rect dst_clip;
+    SDL_Rect win;
+#if !USE_SDL_GPU
+    SDL_Surface *rbuffer; /*rotation buffer*/
+#endif
+}AttitudeIndicatorState;
+
+typedef struct{
+    BaseGauge super;
+	SDL_Point common_center;
+
+    float roll; /*pitch?*/
+    float pitch;
 
 	RollSlipGauge *rollslip;
 
@@ -30,23 +43,20 @@ typedef struct{
 	int ball_horizon;
     SDL_Point ball_center;
 
-	Point2D ruler_center;
+	SDL_Point ruler_center;
 	int ruler_middle;
 	int ruler_middlex;
-//	int size;
-
 
     GenericLayer markers[3]; //left, right, center
 	SDL_Rect locations[LOCATION_MAX];
-#if USE_SDL_GPU
-    GPU_Image *tbuffer;
-#else
-	SDL_Surface *buffer;
+#if !USE_SDL_GPU
 	SDL_Renderer *renderer;
 	SDL_Texture *horizon;
 #endif
 
     GenericLayer etched_ball;
+
+    AttitudeIndicatorState state;
 }AttitudeIndicator;
 
 
@@ -55,7 +65,8 @@ AttitudeIndicator *attitude_indicator_init(AttitudeIndicator *self, int width, i
 void attitude_indicator_dispose(AttitudeIndicator *self);
 void attitude_indicator_free(AttitudeIndicator *self);
 
-void attitude_indicator_set_roll(AttitudeIndicator *self, float value);
+bool attitude_indicator_set_roll(AttitudeIndicator *self, float value, bool animated);
+bool attitude_indicator_set_pitch(AttitudeIndicator *self, float value, bool animated);
 
 AttitudeIndicator *attitude_indicator_init(AttitudeIndicator *self, int width, int height);
 
