@@ -42,7 +42,7 @@ OdoGauge *gauge = NULL;
 LadderGauge *ladder = NULL;
 OdoGauge *wheel = NULL;
 OdoGauge *odo = NULL;
-/*AltIndicator *alt_ind = NULL;*/
+AltIndicator *alt_ind = NULL;
 /*VerticalStair *stair = NULL;*/
 /*AltGroup *group = NULL;*/
 /*AirspeedIndicator *asi = NULL;*/
@@ -122,7 +122,7 @@ bool handle_keyboard(SDL_KeyboardEvent *event, Uint32 elapsed)
                 alt += ALT_INC;
                 ladder_gauge_set_value(ladder, alt, true);
                 odo_gauge_set_value(wheel, alt, true);
-/*                alt_indicator_set_value(alt_ind, alt);*/
+                alt_indicator_set_value(alt_ind, alt, true);
                 /*//alt_group_set_altitude(group, alt);*/
                 /*alt_group_set_values(group, alt, vs);*/
                 /*basic_hud_set(hud, 1, ALTITUDE, alt);*/
@@ -136,7 +136,7 @@ bool handle_keyboard(SDL_KeyboardEvent *event, Uint32 elapsed)
                 alt -= ALT_INC;
                 ladder_gauge_set_value(ladder, alt, true);
                 odo_gauge_set_value(wheel, alt, true);
-/*                alt_indicator_set_value(alt_ind, alt);*/
+                alt_indicator_set_value(alt_ind, alt, true);
                 /*//alt_group_set_altitude(group, alt);*/
                 /*alt_group_set_values(group, alt, vs);*/
                 /*basic_hud_set(hud, 1, ALTITUDE, alt);*/
@@ -225,7 +225,7 @@ bool handle_keyboard(SDL_KeyboardEvent *event, Uint32 elapsed)
         case SDLK_SPACE:
             if(event->state == SDL_PRESSED){
                 printf("Alt is: %f\n", alt);
-                printf("TextGauge value: %s\n", txt->value);
+//                printf("TextGauge value: %s\n", txt->value);
             }
             break;
 
@@ -349,8 +349,8 @@ int main(int argc, char **argv)
     );
     odo_gauge_set_value(odo, odo_val, true);
 
-/*    alt_ind = alt_indicator_new();*/
-    /*alt_indicator_set_value(alt_ind, alt);*/
+    alt_ind = alt_indicator_new();
+    alt_indicator_set_value(alt_ind, alt, true);
 
     /*stair = vertical_stair_new(*/
         /*"vs-bg.png",*/
@@ -404,8 +404,6 @@ int main(int argc, char **argv)
         resource_manager_get_font(TERMINUS_24)
     );
 #endif
-
-
     text_gauge_set_color(txt, SDL_WHITE, TEXT_COLOR);
     text_gauge_set_color(txt, SDL_BLACK, BACKGROUND_COLOR);
     SDL_Rect txtrect = {SCREEN_WIDTH/2.0, SCREEN_HEIGHT/2.0,0,0};
@@ -494,13 +492,13 @@ int main(int argc, char **argv)
 #else
         SDL_FillRect(screenSurface, NULL, SDL_UFBLUE(screenSurface));
 #endif
-        base_gauge_render(BASE_GAUGE(ladder), elapsed, &(RenderContext){rtarget, &lrect, NULL});
+//        base_gauge_render(BASE_GAUGE(ladder), elapsed, &(RenderContext){rtarget, &lrect, NULL});
 //void base_gauge_render(BaseGauge *self, Uint32 dt, RenderTarget destination, SDL_Rect *location, SDL_Rect *portion);
-        base_gauge_render(BASE_GAUGE(gauge), elapsed, &(RenderContext){rtarget, &dst, NULL});
-        base_gauge_render(BASE_GAUGE(wheel), elapsed, &(RenderContext){rtarget, &wheelrect, NULL});
-        base_gauge_render(BASE_GAUGE(odo), elapsed, &(RenderContext){rtarget, &odorect, NULL});
+//        base_gauge_render(BASE_GAUGE(gauge), elapsed, &(RenderContext){rtarget, &dst, NULL});
+//        base_gauge_render(BASE_GAUGE(wheel), elapsed, &(RenderContext){rtarget, &wheelrect, NULL});
+//        base_gauge_render(BASE_GAUGE(odo), elapsed, &(RenderContext){rtarget, &odorect, NULL});
 
-//        base_gauge_render(BASE_GAUGE(alt_ind), elapsed, rtarget, &airect);
+        base_gauge_render(BASE_GAUGE(alt_ind), elapsed, &(RenderContext){rtarget, &airect, NULL});
 //        base_gauge_render(BASE_GAUGE(stair), elapsed, rtarget, &vrect);
 
 //        base_gauge_render(BASE_GAUGE(group), elapsed, rtarget, &airect);
@@ -512,7 +510,7 @@ int main(int argc, char **argv)
 //        base_gauge_render(BASE_GAUGE(ai), elapsed, rtarget, NULL);
 
 //        base_gauge_render(BASE_GAUGE(hud), elapsed, rtarget, &whole);
-        base_gauge_render(BASE_GAUGE(txt), elapsed, &(RenderContext){rtarget, &txtrect, NULL});
+//        base_gauge_render(BASE_GAUGE(txt), elapsed, &(RenderContext){rtarget, &txtrect, NULL});
 //        base_gauge_render(BASE_GAUGE(panel), elapsed, rtarget, &sprect);
 //        base_gauge_render(BASE_GAUGE(elevator), elapsed, rtarget, &center_rect);
 //        base_gauge_render(BASE_GAUGE(fish), elapsed, rtarget, &center_rect);
@@ -569,7 +567,7 @@ int main(int argc, char **argv)
     ladder_gauge_free(ladder);
     /*alt_group_free(group);*/
     /*airspeed_indicator_free(asi);*/
-    /*alt_indicator_free(alt_ind);*/
+    alt_indicator_free(alt_ind);
     /*vertical_stair_free(stair);*/
     /*roll_slip_gauge_free(rsg);*/
     /*attitude_indicator_free(ai);*/

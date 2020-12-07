@@ -113,7 +113,7 @@ void base_gauge_render(BaseGauge *self, Uint32 dt, RenderContext *ctx)
     for(int i = 0; i < self->nchildren; i++){
         SDL_Rect child_location = {
             .x = ctx->location->x + self->children[i]->state.frame.x,
-            .y = ctx->location->y + self->children[i]->state.frame.x,
+            .y = ctx->location->y + self->children[i]->state.frame.y,
             /*The following are only here to prevent distortion when using
              * SDL_Renderer/SDL_Gpu/OpenGL */
             .w = self->children[i]->state.frame.w,
