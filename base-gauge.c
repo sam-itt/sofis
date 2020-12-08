@@ -105,13 +105,13 @@ void base_gauge_render(BaseGauge *self, Uint32 dt, RenderContext *ctx)
                 self->dirty = true;
         }
     }
-    //TODO after refactor: update_state is mandatory, provide a standard or remove the test and let fail
     if(self->dirty){
         if(self->ops->update_state)
             self->ops->update_state(self, dt);
         self->dirty = false;
     }
-    self->ops->render(self, dt, ctx);
+    if(self->ops->render)
+        self->ops->render(self, dt, ctx);
     for(int i = 0; i < self->nchildren; i++){
         SDL_Rect child_location = {
             .x = ctx->location->x + self->children[i]->state.frame.x,
