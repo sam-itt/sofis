@@ -43,6 +43,7 @@ typedef struct{
     float time_progress;
 
     bool finished;
+    bool last_value_reached;
     size_t refcount; /*must be the same type as ntargets*/
 }BaseAnimation;
 
@@ -54,5 +55,5 @@ void base_animation_unref(BaseAnimation *self);
 void base_animation_ref(BaseAnimation *self);
 
 void base_animation_start(BaseAnimation *self, float from, float to, float duration);
-void base_animation_loop(BaseAnimation *self, uint32_t dt);
+bool base_animation_loop(BaseAnimation *self, uint32_t dt);
 #endif /* BASE_ANIMATION_H */

@@ -95,12 +95,14 @@ bool base_gauge_add_animation(BaseGauge *self, BaseAnimation *animation)
 
 void base_gauge_render(BaseGauge *self, Uint32 dt, RenderContext *ctx)
 {
+    bool rv;
     for(int i = 0; i < self->nanimations; i++){
         if(!self->animations[i]->finished){
-            base_animation_loop(self->animations[i], dt);
+            rv = base_animation_loop(self->animations[i], dt);
             /*If at least one animation has changed something
              * we need to retrace */
-            self->dirty = true;
+            if(rv)
+                self->dirty = true;
         }
     }
     //TODO after refactor: update_state is mandatory, provide a standard or remove the test and let fail

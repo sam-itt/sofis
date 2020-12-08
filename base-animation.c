@@ -79,6 +79,7 @@ void base_animation_start(BaseAnimation *self, float from, float to, float durat
     self->duration = duration;
     self->time_progress = 0.0;
     self->finished = false;
+    self->last_value_reached = false;
 }
 
 /**
@@ -87,10 +88,23 @@ void base_animation_start(BaseAnimation *self, float from, float to, float durat
  * @param dt time elapsed since last call (milliseconds)
  * @return value matching the given time
  * */
-void base_animation_loop(BaseAnimation *self, uint32_t dt)
+bool base_animation_loop(BaseAnimation *self, uint32_t dt)
 {
     float progress;
     float dv;
+    float new_value;
+
+    /* We don't set finished when setting the last value
+     * to be called one more time to allow gauges that have
+     * children to process the last value.
+     * Otherwise self->finished whould be true in the gauge's
+     * update_state during the iteration where the last value
+     * has been reached
+     */
+    if(self->last_value_reached){
+        self->finished = true;
+        return false;
+    }
 
     self->time_progress += dt; //millis
     progress = self->time_progress / self->duration; /*percentage*/
@@ -98,8 +112,11 @@ void base_animation_loop(BaseAnimation *self, uint32_t dt)
         progress = 1.0f;
 
     dv = self->end - self->start;
-    if(self->targets_type == TYPE_FLOAT)
-        base_animation_process_floats(self, self->start + dv * progress);
+    new_value = self->start + dv * progress;
+    if(self->targets_type == TYPE_FLOAT){
+        base_animation_process_floats(self, new_value);
+    }
+    return true;
 }
 
 static inline void base_animation_process_floats(BaseAnimation *self, float new_value)
@@ -107,6 +124,6 @@ static inline void base_animation_process_floats(BaseAnimation *self, float new_
     for(int i = 0; i < self->ntargets; i++){
         *((float *)self->targets[i]) = new_value;
     }
-    if(new_value == self->end)
-        self->finished = true;
+   if(new_value == self->end)
+       self->last_value_reached = true;
 }
