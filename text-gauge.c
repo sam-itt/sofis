@@ -159,11 +159,13 @@ static inline void text_gauge_static_font_update_state(TextGauge *self, Uint32 d
     /*avoid stretching when using SDL_Renderer*/
     cursor.w = sfont->metrics.characterWidth;
 
+    self->state.nchars = 0;
     for(int i = 0; i < self->len; i++){
         if( PCF_StaticFontGetCharRect(sfont, self->value[i], &glyph) != 0){ /*0 means white space*/
             /*h and w are implied as the values found in sfont->metrics*/
-            self->state.chars[i].src = (SDL_Point){glyph.x, glyph.y};
-            self->state.chars[i].dst = (SDL_Point){cursor.x, cursor.y};
+            self->state.chars[self->state.nchars].src = (SDL_Point){glyph.x, glyph.y};
+            self->state.chars[self->state.nchars].dst = (SDL_Point){cursor.x, cursor.y};
+            self->state.nchars++;
         }
         cursor.x += sfont->metrics.characterWidth;
     }
@@ -211,7 +213,7 @@ static inline void text_gauge_static_font_render(TextGauge *self, Uint32 dt,
     if(self->outlined)
         base_gauge_draw_outline(BASE_GAUGE(self), ctx, &SDL_WHITE, NULL);
 
-    for(int i = 0; i < self->len; i++){
+    for(int i = 0; i < self->state.nchars; i++){
         base_gauge_draw_static_font_glyph(BASE_GAUGE(self),
             ctx,
             self->font.static_font,

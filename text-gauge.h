@@ -18,6 +18,7 @@ typedef struct{
 typedef struct{
     TextGaugeFontPatch *chars;
     size_t achars; /*Allocated chars*/
+    int nchars;
 }TextGaugeState;
 
 typedef struct{
