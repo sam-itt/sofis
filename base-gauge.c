@@ -388,3 +388,47 @@ void base_gauge_draw_static_font_glyph(BaseGauge *self, RenderContext *ctx,
     base_gauge_blit(self, ctx, font->raster, src_rect, dst_rect)
 #endif
 }
+
+int base_gauge_blit_rotated_texture(BaseGauge *self, RenderContext *ctx,
+                                    GPU_Image *src, SDL_Rect *srcrect,
+                                    double angle, SDL_Point *about,
+                                    SDL_Rect *dstrect, SDL_Rect *clip)
+{
+    SDL_Rect fdst; /*final destination*/
+    SDL_Rect fclip; /*final clip*/
+
+    if(dstrect){
+        fdst = rect_offset(dstrect, ctx->location);
+    }else{
+        fdst = (SDL_Rect){
+            .x = 0,
+            .y = 0,
+            .w = base_gauge_w(self),
+            .h = base_gauge_h(self)
+        };
+        fdst = rect_offset(&fdst, ctx->location);
+    }
+    if(clip)
+        fclip = rect_offset(clip, ctx->location);
+
+	if(!clip){
+		GPU_BlitRectX(src,
+			srcrect ? &rectf(srcrect) : NULL,
+			ctx->target.target,
+			&rectf(&fdst),
+			angle,
+			about->x, about->y,
+			GPU_FLIP_NONE
+		);
+	}else{
+		GPU_BlitTransformX(src,
+			srcrect ? &rectf(srcrect) : NULL,
+			ctx->target.target,
+			fclip.x, fclip.y,
+			about->x, about->y,
+			angle, 1,1
+		);
+	}
+    return 1;
+}
+

@@ -86,4 +86,8 @@ void base_gauge_draw_static_font_glyph(BaseGauge *self, RenderContext *ctx,
                                        PCF_StaticFont *font,
                                        SDL_Point *src, SDL_Point *dst);
 
+int base_gauge_blit_rotated_texture(BaseGauge *self, RenderContext *ctx,
+                                    GPU_Image *src, SDL_Rect *srcrect,
+                                    double angle, SDL_Point *about,
+                                    SDL_Rect *dstrect, SDL_Rect *clip);
 #endif /* BASE_GAUGE_H */
