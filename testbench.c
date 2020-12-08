@@ -44,7 +44,7 @@ OdoGauge *wheel = NULL;
 OdoGauge *odo = NULL;
 /*AltIndicator *alt_ind = NULL;*/
 VerticalStair *stair = NULL;
-/*AltGroup *group = NULL;*/
+AltGroup *group = NULL;
 /*AirspeedIndicator *asi = NULL;*/
 /*AttitudeIndicator *ai = NULL;*/
 /*RollSlipGauge *rsg = NULL;*/
@@ -123,8 +123,8 @@ bool handle_keyboard(SDL_KeyboardEvent *event, Uint32 elapsed)
                 ladder_gauge_set_value(ladder, alt, true);
                 odo_gauge_set_value(wheel, alt, true);
                 /*alt_indicator_set_value(alt_ind, alt, true);*/
-                /*//alt_group_set_altitude(group, alt);*/
-                /*alt_group_set_values(group, alt, vs);*/
+                //alt_group_set_altitude(group, alt);
+                alt_group_set_values(group, alt, vs);
                 /*basic_hud_set(hud, 1, ALTITUDE, alt);*/
                 sprintf(txtbuf, "Altitude: %0.2f", alt);
                 text_gauge_set_value(txt, txtbuf);
@@ -137,8 +137,8 @@ bool handle_keyboard(SDL_KeyboardEvent *event, Uint32 elapsed)
                 ladder_gauge_set_value(ladder, alt, true);
                 odo_gauge_set_value(wheel, alt, true);
                 /*alt_indicator_set_value(alt_ind, alt, true);*/
-                /*//alt_group_set_altitude(group, alt);*/
-                /*alt_group_set_values(group, alt, vs);*/
+                //alt_group_set_altitude(group, alt);
+                alt_group_set_values(group, alt, vs);
                 /*basic_hud_set(hud, 1, ALTITUDE, alt);*/
                 sprintf(txtbuf, "Altitude: %0.2f", alt);
                 text_gauge_set_value(txt, txtbuf);
@@ -170,7 +170,7 @@ bool handle_keyboard(SDL_KeyboardEvent *event, Uint32 elapsed)
 //                if(vs < stair->scale.end)
                     vs += VARIO_INC;
                 vertical_stair_set_value(stair, vs, true);
-                /*alt_group_set_vertical_speed(group, vs);*/
+                alt_group_set_vertical_speed(group, vs);
                 /*basic_hud_set(hud, 1, VERTICAL_SPEED, vs);*/
             }
             break;
@@ -179,7 +179,7 @@ bool handle_keyboard(SDL_KeyboardEvent *event, Uint32 elapsed)
 //                if(vs > stair->scale.start)
                     vs -= VARIO_INC;
                 vertical_stair_set_value(stair, vs, true);
-                /*alt_group_set_vertical_speed(group, vs);*/
+                alt_group_set_vertical_speed(group, vs);
                 /*basic_hud_set(hud, 1, VERTICAL_SPEED, vs);*/
             }
             break;
@@ -360,8 +360,8 @@ int main(int argc, char **argv)
 
     vertical_stair_set_value(stair, vs, true);
 
-    /*group = alt_group_new();*/
-    /*alt_group_set_values(group, alt, vs);*/
+    group = alt_group_new();
+    alt_group_set_values(group, alt, vs);
 
 
     /*asi = airspeed_indicator_new(50,60,85,155,200);*/
@@ -501,7 +501,7 @@ int main(int argc, char **argv)
         /*base_gauge_render(BASE_GAUGE(alt_ind), elapsed, &(RenderContext){rtarget, &airect, NULL});*/
         base_gauge_render(BASE_GAUGE(stair), elapsed, &(RenderContext){rtarget, &vrect, NULL});
 
-//        base_gauge_render(BASE_GAUGE(group), elapsed, rtarget, &airect);
+        base_gauge_render(BASE_GAUGE(group), elapsed, &(RenderContext){rtarget, &airect, NULL});
 //        base_gauge_render(BASE_GAUGE(asi), elapsed, rtarget, &vrect);
 //
 
@@ -565,7 +565,7 @@ int main(int argc, char **argv)
     odo_gauge_free(wheel);
     odo_gauge_free(odo);
     ladder_gauge_free(ladder);
-    /*alt_group_free(group);*/
+    alt_group_free(group);
     /*airspeed_indicator_free(asi);*/
     /*alt_indicator_free(alt_ind);*/
     vertical_stair_free(stair);

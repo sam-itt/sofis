@@ -6,11 +6,13 @@
 #include "resource-manager.h"
 #include "sdl-colors.h"
 #include "SDL_pcf.h"
+#include "vertical-stair.h"
 
-static void alt_group_render(AltGroup *self, Uint32 dt, RenderTarget destination, SDL_Rect *location);
 static BaseGaugeOps alt_group_ops = {
-    .render = (RenderFunc)alt_group_render
+   .render = (RenderFunc)NULL,
+   .update_state = (StateUpdateFunc)NULL
 };
+
 
 AltGroup *alt_group_new(void)
 {
@@ -38,9 +40,16 @@ AltGroup *alt_group_init(AltGroup *self)
     base_gauge_init(
         BASE_GAUGE(self),
         &alt_group_ops,
-        BASE_GAUGE(self->altimeter)->w + BASE_GAUGE(self->vsi)->w,
-        (BASE_GAUGE(self->vsi)->h > BASE_GAUGE(self->altimeter)->h) ?
-            BASE_GAUGE(self->vsi)->h : BASE_GAUGE(self->altimeter)->h
+        base_gauge_w(BASE_GAUGE(self->altimeter)) + base_gauge_w(BASE_GAUGE(self->vsi)),
+        (base_gauge_h(BASE_GAUGE(self->vsi)) > base_gauge_h(BASE_GAUGE(self->altimeter))) ?
+            base_gauge_h(BASE_GAUGE(self->vsi)) :
+            base_gauge_h(BASE_GAUGE(self->altimeter))
+    );
+
+    base_gauge_add_child(BASE_GAUGE(self), BASE_GAUGE(self->altimeter), 0, 0);
+    base_gauge_add_child(BASE_GAUGE(self), BASE_GAUGE(self->vsi),
+        base_gauge_w(BASE_GAUGE(self->altimeter)),
+        base_gauge_h(BASE_GAUGE(self->altimeter))/2 - base_gauge_h(BASE_GAUGE(self->vsi))/2
     );
     return self;
 
@@ -59,12 +68,12 @@ void alt_group_free(AltGroup *self)
 
 void alt_group_set_altitude(AltGroup *self, float value)
 {
-    alt_indicator_set_value(self->altimeter, value);
+    alt_indicator_set_value(self->altimeter, value, true);
 }
 
 void alt_group_set_vertical_speed(AltGroup *self, float value)
 {
-    animated_gauge_set_value(ANIMATED_GAUGE(self->vsi), value);
+    vertical_stair_set_value(self->vsi, value, true);
 }
 
 void alt_group_set_values(AltGroup *self, float alt, float vs)
@@ -73,12 +82,3 @@ void alt_group_set_values(AltGroup *self, float alt, float vs)
     alt_group_set_vertical_speed(self, vs);
 }
 
-static void alt_group_render(AltGroup *self, Uint32 dt, RenderTarget destination, SDL_Rect *location)
-{
-    SDL_Rect offset = {0,0,0,0};
-    offset.x = location->x + BASE_GAUGE(self->altimeter)->w;
-    offset.y = location->y +  round(BASE_GAUGE(self->altimeter)->h/2.0) - round((BASE_GAUGE(self->vsi)->h)/2.0);
-
-    base_gauge_render(BASE_GAUGE(self->altimeter), dt, destination, location);
-    base_gauge_render(BASE_GAUGE(self->vsi), dt, destination, &offset);
-}
