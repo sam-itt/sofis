@@ -1,22 +1,24 @@
-#include "SDL_image.h"
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "SDL_pixels.h"
-#include "SDL_rect.h"
-#include "SDL_render.h"
+#include <SDL2/SDL.h>
+#include <SDL2/SDL_image.h>
+
 #include "SDL_surface.h"
-#include "animated-gauge.h"
-#include "buffered-gauge.h"
+#include "base-gauge.h"
+#include "generic-layer.h"
 #include "roll-slip-gauge.h"
 #include "sdl-colors.h"
 
+#define SPIN_DURATION 1000
 
 #define sign(x) (((x) > 0) - ((x) < 0))
 
-static void roll_slip_gauge_render_value(RollSlipGauge *self, float value);
-static AnimatedGaugeOps roll_slip_gauge_ops = {
-   .render_value = (ValueRenderFunc)roll_slip_gauge_render_value
+static void roll_slip_gauge_render(RollSlipGauge *self, Uint32 dt, RenderContext *ctx);
+static void roll_slip_gauge_update_state(RollSlipGauge *self, Uint32 dt);
+static BaseGaugeOps roll_slip_gauge_ops = {
+   .render = (RenderFunc)roll_slip_gauge_render,
+   .update_state = (StateUpdateFunc)roll_slip_gauge_update_state
 };
 
 
@@ -36,31 +38,51 @@ RollSlipGauge *roll_slip_gauge_new(void)
 
 RollSlipGauge *roll_slip_gauge_init(RollSlipGauge *self)
 {
-    animated_gauge_init(ANIMATED_GAUGE(self), ANIMATED_GAUGE_OPS(&roll_slip_gauge_ops), 175, 184);
-    BUFFERED_GAUGE(self)->max_ops = 2;
+    base_gauge_init(BASE_GAUGE(self), &roll_slip_gauge_ops, 175, 184);
 
-	self->arc = IMG_Load("roll-indicator.png");
-    if(!self->arc) return NULL;
+    generic_layer_init_from_file(&self->arc, "roll-indicator.png");
+    if(!self->arc.canvas) return NULL;
+    generic_layer_build_texture(&self->arc);
 
 	SDL_Surface *tmp = IMG_Load("arrow-needleless.png");
     if(!tmp) return NULL; //TODO: Can leak self->arc
 #if USE_SDL_GPU
     self->arrow = GPU_CopyImageFromSurface(tmp);
-    self->tarc = GPU_CopyImageFromSurface(self->arc);
 #else
-    self->renderer = SDL_CreateSoftwareRenderer(buffered_gauge_get_view(BUFFERED_GAUGE(self)));
+    self->state.rbuffer = SDL_CreateRGBSurfaceWithFormat(0,
+        base_gauge_w(BASE_GAUGE(self)),
+        base_gauge_h(BASE_GAUGE(self)),
+        32, SDL_PIXELFORMAT_RGBA32
+    );
+    self->renderer = SDL_CreateSoftwareRenderer(self->state.rbuffer);
     self->arrow = SDL_CreateTextureFromSurface(self->renderer, tmp);
 #endif
 	SDL_FreeSurface(tmp);
+
+	//Arc 0°: 86/10
+//	rect.x = 86 - round(self->arrow->w/2.0);
+	self->state.arrow_rect.x = 87 - 6;
+	self->state.arrow_rect.y = 10;
+	self->state.arrow_rect.h = 103;
+	self->state.arrow_rect.w = 13;
+
+	self->state.arrow_center.x = self->state.arrow_rect.x;
+	self->state.arrow_center.y = self->state.arrow_rect.y - 94;
+
+	self->state.arrow_center.x = self->state.arrow_rect.w/2;
+	self->state.arrow_center.y = 90; /*Radius 94.5 or 92.725*/
+
 
 	return self;
 }
 
 void roll_slip_gauge_dispose(RollSlipGauge *self)
 {
-    animated_gauge_dispose(ANIMATED_GAUGE(self));
-    SDL_FreeSurface(self->arc);
+    base_gauge_dispose(BASE_GAUGE(self));
+    generic_layer_dispose(&self->arc);
 #if !USE_SDL_GPU
+    if(self->state.rbuffer)
+        SDL_FreeSurface(self->state.rbuffer);
     SDL_DestroyRenderer(self->renderer); /*Will also free self->arrow*/
 #endif
 }
@@ -71,36 +93,62 @@ void roll_slip_gauge_free(RollSlipGauge *self)
 	free(self);
 }
 
-static void roll_slip_gauge_render_value(RollSlipGauge *self, float value)
+bool roll_slip_gauge_set_value(RollSlipGauge *self, float value, bool animated)
 {
-	SDL_Rect rect;
-	SDL_Point center;
+    bool rv = true;
+    BaseAnimation *animation;
 
 	if(value > 60.0 || value < -60.0)
 		value = sign(value)*65;
 
-	value *= -1.0;
-#if USE_SDL_GPU
-    buffered_gauge_blit_texture(BUFFERED_GAUGE(self), self->tarc, NULL, &(SDL_Rect){0,0,self->arc->w,self->arc->h});
-#else
-    buffered_gauge_fill(BUFFERED_GAUGE(self), NULL, &SDL_TRANSPARENT, false);
-    buffered_gauge_blit(BUFFERED_GAUGE(self), self->arc, NULL, NULL);
+    if(animated){
+        if(BASE_GAUGE(self)->nanimations == 0){
+            animation = base_animation_new(TYPE_FLOAT, 1, &self->value);
+            base_gauge_add_animation(BASE_GAUGE(self), animation);
+            base_animation_unref(animation);/*base_gauge takes ownership*/
+        }else{
+            animation = BASE_GAUGE(self)->animations[0];
+        }
+        base_animation_start(animation, self->value, value, SPIN_DURATION);
+    }else{
+        self->value = value;
+        BASE_GAUGE(self)->dirty = true;
+    }
+
+    return rv;
+}
+
+static void roll_slip_gauge_update_state(RollSlipGauge *self, Uint32 dt)
+{
+#if !USE_SDL_GPU
+	SDL_RenderCopyEx(self->renderer,
+        self->arrow, NULL,
+        &self->state.arrow_rect,
+        value,
+        &self->state.arrow_center,
+        SDL_FLIP_NONE);
 #endif
-	//Arc 0°: 86/10
-//	rect.x = 86 - round(self->arrow->w/2.0);
-	rect.x = 87 - 6;
-	rect.y = 10;
-	rect.h = 103;
-	rect.w = 13;
+}
 
-	center.x = rect.x;
-	center.y = rect.y - 94;
-
-	center.x = rect.w/2;
-	center.y = 90; /*Radius 94.5 or 92.725*/
+static void roll_slip_gauge_render(RollSlipGauge *self, Uint32 dt, RenderContext *ctx)
+{
+    base_gauge_blit_layer(BASE_GAUGE(self), ctx,
+        &self->arc, NULL,
+        &(SDL_Rect){
+            0,0,
+            generic_layer_w(&self->arc),
+            generic_layer_h(&self->arc),
+        }
+    );
 #if USE_SDL_GPU
-    buffered_gauge_blit_rotated_texture(BUFFERED_GAUGE(self), self->arrow, NULL, value, &center, &rect, NULL);
+    base_gauge_blit_rotated_texture(BASE_GAUGE(self), ctx,
+        self->arrow, NULL,
+        self->value,
+        &self->state.arrow_center,
+        &self->state.arrow_rect,
+        NULL
+    );
 #else
-	SDL_RenderCopyEx(self->renderer, self->arrow, NULL,&rect, value, &center, SDL_FLIP_NONE);
+    base_gauge_blit(BASE_GAUGE(self), ctx, self->state.rbuffer, NULL, &self->state.arrow_rect);
 #endif
 }
