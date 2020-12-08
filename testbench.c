@@ -42,8 +42,8 @@ OdoGauge *gauge = NULL;
 LadderGauge *ladder = NULL;
 OdoGauge *wheel = NULL;
 OdoGauge *odo = NULL;
-AltIndicator *alt_ind = NULL;
-/*VerticalStair *stair = NULL;*/
+/*AltIndicator *alt_ind = NULL;*/
+VerticalStair *stair = NULL;
 /*AltGroup *group = NULL;*/
 /*AirspeedIndicator *asi = NULL;*/
 /*AttitudeIndicator *ai = NULL;*/
@@ -122,7 +122,7 @@ bool handle_keyboard(SDL_KeyboardEvent *event, Uint32 elapsed)
                 alt += ALT_INC;
                 ladder_gauge_set_value(ladder, alt, true);
                 odo_gauge_set_value(wheel, alt, true);
-                alt_indicator_set_value(alt_ind, alt, true);
+                /*alt_indicator_set_value(alt_ind, alt, true);*/
                 /*//alt_group_set_altitude(group, alt);*/
                 /*alt_group_set_values(group, alt, vs);*/
                 /*basic_hud_set(hud, 1, ALTITUDE, alt);*/
@@ -136,7 +136,7 @@ bool handle_keyboard(SDL_KeyboardEvent *event, Uint32 elapsed)
                 alt -= ALT_INC;
                 ladder_gauge_set_value(ladder, alt, true);
                 odo_gauge_set_value(wheel, alt, true);
-                alt_indicator_set_value(alt_ind, alt, true);
+                /*alt_indicator_set_value(alt_ind, alt, true);*/
                 /*//alt_group_set_altitude(group, alt);*/
                 /*alt_group_set_values(group, alt, vs);*/
                 /*basic_hud_set(hud, 1, ALTITUDE, alt);*/
@@ -165,24 +165,24 @@ bool handle_keyboard(SDL_KeyboardEvent *event, Uint32 elapsed)
                 odo_gauge_set_value(gauge, odo_val, true);
             }
             break;
-/*        case SDLK_p:*/
-            /*if(event->state == SDL_PRESSED){*/
-/*//                if(vs < stair->scale.end)*/
-                    /*vs += VARIO_INC;*/
-                /*animated_gauge_set_value(ANIMATED_GAUGE(stair), vs);*/
+        case SDLK_p:
+            if(event->state == SDL_PRESSED){
+//                if(vs < stair->scale.end)
+                    vs += VARIO_INC;
+                vertical_stair_set_value(stair, vs, true);
                 /*alt_group_set_vertical_speed(group, vs);*/
                 /*basic_hud_set(hud, 1, VERTICAL_SPEED, vs);*/
-            /*}*/
-            /*break;*/
-        /*case SDLK_m:*/
-            /*if(event->state == SDL_PRESSED){*/
-/*//                if(vs > stair->scale.start)*/
-                    /*vs -= VARIO_INC;*/
-                /*animated_gauge_set_value(ANIMATED_GAUGE(stair), vs);*/
+            }
+            break;
+        case SDLK_m:
+            if(event->state == SDL_PRESSED){
+//                if(vs > stair->scale.start)
+                    vs -= VARIO_INC;
+                vertical_stair_set_value(stair, vs, true);
                 /*alt_group_set_vertical_speed(group, vs);*/
                 /*basic_hud_set(hud, 1, VERTICAL_SPEED, vs);*/
-            /*}*/
-            /*break;*/
+            }
+            break;
         /*case SDLK_x:*/
             /*if(event->state == SDL_PRESSED){*/
                     /*pitch -= PITCH_INC;*/
@@ -349,16 +349,16 @@ int main(int argc, char **argv)
     );
     odo_gauge_set_value(odo, odo_val, true);
 
-    alt_ind = alt_indicator_new();
-    alt_indicator_set_value(alt_ind, alt, true);
+    /*alt_ind = alt_indicator_new();*/
+    /*alt_indicator_set_value(alt_ind, alt, true);*/
 
-    /*stair = vertical_stair_new(*/
-        /*"vs-bg.png",*/
-        /*"vs-cursor.png",*/
-        /*resource_manager_get_static_font(TERMINUS_16, &SDL_WHITE, 2, PCF_DIGITS, "+-")*/
-    /*);*/
+    stair = vertical_stair_new(
+        "vs-bg.png",
+        "vs-cursor.png",
+        resource_manager_get_static_font(TERMINUS_16, &SDL_WHITE, 2, PCF_DIGITS, "+-")
+    );
 
-    /*animated_gauge_set_value(ANIMATED_GAUGE(stair), vs);*/
+    vertical_stair_set_value(stair, vs, true);
 
     /*group = alt_group_new();*/
     /*alt_group_set_values(group, alt, vs);*/
@@ -498,8 +498,8 @@ int main(int argc, char **argv)
 //        base_gauge_render(BASE_GAUGE(wheel), elapsed, &(RenderContext){rtarget, &wheelrect, NULL});
 //        base_gauge_render(BASE_GAUGE(odo), elapsed, &(RenderContext){rtarget, &odorect, NULL});
 
-        base_gauge_render(BASE_GAUGE(alt_ind), elapsed, &(RenderContext){rtarget, &airect, NULL});
-//        base_gauge_render(BASE_GAUGE(stair), elapsed, rtarget, &vrect);
+        /*base_gauge_render(BASE_GAUGE(alt_ind), elapsed, &(RenderContext){rtarget, &airect, NULL});*/
+        base_gauge_render(BASE_GAUGE(stair), elapsed, &(RenderContext){rtarget, &vrect, NULL});
 
 //        base_gauge_render(BASE_GAUGE(group), elapsed, rtarget, &airect);
 //        base_gauge_render(BASE_GAUGE(asi), elapsed, rtarget, &vrect);
@@ -567,8 +567,8 @@ int main(int argc, char **argv)
     ladder_gauge_free(ladder);
     /*alt_group_free(group);*/
     /*airspeed_indicator_free(asi);*/
-    alt_indicator_free(alt_ind);
-    /*vertical_stair_free(stair);*/
+    /*alt_indicator_free(alt_ind);*/
+    vertical_stair_free(stair);
     /*roll_slip_gauge_free(rsg);*/
     /*attitude_indicator_free(ai);*/
     /*basic_hud_free(hud);*/
