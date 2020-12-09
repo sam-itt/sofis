@@ -28,7 +28,6 @@ LadderGauge *ladder_gauge_new(LadderPageDescriptor *descriptor, int rubis)
     return self;
 }
 
-
 LadderGauge *ladder_gauge_init(LadderGauge *self, LadderPageDescriptor *descriptor, int rubis)
 {
     base_gauge_init(BASE_GAUGE(self), &ladder_gauge_ops, 68, 240);
@@ -40,7 +39,6 @@ LadderGauge *ladder_gauge_init(LadderGauge *self, LadderPageDescriptor *descript
         self->rubis = round(base_gauge_h(BASE_GAUGE(self))/2.0);
     return self;
 }
-
 
 void ladder_gauge_free(LadderGauge *self)
 {
@@ -54,7 +52,6 @@ void ladder_gauge_free(LadderGauge *self)
     free(self->descriptor); /*No need for virtual dispose ATM*/
     free(self);
 }
-
 
 bool ladder_gauge_set_value(LadderGauge *self, float value, bool animated)
 {
@@ -114,7 +111,6 @@ LadderPage *ladder_gauge_get_page(LadderGauge *self, uintf8_t idx)
 
     return self->pages[a_idx];
 }
-
 
 LadderPage *ladder_gauge_get_page_for(LadderGauge *self, float value)
 {
@@ -241,92 +237,3 @@ static void ladder_gauge_render(LadderGauge *self, Uint32 dt, RenderContext *ctx
         &SDL_RED, self->state.pskip
     );
 }
-
-#if 0
-static void ladder_gauge_render_value(LadderGauge *self, float value)
-{
-    float y;
-    float rubis;
-    LadderPage *page, *page2;
-    SDL_Rect dst_region = {0,0,BASE_GAUGE(self)->w,BASE_GAUGE(self)->h};
-
-    buffered_gauge_clear(BUFFERED_GAUGE(self));
-    buffered_gauge_draw_outline(BUFFERED_GAUGE(self), &SDL_WHITE, NULL);
-
-    value = value >= 0 ? value : 0.0f;
-
-    page = ladder_gauge_get_page_for(self, value);
-
-    y = ladder_page_resolve_value(page, value);
-//    printf("y = %f for value = %f\n",y,value);
-    rubis = (self->rubis < 0) ? BASE_GAUGE(self)->h / 2.0 : self->rubis;
-    SDL_Rect portion = {
-        .x = 0,
-        .y = round(y - rubis),
-        .w = generic_layer_w(GENERIC_LAYER(page)),
-        .h = BASE_GAUGE(self)->h
-    };
-    /* Ensures that portion.y + portion.h doesn't got past image bounds:
-     * w/h are ignored by SDL_BlitSurface, but when using SDL_Renderers wrong
-     * values will stretch the image.
-     * */
-    if(portion.y + portion.h > generic_layer_h(GENERIC_LAYER(page)))
-        portion.h = generic_layer_h(GENERIC_LAYER(page)) - portion.y;
-    /*All pages must have the same size*/
-    if(portion.y < 0){ //Fill top
-        SDL_Rect patch = {
-            .x = 0,
-            .y = generic_layer_h(GENERIC_LAYER(page)) + portion.y, //means - portion.y as portion.y < 0 here
-            .w = generic_layer_w(GENERIC_LAYER(page)),
-            .h = generic_layer_h(GENERIC_LAYER(page)) - patch.y
-        };
-        if(self->descriptor->direction == TOP_DOWN){
-            /* 0 is on top, 100 is downwards. We need to fill the top with values before the begining
-             * of the current page, i.e get the previous page */
-            int pidx = ladder_page_get_index(page);
-            if(pidx > 0){
-                page2 = ladder_gauge_get_page(self, pidx - 1);
-                buffered_gauge_blit_layer(BUFFERED_GAUGE(self), GENERIC_LAYER(page2), &patch, &dst_region);
-            }
-        }else{
-            /* 0 at the bottom, 100 is upwards. We need to fill the top with values after the end
-             * of the current page, i.e get the next page */
-            int pidx = ladder_page_get_index(page);
-            page2 = ladder_gauge_get_page(self, pidx + 1);
-            buffered_gauge_blit_layer(BUFFERED_GAUGE(self), GENERIC_LAYER(page2), &patch, &dst_region);
-        }
-        dst_region.y = patch.h;
-        portion.y = 0;
-        portion.h -= patch.h;
-    }
-    buffered_gauge_blit_layer(BUFFERED_GAUGE(self), GENERIC_LAYER(page), &portion, &dst_region);
-
-    if(portion.y + BASE_GAUGE(self)->h > generic_layer_h(GENERIC_LAYER(page))){// fill bottom
-        float taken = generic_layer_h(GENERIC_LAYER(page)) - portion.y; //number of pixels taken from the bottom of values pict
-        float delta = BASE_GAUGE(self)->h - taken;
-        dst_region.y += taken;
-        SDL_Rect patch = {
-            .x = 0,
-            .y = 0,
-            .w = generic_layer_w(GENERIC_LAYER(page)),
-            .h = delta
-        };
-        if(self->descriptor->direction == TOP_DOWN){
-            /* 0 is on top, 100 is downwards. We need to fill the bottom with values that are after the end
-             * of the current page, i.e get the next page */
-            int pidx = ladder_page_get_index(page);
-            page2 = ladder_gauge_get_page(self, pidx + 1);
-            buffered_gauge_blit_layer(BUFFERED_GAUGE(self), GENERIC_LAYER(page2), &patch, &dst_region);
-        }else{
-            /* 0 at the bottom, 100 is upwards. We need to fill the bottom with values that are before the begining
-             * of the current page, i.e get the previous page */
-            int pidx = ladder_page_get_index(page);
-            if(pidx > 0){
-                page2 = ladder_gauge_get_page(self, pidx - 1);
-                buffered_gauge_blit_layer(BUFFERED_GAUGE(self), GENERIC_LAYER(page2), &patch, &dst_region);
-            }
-        }
-    }
-    buffered_gauge_draw_rubis(BUFFERED_GAUGE(self), self->rubis, &SDL_RED, round(BASE_GAUGE(self)->w/2.0));
-}
-#endif

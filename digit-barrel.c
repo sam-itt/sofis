@@ -1,8 +1,3 @@
-#include "SDL_gpu.h"
-#include "SDL_render.h"
-#include "generic-layer.h"
-#include "misc.h"
-#include "SDL_pcf.h"
 #define _GNU_SOURCE
 #include <stdio.h>
 #include <stdlib.h>
@@ -10,6 +5,8 @@
 
 #include "digit-barrel.h"
 #include "sdl-colors.h"
+#include "misc.h"
+
 
 DigitBarrel *digit_barrel_new(PCF_Font *font, float start, float end, float step)
 {

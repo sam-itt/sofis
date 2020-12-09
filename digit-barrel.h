@@ -2,6 +2,7 @@
 #define DIGIT_BARREL_H
 
 #include <SDL2/SDL.h>
+#include "SDL_pcf.h"
 
 #include "generic-layer.h"
 #include "vertical-strip.h"

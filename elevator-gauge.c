@@ -11,13 +11,6 @@
 #include "elevator-gauge.h"
 #include "misc.h"
 
-static bool elevator_gauge_build_elevator(ElevatorGauge *self, Uint32 color);
-#if 0
-static void elevator_gauge_render_value(ElevatorGauge *self, float value);
-static AnimatedGaugeOps elevator_gauge_ops = {
-   .render_value = (ValueRenderFunc)elevator_gauge_render_value
-};
-#endif
 static void elevator_gauge_render(ElevatorGauge *self, Uint32 dt, RenderContext *ctx);
 static void elevator_gauge_update_state(ElevatorGauge *self, Uint32 dt);
 static BaseGaugeOps elevator_gauge_ops = {
@@ -25,7 +18,7 @@ static BaseGaugeOps elevator_gauge_ops = {
    .update_state = (StateUpdateFunc)elevator_gauge_update_state
 };
 
-
+static bool elevator_gauge_build_elevator(ElevatorGauge *self, Uint32 color);
 /**
  * @brief Creates a new ElevatorGauge. Calling code is responsible
  * for the freeing.
@@ -288,47 +281,3 @@ static void elevator_gauge_render(ElevatorGauge *self, Uint32 dt, RenderContext 
         &self->state.elevator_dst
     );
 }
-#if 0
-/*
- * @brief Implementation of AnimatedGauge::render_value
- *
- * Internal use only
- *
- * @see animated_gauge_render_value
- */
-static void elevator_gauge_render_value(ElevatorGauge *self, float value)
-{
-    int yinc;
-    int elevator_top;
-    SDL_Rect elevator_dest;
-    SDL_Rect elevator_src;
-
-    generic_ruler_clip_value(&self->ruler, &value);
-
-    yinc = generic_ruler_get_pixel_increment_for(&self->ruler, value);
-    elevator_top = SDLExt_RectLastY(&self->ruler.ruler_area) - yinc;
-
-    /*Area to copy from the whole elevator image*/
-    elevator_src = (SDL_Rect){
-        .x = 0,
-        .y = 0,
-        .w = self->elevator->canvas->w,
-        .h = yinc + 1
-    };
-    /*Where to put it*/
-    elevator_dest = (SDL_Rect){
-        .x = (self->elevator_location == Left)
-             ? 0
-             : SDLExt_RectLastX(&self->ruler_rect) + 1,
-        .y = self->ruler_rect.y + elevator_top,
-        .w = elevator_src.w,
-        .h = elevator_src.h
-    };
-
-
-    buffered_gauge_clear(BUFFERED_GAUGE(self));
-    //TODO: See vertical-stair.c:99 and have buffered_gauge handle texture/surface switching
-    buffered_gauge_blit_texture(BUFFERED_GAUGE(self), GENERIC_LAYER(&self->ruler)->texture, NULL, &self->ruler_rect);
-    buffered_gauge_blit_texture(BUFFERED_GAUGE(self), self->elevator->texture, &elevator_src, &elevator_dest);
-}
-#endif

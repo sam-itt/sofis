@@ -11,12 +11,6 @@
 #include "sdl-colors.h"
 #include "misc.h"
 
-#if 0
-static void airspeed_indicator_render(AirspeedIndicator *self, Uint32 dt);
-static BufferedGaugeOps airspeed_indicator_ops = {
-    .render = (BufferRenderFunc)airspeed_indicator_render
-};
-#endif
 static void airspeed_indicator_update_state(AirspeedIndicator *self, Uint32 dt);
 static BaseGaugeOps airspeed_indicator_ops = {
    .render = (RenderFunc)NULL,
