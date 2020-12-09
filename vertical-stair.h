@@ -9,20 +9,12 @@
 
 #define VS_VALUE_MAX_LEN 6 /*5 digits plus \0*/
 
-/*TODO: Merge this and code from
- * text_gauge into SDL_pcf*/
-typedef struct{
-     SDL_Point src;
-     SDL_Point dst;
-}VerticalStairCharPatch;
-
-
 typedef struct{
     SDL_Rect cloc; /*cursor location*/
     SDL_Rect tloc; /*text location*/
 
     /* -1 because we don't need to render the \0*/
-    VerticalStairCharPatch chars[VS_VALUE_MAX_LEN-1];
+    PCF_StaticFontPatch chars[VS_VALUE_MAX_LEN-1];
     int nchars;
 }VerticalStairState;
 

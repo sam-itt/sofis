@@ -11,12 +11,7 @@
 #define BACKGROUND_COLOR 1
 
 typedef struct{
-     SDL_Point src;
-     SDL_Point dst;
-}TextGaugeFontPatch;
-
-typedef struct{
-    TextGaugeFontPatch *chars;
+    PCF_StaticFontPatch *chars;
     size_t achars; /*Allocated chars*/
     int nchars;
 }TextGaugeState;

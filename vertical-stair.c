@@ -133,18 +133,11 @@ static void vertical_stair_update_state(VerticalStair *self, Uint32 dt)
 
     SDL_Rect glyph, cursor;
     cursor = self->state.tloc;
-    cursor.w = self->font->metrics.characterWidth;
-
-    self->state.nchars = 0; //Spaces won't output a glyph
-    for(int i = 0; i < len; i++){
-        if( PCF_StaticFontGetCharRect(self->font, number[i], &glyph) != 0){ /*0 means white space*/
-            /*h and w are implied as the values found in self->font->metrics*/
-            self->state.chars[self->state.nchars].src = (SDL_Point){glyph.x, glyph.y};
-            self->state.chars[self->state.nchars].dst = (SDL_Point){cursor.x, cursor.y};
-            self->state.nchars++;
-        }
-        cursor.x += self->font->metrics.characterWidth;
-    }
+    self->state.nchars = PCF_StaticFontPreWriteString(self->font,
+        len, number,
+        &cursor,
+        VS_VALUE_MAX_LEN-1, self->state.chars
+    );
 }
 
 static void vertical_stair_render(VerticalStair *self, Uint32 dt, RenderContext *ctx)

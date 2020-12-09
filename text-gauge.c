@@ -120,7 +120,7 @@ bool text_gauge_set_value(TextGauge *self, const char *value)
 
     if(newlen > self->state.achars){
         void *tmp;
-        tmp = realloc(self->state.chars, newlen * sizeof(TextGaugeFontPatch));
+        tmp = realloc(self->state.chars, newlen * sizeof(PCF_StaticFontPatch));
         if(!tmp) return false;
         self->state.chars = tmp;
 
@@ -134,7 +134,6 @@ bool text_gauge_set_value(TextGauge *self, const char *value)
     BASE_GAUGE(self)->dirty = true;
     return true;
 }
-
 
 static inline void text_gauge_static_font_update_state(TextGauge *self, Uint32 dt)
 {
@@ -156,21 +155,12 @@ static inline void text_gauge_static_font_update_state(TextGauge *self, Uint32 d
 
     PCF_StaticFontGetSizeRequestRect(sfont, self->value, &cursor);
     SDLExt_RectAlign(&cursor, &farea, self->alignment);
-    /*avoid stretching when using SDL_Renderer*/
-    cursor.w = sfont->metrics.characterWidth;
-
-    self->state.nchars = 0;
-    for(int i = 0; i < self->len; i++){
-        if( PCF_StaticFontGetCharRect(sfont, self->value[i], &glyph) != 0){ /*0 means white space*/
-            /*h and w are implied as the values found in sfont->metrics*/
-            self->state.chars[self->state.nchars].src = (SDL_Point){glyph.x, glyph.y};
-            self->state.chars[self->state.nchars].dst = (SDL_Point){cursor.x, cursor.y};
-            self->state.nchars++;
-        }
-        cursor.x += sfont->metrics.characterWidth;
-    }
+    self->state.nchars = PCF_StaticFontPreWriteString(sfont,
+        self->len, self->value,
+        &cursor,
+        self->state.achars, self->state.chars
+    );
 }
-
 
 static inline void text_gauge_regular_font_update_state(TextGauge *self, Uint32 dt)
 {
@@ -234,7 +224,6 @@ static inline void text_gauge_regular_font_render(TextGauge *self, Uint32 dt,
         base_gauge_draw_outline(BASE_GAUGE(self), ctx, &SDL_WHITE, NULL);
 }
 
-
 static void text_gauge_render(TextGauge *self, Uint32 dt, RenderContext *ctx)
 {
     if(!self->font.font) return; /*Wait until either font has been set*/
@@ -245,22 +234,3 @@ static void text_gauge_render(TextGauge *self, Uint32 dt, RenderContext *ctx)
         text_gauge_regular_font_render(self, dt, ctx);
     }
 }
-
-#if 0
-static void text_gauge_render(TextGauge *self, Uint32 dt)
-{
-    if(!self->font.font) return; /*Wait until either font has been set*/
-
-    if(self->value){
-        if(self->font.is_static)
-            buffered_gauge_static_font_draw_text(BUFFERED_GAUGE(self), NULL, self->alignment, self->value, self->font.static_font, self->bg_color);
-        else
-            buffered_gauge_font_draw_text(BUFFERED_GAUGE(self), NULL, self->alignment, self->value, self->font.font, self->text_color, self->bg_color);
-    }else{
-        buffered_gauge_fill(BUFFERED_GAUGE(self), NULL, &self->bg_color, true);
-    }
-
-    if(self->outlined)
-        buffered_gauge_draw_outline(BUFFERED_GAUGE(self), &SDL_WHITE, NULL);
-}
-#endif
