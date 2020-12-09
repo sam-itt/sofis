@@ -1,30 +1,29 @@
-#include <math.h>
-#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <math.h>
+#include <stdint.h>
 
 #include <SDL2/SDL.h>
+#include <SDL2/SDL_image.h>
 #include <SDL_gpu.h>
 
-#include <SDL2/SDL_image.h>
 
-#include "SDL_rect.h"
-#include "SDL_surface.h"
 #include "elevator-gauge.h"
-
-#include "animated-gauge.h"
-#include "generic-layer.h"
-#include "generic-ruler.h"
-#include "resource-manager.h"
-#include "sdl-colors.h"
-#include "SDL_pcf.h"
 #include "misc.h"
 
+#define SPIN_DURATION 1000
 static bool elevator_gauge_build_elevator(ElevatorGauge *self, Uint32 color);
-
+#if 0
 static void elevator_gauge_render_value(ElevatorGauge *self, float value);
 static AnimatedGaugeOps elevator_gauge_ops = {
    .render_value = (ValueRenderFunc)elevator_gauge_render_value
+};
+#endif
+static void elevator_gauge_render(ElevatorGauge *self, Uint32 dt, RenderContext *ctx);
+static void elevator_gauge_update_state(ElevatorGauge *self, Uint32 dt);
+static BaseGaugeOps elevator_gauge_ops = {
+   .render = (RenderFunc)elevator_gauge_render,
+   .update_state = (StateUpdateFunc)elevator_gauge_update_state
 };
 
 
@@ -108,6 +107,7 @@ ElevatorGauge *elevator_gauge_init(ElevatorGauge *self,
         font, marks_location, 0,
         bar_max_w, bar_max_h
     );
+    self->value = from;
 
     self->nzones = nzones;
     self->zones = calloc(self->nzones, sizeof(ColorZone));
@@ -153,12 +153,11 @@ ElevatorGauge *elevator_gauge_init(ElevatorGauge *self,
         .h = GENERIC_LAYER(&self->ruler)->canvas->h
     };
 
-    animated_gauge_init(ANIMATED_GAUGE(self),
-        ANIMATED_GAUGE_OPS(&elevator_gauge_ops),
+    base_gauge_init(BASE_GAUGE(self),
+        &elevator_gauge_ops,
         GENERIC_LAYER(&self->ruler)->canvas->w + self->elevator->canvas->w,
         GENERIC_LAYER(&self->ruler)->canvas->h
     );
-    BUFFERED_GAUGE(self)->max_ops = 3;
 
     return self;
 }
@@ -175,7 +174,7 @@ void elevator_gauge_dispose(ElevatorGauge *self)
         generic_layer_free(self->elevator);
     if(self->zones)
         free(self->zones);
-    animated_gauge_dispose(ANIMATED_GAUGE(self));
+    base_gauge_dispose(BASE_GAUGE(self));
 }
 
 /**
@@ -188,6 +187,33 @@ void elevator_gauge_free(ElevatorGauge *self)
 {
     elevator_gauge_dispose(self);
     free(self);
+}
+
+bool elevator_gauge_set_value(ElevatorGauge *self, float value, bool animated)
+{
+    bool rv = true;
+    BaseAnimation *animation;
+
+    generic_ruler_clip_value(&self->ruler, &value);
+
+    if(animated){
+        if(BASE_GAUGE(self)->nanimations == 0){
+            animation = base_animation_new(TYPE_FLOAT, 1, &self->value);
+            base_gauge_add_animation(BASE_GAUGE(self), animation);
+            base_animation_unref(animation);/*base_gauge takes ownership*/
+        }else{
+            animation = BASE_GAUGE(self)->animations[0];
+        }
+        base_animation_start(animation, self->value, value, SPIN_DURATION);
+    }else{
+        if(value != self->value){
+            self->value = value;
+            BASE_GAUGE(self)->dirty = true;
+        }
+    }
+
+    return rv;
+
 }
 
 /*
@@ -239,7 +265,48 @@ static bool elevator_gauge_build_elevator(ElevatorGauge *self, Uint32 color)
     return true;
 }
 
+static void elevator_gauge_update_state(ElevatorGauge *self, Uint32 dt)
+{
+    int yinc;
+    int elevator_top;
 
+    yinc = generic_ruler_get_pixel_increment_for(&self->ruler, self->value);
+    elevator_top = SDLExt_RectLastY(&self->ruler.ruler_area) - yinc;
+
+    /*Area to copy from the whole elevator image*/
+    self->state.elevator_src = (SDL_Rect){
+        .x = 0,
+        .y = 0,
+        .w = self->elevator->canvas->w,
+        .h = yinc + 1
+    };
+    /*Where to put it*/
+    self->state.elevator_dst = (SDL_Rect){
+        .x = (self->elevator_location == Left)
+             ? 0
+             : SDLExt_RectLastX(&self->ruler_rect) + 1,
+        .y = self->ruler_rect.y + elevator_top,
+        .w = self->state.elevator_src.w,
+        .h = self->state.elevator_src.h
+    };
+
+}
+
+static void elevator_gauge_render(ElevatorGauge *self, Uint32 dt, RenderContext *ctx)
+{
+    base_gauge_blit_layer(BASE_GAUGE(self), ctx,
+        GENERIC_LAYER(&self->ruler),
+        NULL,
+        &self->ruler_rect
+    );
+
+    base_gauge_blit_layer(BASE_GAUGE(self), ctx,
+        self->elevator,
+        &self->state.elevator_src,
+        &self->state.elevator_dst
+    );
+}
+#if 0
 /*
  * @brief Implementation of AnimatedGauge::render_value
  *
@@ -282,3 +349,4 @@ static void elevator_gauge_render_value(ElevatorGauge *self, float value)
     buffered_gauge_blit_texture(BUFFERED_GAUGE(self), GENERIC_LAYER(&self->ruler)->texture, NULL, &self->ruler_rect);
     buffered_gauge_blit_texture(BUFFERED_GAUGE(self), self->elevator->texture, &elevator_src, &elevator_dest);
 }
+#endif

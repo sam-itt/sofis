@@ -560,7 +560,9 @@ static void attitude_indicator_update_state(AttitudeIndicator *self, Uint32 dt)
         SDL_Texture *tex = SDL_CreateTextureFromSurface(self->renderer, self->etched_ball.canvas);
         SDL_RenderCopyEx(self->renderer, tex, NULL, NULL, self->roll, &rcenter, SDL_FLIP_NONE);
 		SDL_DestroyTexture(tex);
-	}
+	}else{
+        SDL_BlitSurface(self->etched_ball.canvas, NULL, self->state.rbuffer, NULL);
+    }
 #endif
 }
 

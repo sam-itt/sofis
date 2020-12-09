@@ -50,8 +50,8 @@
 /*AttitudeIndicator *ai = NULL;*/
 /*RollSlipGauge *rsg = NULL;*/
 /*TextGauge *txt = NULL;*/
-FishboneGauge *fish = NULL;
-/*ElevatorGauge *elevator = NULL;*/
+/*FishboneGauge *fish = NULL;*/
+ElevatorGauge *elevator = NULL;
 /*RichCompassGauge *compass = NULL;*/
 /*SidePanel *panel = NULL;*/
 
@@ -230,36 +230,36 @@ bool handle_keyboard(SDL_KeyboardEvent *event, Uint32 elapsed)
             /*break;*/
         case SDLK_y:
             if(event->state == SDL_PRESSED){
-                if(fishval < fish->ruler.end){
-                    fishval += FISHVAL_INC;
-                    fishbone_gauge_set_value(fish, fishval, true);
-                }
+                /*if(fishval < fish->ruler.end){*/
+                    /*fishval += FISHVAL_INC;*/
+                    /*fishbone_gauge_set_value(fish, fishval, true);*/
+                /*}*/
             }
             break;
         case SDLK_h:
             if(event->state == SDL_PRESSED){
-                if(fishval > fish->ruler.start){
-                    fishval -= FISHVAL_INC;
-                    fishbone_gauge_set_value(fish, fishval, true);
+                /*if(fishval > fish->ruler.start){*/
+                    /*fishval -= FISHVAL_INC;*/
+                    /*fishbone_gauge_set_value(fish, fishval, true);*/
+                /*}*/
+            }
+            break;
+        case SDLK_j:
+            if(event->state == SDL_PRESSED){
+                if(eleval < elevator->ruler.end){
+                    eleval += ELEVAL_INC;
+                    elevator_gauge_set_value(elevator, eleval, true);
                 }
             }
             break;
-/*        case SDLK_j:*/
-            /*if(event->state == SDL_PRESSED){*/
-                /*if(eleval < elevator->ruler.end){*/
-                    /*eleval += ELEVAL_INC;*/
-                    /*animated_gauge_set_value(ANIMATED_GAUGE(elevator), eleval);*/
-                /*}*/
-            /*}*/
-            /*break;*/
-        /*case SDLK_k:*/
-            /*if(event->state == SDL_PRESSED){*/
-                /*if(eleval > elevator->ruler.start){*/
-                    /*eleval -= ELEVAL_INC;*/
-                    /*animated_gauge_set_value(ANIMATED_GAUGE(elevator), eleval);*/
-                /*}*/
-            /*}*/
-            /*break;*/
+        case SDLK_k:
+            if(event->state == SDL_PRESSED){
+                if(eleval > elevator->ruler.start){
+                    eleval -= ELEVAL_INC;
+                    elevator_gauge_set_value(elevator, eleval, true);
+                }
+            }
+            break;
         case SDLK_SPACE:
             if(event->state == SDL_PRESSED){
                 printf("Alt is: %f\n", alt);
@@ -436,53 +436,53 @@ int main(int argc, char **argv)
     /*//compass = compass_gauge_new();*/
     /*compass = rich_compass_gauge_new();*/
 
-/*    elevator = elevator_gauge_new(*/
-        /*true, Left,*/
-        /*resource_manager_get_font(TERMINUS_12),*/
-        /*SDL_WHITE,*/
-        /*300, 2700, 300,*/
-        /*20, 120, [> 10x60 on the screenshot<]*/
-        /*3,(ColorZone[]){{*/
-            /*.from = 300,*/
-            /*.to = 900,*/
-            /*.color = SDL_GREEN,*/
-            /*.flags = FromIncluded | ToIncluded*/
-        /*},{*/
-        /*.from = 900,*/
-        /*.to = 2000,*/
-        /*.color = SDL_YELLOW,*/
-        /*.flags = FromExcluded | ToIncluded*/
-        /*},{*/
-        /*.from = 2000,*/
-        /*.to = 2300,*/
-        /*.color = SDL_RED,*/
-        /*.flags = FromExcluded | ToIncluded*/
-        /*}}*/
-    /*);*/
-
-    fish = fishbone_gauge_new(
-        true,
+    elevator = elevator_gauge_new(
+        true, Left,
         resource_manager_get_font(TERMINUS_12),
         SDL_WHITE,
-        0, 25, 5,
-        150, 13, /* 76x9 on the screenshot*/
+        300, 2700, 300,
+        20, 120, /* 10x60 on the screenshot */
         3,(ColorZone[]){{
-            .from = 0,
-            .to = 2,
-            .color = SDL_RED,
+            .from = 300,
+            .to = 900,
+            .color = SDL_GREEN,
             .flags = FromIncluded | ToIncluded
         },{
-        .from = 2,
-        .to = 10,
+        .from = 900,
+        .to = 2000,
         .color = SDL_YELLOW,
         .flags = FromExcluded | ToIncluded
         },{
-        .from = 10,
-        .to = 25,
-        .color = SDL_GREEN,
+        .from = 2000,
+        .to = 2700,
+        .color = SDL_RED,
         .flags = FromExcluded | ToIncluded
         }}
     );
+
+/*    fish = fishbone_gauge_new(*/
+        /*true,*/
+        /*resource_manager_get_font(TERMINUS_12),*/
+        /*SDL_WHITE,*/
+        /*0, 25, 5,*/
+        /*150, 13, [> 76x9 on the screenshot<]*/
+        /*3,(ColorZone[]){{*/
+            /*.from = 0,*/
+            /*.to = 2,*/
+            /*.color = SDL_RED,*/
+            /*.flags = FromIncluded | ToIncluded*/
+        /*},{*/
+        /*.from = 2,*/
+        /*.to = 10,*/
+        /*.color = SDL_YELLOW,*/
+        /*.flags = FromExcluded | ToIncluded*/
+        /*},{*/
+        /*.from = 10,*/
+        /*.to = 25,*/
+        /*.color = SDL_GREEN,*/
+        /*.flags = FromExcluded | ToIncluded*/
+        /*}}*/
+    /*);*/
 
     /*panel = side_panel_new(-1, -1);*/
 
@@ -549,8 +549,8 @@ int main(int argc, char **argv)
 //        base_gauge_render(BASE_GAUGE(hud), elapsed, rtarget, &whole);
 //        base_gauge_render(BASE_GAUGE(txt), elapsed, &(RenderContext){rtarget, &txtrect, NULL});
 //        base_gauge_render(BASE_GAUGE(panel), elapsed, rtarget, &sprect);
-//        base_gauge_render(BASE_GAUGE(elevator), elapsed, rtarget, &center_rect);
-        base_gauge_render(BASE_GAUGE(fish), elapsed, &(RenderContext){rtarget, &center_rect, NULL});
+        base_gauge_render(BASE_GAUGE(elevator), elapsed,  &(RenderContext){rtarget, &center_rect, NULL});
+        /*base_gauge_render(BASE_GAUGE(fish), elapsed, &(RenderContext){rtarget, &center_rect, NULL});*/
 //        base_gauge_render(BASE_GAUGE(compass), elapsed, rtarget, &center_rect);
 #if USE_SDL_GPU
 		GPU_Flip(gpu_screen);
@@ -610,8 +610,8 @@ int main(int argc, char **argv)
     /*attitude_indicator_free(ai);*/
     /*basic_hud_free(hud);*/
     /*text_gauge_free(txt);*/
-    fishbone_gauge_free(fish);
-    /*elevator_gauge_free(elevator);*/
+    /*fishbone_gauge_free(fish);*/
+    elevator_gauge_free(elevator);
     /*side_panel_free(panel);*/
     /*rich_compass_gauge_free(compass);*/
     resource_manager_shutdown();
