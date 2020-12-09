@@ -1,6 +1,5 @@
 #include "SDL_gpu.h"
 #include "SDL_render.h"
-#include "buffered-gauge.h"
 #include "generic-layer.h"
 #include "misc.h"
 #include "SDL_pcf.h"

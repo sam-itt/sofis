@@ -10,7 +10,6 @@
 #include "base-gauge.h"
 #include "fishbone-gauge.h"
 
-#include "animated-gauge.h"
 #include "generic-ruler.h"
 #include "resource-manager.h"
 #include "sdl-colors.h"

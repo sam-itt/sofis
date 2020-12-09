@@ -4,7 +4,6 @@
 #include <SDL2/SDL_image.h>
 
 #include "alt-ladder-page-descriptor.h"
-#include "animated-gauge.h"
 #include "generic-layer.h"
 #include "resource-manager.h"
 #include "sdl-colors.h"

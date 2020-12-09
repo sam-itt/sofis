@@ -6,7 +6,6 @@
 #include "generic-layer.h"
 #include "vertical-strip.h"
 #include "misc.h"
-#include "buffered-gauge.h"
 
 typedef struct{
     SDL_Rect src;

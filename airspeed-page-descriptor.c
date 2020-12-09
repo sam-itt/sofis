@@ -5,7 +5,6 @@
 
 #include "SDL_render.h"
 #include "airspeed-page-descriptor.h"
-#include "buffered-gauge.h"
 #include "generic-layer.h"
 #include "resource-manager.h"
 #include "sdl-colors.h"

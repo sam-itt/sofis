@@ -5,7 +5,6 @@
 
 #include "airspeed-indicator.h"
 #include "alt-group.h"
-#include "animated-gauge.h"
 #include "attitude-indicator.h"
 #include "base-gauge.h"
 #include "basic-hud.h"
