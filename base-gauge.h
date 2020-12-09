@@ -28,15 +28,12 @@ typedef struct{
     StateUpdateFunc update_state;
 }BaseGaugeOps;
 
-typedef struct{
-    /*width, height and xy position relative to parent*/
-    SDL_Rect frame;
-}BaseState;
-
 typedef struct _BaseGauge{
     BaseGaugeOps *ops;
 
-    BaseState state; /**/
+    /*width, height and xy position relative to parent*/
+    SDL_Rect frame;
+
     bool dirty;
 
     struct _BaseGauge *parent;
@@ -53,8 +50,8 @@ typedef struct _BaseGauge{
 #define BASE_GAUGE_OPS(self) ((BaseGaugeOps*)(self))
 #define BASE_GAUGE(self) ((BaseGauge *)(self))
 
-#define base_gauge_w(self) ((self)->state.frame.w)
-#define base_gauge_h(self) ((self)->state.frame.h)
+#define base_gauge_w(self) ((self)->frame.w)
+#define base_gauge_h(self) ((self)->frame.h)
 
 BaseGauge *base_gauge_init(BaseGauge *self, BaseGaugeOps *ops, int w, int h);
 void base_gauge_dispose(BaseGauge *self);

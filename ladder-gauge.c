@@ -223,7 +223,6 @@ static void ladder_gauge_update_state(LadderGauge *self, Uint32 dt)
             }
         }
     }
-    self->state.rubis_y = self->rubis;
     self->state.pskip = round(base_gauge_w(BASE_GAUGE(self))/2.0);
 }
 
@@ -238,7 +237,7 @@ static void ladder_gauge_render(LadderGauge *self, Uint32 dt, RenderContext *ctx
         );
     }
     base_gauge_draw_rubis(BASE_GAUGE(self),
-        ctx, self->state.rubis_y,
+        ctx, self->rubis,
         &SDL_RED, self->state.pskip
     );
 }

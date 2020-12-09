@@ -63,8 +63,8 @@ CompassGauge *compass_gauge_init(CompassGauge *self)
     );
 
     base_gauge_add_child(BASE_GAUGE(self), BASE_GAUGE(self->caption),
-        (int)SDLExt_RectMidX(&BASE_GAUGE(self)->state.frame)
-        - (int)SDLExt_RectMidX(&BASE_GAUGE(self->caption)->state.frame),
+        (int)SDLExt_RectMidX(&BASE_GAUGE(self)->frame)
+        - (int)SDLExt_RectMidX(&BASE_GAUGE(self->caption)->frame),
         0
     );
 

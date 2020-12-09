@@ -18,7 +18,6 @@ typedef struct{
     LadderPagePatch patches[3]; /*Up to 3: top, middle, bottom*/
     uintf8_t npatches;
 
-    int rubis_y;
     int pskip;
 }LadderGaugeState;
 

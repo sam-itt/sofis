@@ -163,7 +163,7 @@ static void odo_gauge_render(OdoGauge *self, Uint32 dt, RenderContext *ctx)
     for(int i = 0; i < self->state.nfill_rects; i++){
         base_gauge_fill(BASE_GAUGE(self), ctx, &self->state.fill_rects[i], &SDL_BLACK, false);
     }
-    base_gauge_draw_rubis(BASE_GAUGE(self), ctx, self->state.rubis_y,
+    base_gauge_draw_rubis(BASE_GAUGE(self), ctx, self->rubis,
                           &SDL_RED, self->state.pskip);
 }
 
@@ -238,6 +238,5 @@ static void odo_gauge_update_state(OdoGauge *self, Uint32 dt)
         self->state.fill_rects[self->state.nfill_rects] = cursor;
         self->state.nfill_rects++;
     }
-    self->state.rubis_y = self->rubis;
     self->state.pskip = round(base_gauge_w(BASE_GAUGE(self))/2.0);
 }

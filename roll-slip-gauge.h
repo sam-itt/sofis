@@ -7,8 +7,6 @@
 #include "generic-layer.h"
 
 typedef struct{
-    SDL_Rect arrow_rect;
-    SDL_Point arrow_center;
 #if !USE_SDL_GPU
     SDL_Surface *rbuffer; /*rotation buffer*/
 #endif
@@ -25,6 +23,9 @@ typedef struct{
     SDL_Texture *arrow;
 	SDL_Renderer *renderer;
 #endif
+    SDL_Rect arrow_rect;
+    SDL_Point arrow_center;
+
     RollSlipGaugeState state;
 }RollSlipGauge;
 

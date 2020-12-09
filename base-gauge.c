@@ -10,8 +10,8 @@
 
 BaseGauge *base_gauge_init(BaseGauge *self, BaseGaugeOps *ops, int w, int h)
 {
-    self->state.frame.w = w;
-    self->state.frame.h = h;
+    self->frame.w = w;
+    self->frame.h = h;
 
     self->ops = ops;
     self->dirty = true;
@@ -55,8 +55,8 @@ bool base_gauge_add_child(BaseGauge *self, BaseGauge *child, int x, int y)
         self->children = tmp;
     }
     self->children[self->nchildren] = child;
-    child->state.frame.x = x;
-    child->state.frame.y = y;
+    child->frame.x = x;
+    child->frame.y = y;
     self->nchildren++;
 
     return true;
@@ -114,12 +114,12 @@ void base_gauge_render(BaseGauge *self, Uint32 dt, RenderContext *ctx)
         self->ops->render(self, dt, ctx);
     for(int i = 0; i < self->nchildren; i++){
         SDL_Rect child_location = {
-            .x = ctx->location->x + self->children[i]->state.frame.x,
-            .y = ctx->location->y + self->children[i]->state.frame.y,
+            .x = ctx->location->x + self->children[i]->frame.x,
+            .y = ctx->location->y + self->children[i]->frame.y,
             /*The following are only here to prevent distortion when using
              * SDL_Renderer/SDL_Gpu/OpenGL */
-            .w = self->children[i]->state.frame.w,
-            .h = self->children[i]->state.frame.h,
+            .w = self->children[i]->frame.w,
+            .h = self->children[i]->frame.h,
         };
         /* TODO during refactor: portion will be NULL during the refactor, afterwise compute
          * the correct portion for the child if needed */

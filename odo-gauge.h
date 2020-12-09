@@ -15,7 +15,6 @@ typedef struct{
     SDL_Rect *fill_rects;
     uintf8_t nfill_rects; /*Must be the same type as OdoGauge::nbarrels*/
 
-    int rubis_y;
     int pskip;
 }OdoGaugeState;
 

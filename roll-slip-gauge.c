@@ -16,7 +16,11 @@ static void roll_slip_gauge_render(RollSlipGauge *self, Uint32 dt, RenderContext
 static void roll_slip_gauge_update_state(RollSlipGauge *self, Uint32 dt);
 static BaseGaugeOps roll_slip_gauge_ops = {
    .render = (RenderFunc)roll_slip_gauge_render,
+#if !USE_SDL_GPU
    .update_state = (StateUpdateFunc)roll_slip_gauge_update_state
+#else
+   .update_state = (StateUpdateFunc)NULL
+#endif
 };
 
 
@@ -59,16 +63,16 @@ RollSlipGauge *roll_slip_gauge_init(RollSlipGauge *self)
 
 	//Arc 0°: 86/10
 //	rect.x = 86 - round(self->arrow->w/2.0);
-	self->state.arrow_rect.x = 87 - 6;
-	self->state.arrow_rect.y = 10;
-	self->state.arrow_rect.h = 103;
-	self->state.arrow_rect.w = 13;
+	self->arrow_rect.x = 87 - 6;
+	self->arrow_rect.y = 10;
+	self->arrow_rect.h = 103;
+	self->arrow_rect.w = 13;
 
-	self->state.arrow_center.x = self->state.arrow_rect.x;
-	self->state.arrow_center.y = self->state.arrow_rect.y - 94;
+	self->arrow_center.x = self->arrow_rect.x;
+	self->arrow_center.y = self->arrow_rect.y - 94;
 
-	self->state.arrow_center.x = self->state.arrow_rect.w/2;
-	self->state.arrow_center.y = 90; /*Radius 94.5 or 92.725*/
+	self->arrow_center.x = self->arrow_rect.w/2;
+	self->arrow_center.y = 90; /*Radius 94.5 or 92.725*/
 
 
 	return self;
@@ -107,9 +111,9 @@ static void roll_slip_gauge_update_state(RollSlipGauge *self, Uint32 dt)
 #if !USE_SDL_GPU
 	SDL_RenderCopyEx(self->renderer,
         self->arrow, NULL,
-        &self->state.arrow_rect,
+        &self->arrow_rect,
         value,
-        &self->state.arrow_center,
+        &self->arrow_center,
         SDL_FLIP_NONE);
 #endif
 }
@@ -128,8 +132,8 @@ static void roll_slip_gauge_render(RollSlipGauge *self, Uint32 dt, RenderContext
     base_gauge_blit_rotated_texture(BASE_GAUGE(self), ctx,
         self->arrow, NULL,
         SFV_GAUGE(self)->value,
-        &self->state.arrow_center,
-        &self->state.arrow_rect,
+        &self->arrow_center,
+        &self->arrow_rect,
         NULL
     );
 #else
