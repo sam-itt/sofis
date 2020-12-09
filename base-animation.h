@@ -6,6 +6,8 @@
 #include <stdarg.h>
 #include <stdbool.h>
 
+#define DEFAULT_DURATION 1000 /*milliseconds*/
+
 /* BaseAnimation can be extended in the future (if needed)
  * by making base_animation_loop virtual there is no need
  * for that at the moment and doing it would add an additional

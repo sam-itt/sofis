@@ -9,9 +9,6 @@
 #include "odo-gauge.h"
 #include "sdl-colors.h"
 
-
-#define SPIN_DURATION 1000 //milliseconds
-
 static void odo_gauge_render(OdoGauge *self, Uint32 dt, RenderContext *ctx);
 static void odo_gauge_update_state(OdoGauge *self, Uint32 dt);
 static BaseGaugeOps odo_gauge_ops = {
@@ -157,7 +154,7 @@ bool odo_gauge_set_value(OdoGauge *self, float value, bool animated)
         }else{
             animation = BASE_GAUGE(self)->animations[0];
         }
-        base_animation_start(animation, self->value, value, SPIN_DURATION);
+        base_animation_start(animation, self->value, value, DEFAULT_DURATION);
     }else{
         self->value = value;
         BASE_GAUGE(self)->dirty = true;

@@ -8,8 +8,6 @@
 #include "misc.h"
 #include "text-gauge.h"
 
-#define SPIN_DURATION 1000
-
 static void compass_gauge_render(CompassGauge *self, Uint32 dt, RenderContext *ctx);
 static void compass_gauge_update_state(CompassGauge *self, Uint32 dt);
 static BaseGaugeOps compass_gauge_ops = {
@@ -134,7 +132,7 @@ bool compass_gauge_set_value(CompassGauge *self, float value, bool animated)
         }else{
             animation = BASE_GAUGE(self)->animations[0];
         }
-        base_animation_start(animation, self->value, value, SPIN_DURATION);
+        base_animation_start(animation, self->value, value, DEFAULT_DURATION);
     }else{
         if(value != self->value){
             self->value = value;

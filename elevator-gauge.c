@@ -11,7 +11,6 @@
 #include "elevator-gauge.h"
 #include "misc.h"
 
-#define SPIN_DURATION 1000
 static bool elevator_gauge_build_elevator(ElevatorGauge *self, Uint32 color);
 #if 0
 static void elevator_gauge_render_value(ElevatorGauge *self, float value);
@@ -204,7 +203,7 @@ bool elevator_gauge_set_value(ElevatorGauge *self, float value, bool animated)
         }else{
             animation = BASE_GAUGE(self)->animations[0];
         }
-        base_animation_start(animation, self->value, value, SPIN_DURATION);
+        base_animation_start(animation, self->value, value, DEFAULT_DURATION);
     }else{
         if(value != self->value){
             self->value = value;

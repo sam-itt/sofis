@@ -16,8 +16,6 @@
 #include "SDL_pcf.h"
 #include "misc.h"
 
-#define SPIN_DURATION 1000
-
 #define view_set_pixel(surface, x, y, color) (Uint32 *)((surface)->pixels)[(y)*(surface)->width+(x)] = (color)
 
 static void fishbone_gauge_render(FishboneGauge *self, Uint32 dt, RenderContext *ctx);
@@ -207,7 +205,7 @@ bool fishbone_gauge_set_value(FishboneGauge *self, float value, bool animated)
         }else{
             animation = BASE_GAUGE(self)->animations[0];
         }
-        base_animation_start(animation, self->value, value, SPIN_DURATION);
+        base_animation_start(animation, self->value, value, DEFAULT_DURATION);
     }else{
         if(value != self->value){
             self->value = value;

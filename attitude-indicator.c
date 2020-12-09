@@ -17,8 +17,6 @@
 #include "sdl-colors.h"
 #include "SDL_pcf.h"
 
-#define SPIN_DURATION 1000
-
 #define sign(x) (((x) > 0) - ((x) < 0))
 
 static void attitude_indicator_render(AttitudeIndicator *self, Uint32 dt, RenderContext *ctx);
@@ -164,7 +162,7 @@ bool attitude_indicator_set_roll(AttitudeIndicator *self, float value, bool anim
                 goto fallback;
         }
         animation = BASE_GAUGE(self)->animations[AI_ROLL_ANIMATION];
-        base_animation_start(animation, self->roll, value, SPIN_DURATION);
+        base_animation_start(animation, self->roll, value, DEFAULT_DURATION);
     }else{
 fallback:
         self->roll = value;
@@ -192,7 +190,7 @@ bool attitude_indicator_set_pitch(AttitudeIndicator *self, float value, bool ani
                 goto fallback;
         }
         animation = BASE_GAUGE(self)->animations[AI_PITCH_ANIMATION];
-        base_animation_start(animation, self->pitch, value, SPIN_DURATION);
+        base_animation_start(animation, self->pitch, value, DEFAULT_DURATION);
     }else{
 fallback:
         if(value != self->pitch){

@@ -13,8 +13,6 @@
 #include "text-gauge.h"
 #include "misc.h"
 
-#define SPIN_DURATION 1000
-
 static void alt_indicator_render(AltIndicator *self, Uint32 dt, RenderContext *ctx);
 static void alt_indicator_update_state(AltIndicator *self, Uint32 dt);
 static BaseGaugeOps alt_indicator_ops = {
@@ -146,7 +144,7 @@ bool alt_indicator_set_value(AltIndicator *self, float value, bool animated)
         }else{
             animation = BASE_GAUGE(self)->animations[0];
         }
-        base_animation_start(animation, self->ladder->value, value, SPIN_DURATION);
+        base_animation_start(animation, self->ladder->value, value, DEFAULT_DURATION);
     }else{
         ladder_gauge_set_value(self->ladder, value, false);
         odo_gauge_set_value(self->odo, value, false);

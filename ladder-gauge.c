@@ -6,8 +6,6 @@
 #include "generic-layer.h"
 #include "sdl-colors.h"
 
-#define SPIN_DURATION 1000 //milliseconds
-
 static void ladder_gauge_update_state(LadderGauge *self, Uint32 dt);
 static void ladder_gauge_render(LadderGauge *self, Uint32 dt, RenderContext *ctx);
 static BaseGaugeOps ladder_gauge_ops = {
@@ -70,7 +68,7 @@ void ladder_gauge_set_value(LadderGauge *self, float value, bool animated)
         }else{
             animation = BASE_GAUGE(self)->animations[0];
         }
-        base_animation_start(animation, self->value, value, SPIN_DURATION);
+        base_animation_start(animation, self->value, value, DEFAULT_DURATION);
     }else{
         self->value = value;
         BASE_GAUGE(self)->dirty = true;

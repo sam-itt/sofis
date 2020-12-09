@@ -11,8 +11,6 @@
 #include "sdl-colors.h"
 #include "misc.h"
 
-#define SPIN_DURATION 1000
-
 #if 0
 static void airspeed_indicator_render(AirspeedIndicator *self, Uint32 dt);
 static BufferedGaugeOps airspeed_indicator_ops = {
@@ -121,7 +119,7 @@ bool airspeed_indicator_set_value(AirspeedIndicator *self, float value)
     }else{
         animation = BASE_GAUGE(self)->animations[0];
     }
-    base_animation_start(animation, self->ladder->value, value, SPIN_DURATION);
+    base_animation_start(animation, self->ladder->value, value, DEFAULT_DURATION);
 
     return true;
 }

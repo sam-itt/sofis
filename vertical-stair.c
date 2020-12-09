@@ -11,8 +11,6 @@
 #include "sdl-colors.h"
 #include "misc.h"
 
-#define SPIN_DURATION 1000
-
 static void vertical_stair_render(VerticalStair *self, Uint32 dt, RenderContext *ctx);
 static void vertical_stair_update_state(VerticalStair *self, Uint32 dt);
 static BaseGaugeOps vertical_stair_ops = {
@@ -92,7 +90,7 @@ bool vertical_stair_set_value(VerticalStair *self, float value, bool animated)
         }else{
             animation = BASE_GAUGE(self)->animations[0];
         }
-        base_animation_start(animation, self->value, value, SPIN_DURATION);
+        base_animation_start(animation, self->value, value, DEFAULT_DURATION);
     }else{
         if(value != self->value){
             self->value = value;

@@ -10,8 +10,6 @@
 #include "roll-slip-gauge.h"
 #include "sdl-colors.h"
 
-#define SPIN_DURATION 1000
-
 #define sign(x) (((x) > 0) - ((x) < 0))
 
 static void roll_slip_gauge_render(RollSlipGauge *self, Uint32 dt, RenderContext *ctx);
@@ -109,7 +107,7 @@ bool roll_slip_gauge_set_value(RollSlipGauge *self, float value, bool animated)
         }else{
             animation = BASE_GAUGE(self)->animations[0];
         }
-        base_animation_start(animation, self->value, value, SPIN_DURATION);
+        base_animation_start(animation, self->value, value, DEFAULT_DURATION);
     }else{
         self->value = value;
         BASE_GAUGE(self)->dirty = true;
