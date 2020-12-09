@@ -33,7 +33,7 @@ SRC = testbench.c resource-manager.c base-animation.c \
 	  ladder-gauge.c ladder-page-factory.c alt-ladder-page-descriptor.c \
 	  fb-page-descriptor.c text-gauge.c alt-indicator.c vertical-stair.c \
 	  alt-group.c airspeed-indicator.c airspeed-page-descriptor.c \
-	  roll-slip-gauge.c
+	  roll-slip-gauge.c attitude-indicator.c
 SRC+= $(wildcard $(SRCDIR)/sdl-pcf/src/*.c)
 SRC+= $(filter-out $(FGCONN)/fg-connector-test.c, $(wildcard $(FGCONN)/*.c))
 SRC+= $(filter-out $(FGTAPE)/fg-tape-reader.c, $(wildcard $(FGTAPE)/*.c))

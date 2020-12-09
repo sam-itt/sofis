@@ -46,8 +46,8 @@ OdoGauge *odo = NULL;
 /*VerticalStair *stair = NULL;*/
 AltGroup *group = NULL;
 AirspeedIndicator *asi = NULL;
-/*AttitudeIndicator *ai = NULL;*/
-RollSlipGauge *rsg = NULL;
+AttitudeIndicator *ai = NULL;
+/*RollSlipGauge *rsg = NULL;*/
 TextGauge *txt = NULL;
 /*ElevatorGauge *elevator = NULL;*/
 /*RichCompassGauge *compass = NULL;*/
@@ -183,33 +183,33 @@ bool handle_keyboard(SDL_KeyboardEvent *event, Uint32 elapsed)
                 /*basic_hud_set(hud, 1, VERTICAL_SPEED, vs);*/
             }
             break;
-        /*case SDLK_x:*/
-            /*if(event->state == SDL_PRESSED){*/
-                    /*pitch -= PITCH_INC;*/
-                /*animated_gauge_set_value(ANIMATED_GAUGE(ai), pitch);*/
+        case SDLK_x:
+            if(event->state == SDL_PRESSED){
+                    pitch -= PITCH_INC;
+                attitude_indicator_set_pitch(ai, pitch, true);
                 /*basic_hud_set(hud, 1, PITCH, pitch);*/
-            /*}*/
-            /*break;*/
-        /*case SDLK_s:*/
-            /*if(event->state == SDL_PRESSED){*/
-                    /*pitch += PITCH_INC;*/
-                /*animated_gauge_set_value(ANIMATED_GAUGE(ai), pitch);*/
+            }
+            break;
+        case SDLK_s:
+            if(event->state == SDL_PRESSED){
+                    pitch += PITCH_INC;
+                attitude_indicator_set_pitch(ai, pitch, true);
                 /*basic_hud_set(hud, 1, PITCH, pitch);*/
-            /*}*/
-            /*break;*/
+            }
+            break;
         case SDLK_c:
             if(event->state == SDL_PRESSED){
                 roll -= ROLL_INC;
-                /*attitude_indicator_set_roll(ai, roll);*/
-                roll_slip_gauge_set_value(rsg, roll, true);
+                attitude_indicator_set_roll(ai, roll, true);
+                /*roll_slip_gauge_set_value(rsg, roll, true);*/
                 /*basic_hud_set(hud, 1, ROLL, roll);*/
             }
             break;
         case SDLK_d:
             if(event->state == SDL_PRESSED){
                 roll += ROLL_INC;
-                /*attitude_indicator_set_roll(ai, roll);*/
-                roll_slip_gauge_set_value(rsg, roll, true);
+                attitude_indicator_set_roll(ai, roll, true);
+                /*roll_slip_gauge_set_value(rsg, roll, true);*/
                 /*basic_hud_set(hud, 1, ROLL, roll);*/
             }
             break;
@@ -226,6 +226,7 @@ bool handle_keyboard(SDL_KeyboardEvent *event, Uint32 elapsed)
             if(event->state == SDL_PRESSED){
                 printf("Alt is: %f\n", alt);
                 printf("Roll is: %f\n", roll);
+                printf("pitch is: %f\n", pitch);
 //                printf("TextGauge value: %s\n", txt->value);
             }
             break;
@@ -382,12 +383,12 @@ int main(int argc, char **argv)
  //   SDL_Rect airect = {SCREEN_WIDTH/2 + 90,SCREEN_HEIGHT/2-20,0,0};
     SDL_Rect attrect = {0,0,0,0};
 
-/*    ai = attitude_indicator_new(640,480);*/
-/*//    animated_gauge_set_value(ANIMATED_GAUGE(ai), pitch);*/
-    /*attitude_indicator_set_roll(ai, roll);*/
+    ai = attitude_indicator_new(640,480);
+    attitude_indicator_set_pitch(ai, pitch, true);
+    attitude_indicator_set_roll(ai, roll, true);
 
-    rsg = roll_slip_gauge_new();
-    roll_slip_gauge_set_value(rsg, roll, true);
+/*    rsg = roll_slip_gauge_new();*/
+    /*roll_slip_gauge_set_value(rsg, roll, true);*/
 
     /*hud = basic_hud_new();*/
 
@@ -505,9 +506,9 @@ int main(int argc, char **argv)
         base_gauge_render(BASE_GAUGE(asi), elapsed, &(RenderContext){rtarget, &vrect, NULL});
 //
 
-        base_gauge_render(BASE_GAUGE(rsg), elapsed, &(RenderContext){rtarget, &dst, NULL});
+        /*base_gauge_render(BASE_GAUGE(rsg), elapsed, &(RenderContext){rtarget, &dst, NULL});*/
 //        base_gauge_render(BASE_GAUGE(ai->rollslip), elapsed);
-//        base_gauge_render(BASE_GAUGE(ai), elapsed, rtarget, NULL);
+        base_gauge_render(BASE_GAUGE(ai), elapsed, &(RenderContext){rtarget, &whole, NULL});
 
 //        base_gauge_render(BASE_GAUGE(hud), elapsed, rtarget, &whole);
 //        base_gauge_render(BASE_GAUGE(txt), elapsed, &(RenderContext){rtarget, &txtrect, NULL});
@@ -569,8 +570,8 @@ int main(int argc, char **argv)
     airspeed_indicator_free(asi);
     /*alt_indicator_free(alt_ind);*/
     /*vertical_stair_free(stair);*/
-    roll_slip_gauge_free(rsg);
-    /*attitude_indicator_free(ai);*/
+    /*roll_slip_gauge_free(rsg);*/
+    attitude_indicator_free(ai);
     /*basic_hud_free(hud);*/
     text_gauge_free(txt);
     /*side_panel_free(panel);*/
