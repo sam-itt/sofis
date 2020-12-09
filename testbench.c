@@ -52,7 +52,7 @@ BasicHud *hud = NULL;
 /*FishboneGauge *fish = NULL;*/
 /*ElevatorGauge *elevator = NULL;*/
 /*CompassGauge *compass = NULL;*/
-/*SidePanel *panel = NULL;*/
+SidePanel *panel = NULL;
 
 float gval = 0.0;
 float alt = 900.0;
@@ -484,7 +484,7 @@ int main(int argc, char **argv)
 
     /*compass = compass_gauge_new();*/
 
-    /*panel = side_panel_new(-1, -1);*/
+    panel = side_panel_new(-1, -1);
 
 
     SDL_Rect dst = {SCREEN_WIDTH/2,SCREEN_HEIGHT/2,0,0};
@@ -500,7 +500,7 @@ int main(int argc, char **argv)
     SDL_Rect whole = {0,0,SCREEN_WIDTH,SCREEN_HEIGHT};
     SDL_Rect center_rect = {(640-1)/2,(480-1)/2,0,0};
 //    SDL_Rect center_rect = {0,0,0,0};
-    /*SDL_Rect sprect = {50,0, BASE_GAUGE(panel)->w,BASE_GAUGE(panel)->h};*/
+    SDL_Rect sprect = {50,0, base_gauge_w(BASE_GAUGE(panel)), base_gauge_h(BASE_GAUGE(panel))};
 
 #if USE_SDL_GPU
     GPU_ClearRGB(gpu_screen, 0x11, 0x56, 0xFF);
@@ -548,7 +548,7 @@ int main(int argc, char **argv)
 
         base_gauge_render(BASE_GAUGE(hud), elapsed, &(RenderContext){rtarget, &whole, NULL});
 //        base_gauge_render(BASE_GAUGE(txt), elapsed, &(RenderContext){rtarget, &txtrect, NULL});
-//        base_gauge_render(BASE_GAUGE(panel), elapsed, rtarget, &sprect);
+        base_gauge_render(BASE_GAUGE(panel), elapsed, &(RenderContext){rtarget, &sprect, NULL});
         /*base_gauge_render(BASE_GAUGE(elevator), elapsed,  &(RenderContext){rtarget, &center_rect, NULL});*/
         /*base_gauge_render(BASE_GAUGE(fish), elapsed, &(RenderContext){rtarget, &center_rect, NULL});*/
         /*base_gauge_render(BASE_GAUGE(compass), elapsed, &(RenderContext){rtarget, &center_rect, NULL});*/
@@ -612,7 +612,7 @@ int main(int argc, char **argv)
     /*text_gauge_free(txt);*/
     /*fishbone_gauge_free(fish);*/
     /*elevator_gauge_free(elevator);*/
-    /*side_panel_free(panel);*/
+    side_panel_free(panel);
     /*compass_gauge_free(compass);*/
     resource_manager_shutdown();
 #if USE_SDL_GPU
