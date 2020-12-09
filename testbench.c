@@ -28,7 +28,6 @@
 #include "roll-slip-gauge.h"
 
 #include "sdl-colors.h"
-#include "rich-compass-gauge.h"
 
 #define SCREEN_WIDTH 640
 #define SCREEN_HEIGHT 480
@@ -51,8 +50,8 @@
 /*RollSlipGauge *rsg = NULL;*/
 /*TextGauge *txt = NULL;*/
 /*FishboneGauge *fish = NULL;*/
-ElevatorGauge *elevator = NULL;
-/*RichCompassGauge *compass = NULL;*/
+/*ElevatorGauge *elevator = NULL;*/
+CompassGauge *compass = NULL;
 /*SidePanel *panel = NULL;*/
 
 float gval = 0.0;
@@ -219,15 +218,15 @@ bool handle_keyboard(SDL_KeyboardEvent *event, Uint32 elapsed)
                 /*basic_hud_set(hud, 1, ROLL, roll);*/
             }
             break;
-        /*case SDLK_e:*/
-            /*if(event->state == SDL_PRESSED){*/
-                /*heading += HEADING_INC;*/
-                /*heading = fmod(heading, 360.0);*/
-                /*if(heading < 0)*/
-                    /*heading += 360.0;*/
-                /*animated_gauge_set_value(ANIMATED_GAUGE(compass->compass), heading);*/
-            /*}*/
-            /*break;*/
+        case SDLK_e:
+            if(event->state == SDL_PRESSED){
+                heading += HEADING_INC;
+                heading = fmod(heading, 360.0);
+                if(heading < 0)
+                    heading += 360.0;
+                compass_gauge_set_value(compass, heading, true);
+            }
+            break;
         case SDLK_y:
             if(event->state == SDL_PRESSED){
                 /*if(fishval < fish->ruler.end){*/
@@ -246,18 +245,18 @@ bool handle_keyboard(SDL_KeyboardEvent *event, Uint32 elapsed)
             break;
         case SDLK_j:
             if(event->state == SDL_PRESSED){
-                if(eleval < elevator->ruler.end){
-                    eleval += ELEVAL_INC;
-                    elevator_gauge_set_value(elevator, eleval, true);
-                }
+/*                if(eleval < elevator->ruler.end){*/
+                    /*eleval += ELEVAL_INC;*/
+                    /*elevator_gauge_set_value(elevator, eleval, true);*/
+                /*}*/
             }
             break;
         case SDLK_k:
             if(event->state == SDL_PRESSED){
-                if(eleval > elevator->ruler.start){
-                    eleval -= ELEVAL_INC;
-                    elevator_gauge_set_value(elevator, eleval, true);
-                }
+/*                if(eleval > elevator->ruler.start){*/
+                    /*eleval -= ELEVAL_INC;*/
+                    /*elevator_gauge_set_value(elevator, eleval, true);*/
+                /*}*/
             }
             break;
         case SDLK_SPACE:
@@ -265,6 +264,7 @@ bool handle_keyboard(SDL_KeyboardEvent *event, Uint32 elapsed)
                 printf("Alt is: %f\n", alt);
                 printf("Roll is: %f\n", roll);
                 printf("pitch is: %f\n", pitch);
+                printf("heading is: %f\n", heading);
 //                printf("TextGauge value: %s\n", txt->value);
             }
             break;
@@ -433,32 +433,29 @@ int main(int argc, char **argv)
     /*text_gauge_set_color(txt, SDL_BLACK, BACKGROUND_COLOR);*/
     /*SDL_Rect txtrect = {SCREEN_WIDTH/2.0, SCREEN_HEIGHT/2.0,0,0};*/
 
-    /*//compass = compass_gauge_new();*/
-    /*compass = rich_compass_gauge_new();*/
-
-    elevator = elevator_gauge_new(
-        true, Left,
-        resource_manager_get_font(TERMINUS_12),
-        SDL_WHITE,
-        300, 2700, 300,
-        20, 120, /* 10x60 on the screenshot */
-        3,(ColorZone[]){{
-            .from = 300,
-            .to = 900,
-            .color = SDL_GREEN,
-            .flags = FromIncluded | ToIncluded
-        },{
-        .from = 900,
-        .to = 2000,
-        .color = SDL_YELLOW,
-        .flags = FromExcluded | ToIncluded
-        },{
-        .from = 2000,
-        .to = 2700,
-        .color = SDL_RED,
-        .flags = FromExcluded | ToIncluded
-        }}
-    );
+/*    elevator = elevator_gauge_new(*/
+        /*true, Left,*/
+        /*resource_manager_get_font(TERMINUS_12),*/
+        /*SDL_WHITE,*/
+        /*300, 2700, 300,*/
+        /*20, 120, [> 10x60 on the screenshot <]*/
+        /*3,(ColorZone[]){{*/
+            /*.from = 300,*/
+            /*.to = 900,*/
+            /*.color = SDL_GREEN,*/
+            /*.flags = FromIncluded | ToIncluded*/
+        /*},{*/
+        /*.from = 900,*/
+        /*.to = 2000,*/
+        /*.color = SDL_YELLOW,*/
+        /*.flags = FromExcluded | ToIncluded*/
+        /*},{*/
+        /*.from = 2000,*/
+        /*.to = 2700,*/
+        /*.color = SDL_RED,*/
+        /*.flags = FromExcluded | ToIncluded*/
+        /*}}*/
+    /*);*/
 
 /*    fish = fishbone_gauge_new(*/
         /*true,*/
@@ -483,6 +480,8 @@ int main(int argc, char **argv)
         /*.flags = FromExcluded | ToIncluded*/
         /*}}*/
     /*);*/
+
+    compass = compass_gauge_new();
 
     /*panel = side_panel_new(-1, -1);*/
 
@@ -549,9 +548,9 @@ int main(int argc, char **argv)
 //        base_gauge_render(BASE_GAUGE(hud), elapsed, rtarget, &whole);
 //        base_gauge_render(BASE_GAUGE(txt), elapsed, &(RenderContext){rtarget, &txtrect, NULL});
 //        base_gauge_render(BASE_GAUGE(panel), elapsed, rtarget, &sprect);
-        base_gauge_render(BASE_GAUGE(elevator), elapsed,  &(RenderContext){rtarget, &center_rect, NULL});
+        /*base_gauge_render(BASE_GAUGE(elevator), elapsed,  &(RenderContext){rtarget, &center_rect, NULL});*/
         /*base_gauge_render(BASE_GAUGE(fish), elapsed, &(RenderContext){rtarget, &center_rect, NULL});*/
-//        base_gauge_render(BASE_GAUGE(compass), elapsed, rtarget, &center_rect);
+        base_gauge_render(BASE_GAUGE(compass), elapsed, &(RenderContext){rtarget, &center_rect, NULL});
 #if USE_SDL_GPU
 		GPU_Flip(gpu_screen);
 #else
@@ -611,9 +610,9 @@ int main(int argc, char **argv)
     /*basic_hud_free(hud);*/
     /*text_gauge_free(txt);*/
     /*fishbone_gauge_free(fish);*/
-    elevator_gauge_free(elevator);
+    /*elevator_gauge_free(elevator);*/
     /*side_panel_free(panel);*/
-    /*rich_compass_gauge_free(compass);*/
+    compass_gauge_free(compass);
     resource_manager_shutdown();
 #if USE_SDL_GPU
 	GPU_Quit();
