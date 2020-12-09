@@ -4,7 +4,7 @@
 #include <SDL2/SDL.h>
 #include <stdbool.h>
 
-#include "base-gauge.h"
+#include "sfv-gauge.h"
 #include "digit-barrel.h"
 
 
@@ -20,9 +20,7 @@ typedef struct{
 }OdoGaugeState;
 
 typedef struct{
-    BaseGauge super;
-
-    float value;
+    SfvGauge super;
 
     DigitBarrel **barrels;
     int *heights;

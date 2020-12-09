@@ -1,7 +1,7 @@
 #ifndef COMPASS_GAUGE_H
 #define COMPASS_GAUGE_H
 
-#include "base-gauge.h"
+#include "sfv-gauge.h"
 #include "generic-layer.h"
 #include "text-gauge.h"
 
@@ -12,9 +12,8 @@ typedef struct{
 }CompassGaugeState;
 
 typedef struct{
-	BaseGauge super;
+	SfvGauge super;
 
-    float value;
     GenericLayer outer;
     GenericLayer inner;
 

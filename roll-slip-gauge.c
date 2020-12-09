@@ -99,21 +99,7 @@ bool roll_slip_gauge_set_value(RollSlipGauge *self, float value, bool animated)
 	if(value > 60.0 || value < -60.0)
 		value = sign(value)*65;
 
-    if(animated){
-        if(BASE_GAUGE(self)->nanimations == 0){
-            animation = base_animation_new(TYPE_FLOAT, 1, &self->value);
-            base_gauge_add_animation(BASE_GAUGE(self), animation);
-            base_animation_unref(animation);/*base_gauge takes ownership*/
-        }else{
-            animation = BASE_GAUGE(self)->animations[0];
-        }
-        base_animation_start(animation, self->value, value, DEFAULT_DURATION);
-    }else{
-        self->value = value;
-        BASE_GAUGE(self)->dirty = true;
-    }
-
-    return rv;
+    return sfv_gauge_set_value(SFV_GAUGE(self), value, animated);
 }
 
 static void roll_slip_gauge_update_state(RollSlipGauge *self, Uint32 dt)
@@ -141,7 +127,7 @@ static void roll_slip_gauge_render(RollSlipGauge *self, Uint32 dt, RenderContext
 #if USE_SDL_GPU
     base_gauge_blit_rotated_texture(BASE_GAUGE(self), ctx,
         self->arrow, NULL,
-        self->value,
+        SFV_GAUGE(self)->value,
         &self->state.arrow_center,
         &self->state.arrow_rect,
         NULL

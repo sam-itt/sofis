@@ -8,6 +8,7 @@
 #include "digit-barrel.h"
 #include "odo-gauge.h"
 #include "sdl-colors.h"
+#include "sfv-gauge.h"
 
 static void odo_gauge_render(OdoGauge *self, Uint32 dt, RenderContext *ctx);
 static void odo_gauge_update_state(OdoGauge *self, Uint32 dt);
@@ -146,19 +147,7 @@ bool odo_gauge_set_value(OdoGauge *self, float value, bool animated)
         rv = false;
     }
 
-    if(animated){
-        if(BASE_GAUGE(self)->nanimations == 0){
-            animation = base_animation_new(TYPE_FLOAT, 1, &self->value);
-            base_gauge_add_animation(BASE_GAUGE(self), animation);
-            base_animation_unref(animation);/*base_gauge takes ownership*/
-        }else{
-            animation = BASE_GAUGE(self)->animations[0];
-        }
-        base_animation_start(animation, self->value, value, DEFAULT_DURATION);
-    }else{
-        self->value = value;
-        BASE_GAUGE(self)->dirty = true;
-    }
+    rv &= sfv_gauge_set_value(SFV_GAUGE(self), value, animated);
 
     return rv;
 }
@@ -207,7 +196,7 @@ static void odo_gauge_update_state(OdoGauge *self, Uint32 dt)
 //    if(BUFFERED_GAUGE(self)->type == BUFFER_OWN)
 //        buffered_gauge_clear(BUFFERED_GAUGE(self));
 
-    nparts = number_split(self->value, vparts, 6);
+    nparts = number_split(SFV_GAUGE(self)->value, vparts, 6);
 //    printf("doing value %f, splitted in to %d parts\n",value,nparts);
     do{
 //        current_rotor_rank = current_rotor;

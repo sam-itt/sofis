@@ -3,7 +3,7 @@
 #include "SDL_render.h"
 #include "SDL_pcf.h"
 
-#include "base-gauge.h"
+#include "sfv-gauge.h"
 #include "generic-layer.h"
 #include "vertical-strip.h"
 
@@ -19,9 +19,8 @@ typedef struct{
 }VerticalStairState;
 
 typedef struct{
-    BaseGauge super;
+    SfvGauge super;
 
-    float value;
     GenericLayer cursor; /*cursor background image*/
 
     PCF_StaticFont *font;

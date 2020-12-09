@@ -3,7 +3,7 @@
 
 #include <SDL2/SDL.h>
 
-#include "base-gauge.h"
+#include "sfv-gauge.h"
 #include "generic-layer.h"
 
 typedef struct{
@@ -15,9 +15,8 @@ typedef struct{
 }RollSlipGaugeState;
 
 typedef struct{
-	BaseGauge super;
+	SfvGauge super;
 
-    float value;
     GenericLayer arc;
 
 #if USE_SDL_GPU

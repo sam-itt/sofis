@@ -10,6 +10,7 @@
 #include "basic-hud.h"
 #include "misc.h"
 #include "compass-gauge.h"
+#include "sfv-gauge.h"
 
 static BaseGaugeOps basic_hud_ops = {
    .render = (RenderFunc)NULL,
@@ -141,31 +142,29 @@ void basic_hud_set_values(BasicHud *self, int nvalues, va_list ap)
 
 float basic_hud_get(BasicHud *self, HudValue hv)
 {
-#if 0
     switch(hv){
       case ALTITUDE:
-        return self->altgroup->altimeter->ladder->super.value;
+        return sfv_gauge_get_value(SFV_GAUGE(self->altgroup->altimeter->ladder));
         break;
       case VERTICAL_SPEED:
-        return self->altgroup->vsi->super.value;
+        return sfv_gauge_get_value(SFV_GAUGE(self->altgroup->vsi));
         break;
       case AIRSPEED:
-        return self->airspeed->ladder->super.value;
+        return sfv_gauge_get_value(SFV_GAUGE(self->airspeed->ladder));
         break;
       case PITCH:
-        return self->attitude->super.value;
+        return self->attitude->pitch; /*will return the frame's value*/
         break;
       case ROLL:
-        return self->attitude->rollslip->super.value;
+        return sfv_gauge_get_value(SFV_GAUGE(self->attitude->rollslip));
         break;
       case HEADING:
-        return ANIMATED_GAUGE(self->compass->compass)->value;
+        return sfv_gauge_get_value(SFV_GAUGE(self->compass));
         break;
       case HUD_VALUE_MAX: /*Fall through*/
       default:
         break;
 
     }
-#endif
     return NAN;
 }

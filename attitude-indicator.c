@@ -109,7 +109,7 @@ static bool attitude_indicator_init_animations(AttitudeIndicator *self)
 
     animation = base_animation_new(TYPE_FLOAT, 2,
         &self->roll,
-        &self->rollslip->value
+        &SFV_GAUGE(self->rollslip)->value
     );
     if(!animation)
         return false;

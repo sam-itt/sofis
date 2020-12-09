@@ -1,7 +1,7 @@
 #ifndef FISHBONE_GAUGE_H
 #define FISHBONE_GAUGE_H
 
-#include "base-gauge.h"
+#include "sfv-gauge.h"
 #include "generic-layer.h"
 #include "generic-ruler.h"
 
@@ -15,7 +15,7 @@ typedef struct{
 }FishboneGaugeState;
 
 typedef struct{
-    BaseGauge super;
+    SfvGauge super;
 
     float value;
 

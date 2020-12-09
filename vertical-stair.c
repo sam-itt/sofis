@@ -78,27 +78,7 @@ void vertical_stair_free(VerticalStair *self)
 
 bool vertical_stair_set_value(VerticalStair *self, float value, bool animated)
 {
-    bool rv = true;
-    BaseAnimation *animation;
-
-//    printf("%s %p value: %f\n",__FUNCTION__, self, self->value);
-    if(animated){
-        if(BASE_GAUGE(self)->nanimations == 0){
-            animation = base_animation_new(TYPE_FLOAT, 1, &self->value);
-            base_gauge_add_animation(BASE_GAUGE(self), animation);
-            base_animation_unref(animation);/*base_gauge takes ownership*/
-        }else{
-            animation = BASE_GAUGE(self)->animations[0];
-        }
-        base_animation_start(animation, self->value, value, DEFAULT_DURATION);
-    }else{
-        if(value != self->value){
-            self->value = value;
-            BASE_GAUGE(self)->dirty = true;
-        }
-    }
-
-    return rv;
+    return sfv_gauge_set_value(SFV_GAUGE(self), value, animated);
 }
 
 
@@ -109,12 +89,12 @@ static void vertical_stair_update_state(VerticalStair *self, Uint32 dt)
     int ivalue;
     int len;
 
-//    printf("%s %p value: %f\n", __FUNCTION__, self, self->value);
-    ivalue = round(self->value);
+//    printf("%s %p value: %f\n", __FUNCTION__, self, SFV_GAUGE(self)->value);
+    ivalue = round(SFV_GAUGE(self)->value);
     len = snprintf(number, VS_VALUE_MAX_LEN, "% -d", ivalue);
-    vertical_strip_clip_value(&self->scale, &self->value);
+    vertical_strip_clip_value(&self->scale, &SFV_GAUGE(self)->value);
 
-    y = vertical_strip_resolve_value(&self->scale, self->value, true);
+    y = vertical_strip_resolve_value(&self->scale, SFV_GAUGE(self)->value, true);
     y = round(round(y) - generic_layer_h(&self->cursor)/2.0);
     self->state.cloc = (SDL_Rect){
         1, y,

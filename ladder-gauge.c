@@ -56,23 +56,9 @@ void ladder_gauge_free(LadderGauge *self)
 }
 
 
-void ladder_gauge_set_value(LadderGauge *self, float value, bool animated)
+bool ladder_gauge_set_value(LadderGauge *self, float value, bool animated)
 {
-    BaseAnimation *animation;
-
-    if(animated){
-        if(BASE_GAUGE(self)->nanimations == 0){
-            animation = base_animation_new(TYPE_FLOAT, 1, &self->value);
-            base_gauge_add_animation(BASE_GAUGE(self), animation);
-            base_animation_unref(animation);/*base_gauge takes ownership*/
-        }else{
-            animation = BASE_GAUGE(self)->animations[0];
-        }
-        base_animation_start(animation, self->value, value, DEFAULT_DURATION);
-    }else{
-        self->value = value;
-        BASE_GAUGE(self)->dirty = true;
-    }
+    return sfv_gauge_set_value(SFV_GAUGE(self), value, animated);
 }
 
 /**
@@ -148,11 +134,11 @@ static void ladder_gauge_update_state(LadderGauge *self, Uint32 dt)
 
     memset(&self->state, 0, sizeof(LadderGaugeState));
 
-    self->value = self->value >= 0 ? self->value : 0.0f;
+    SFV_GAUGE(self)->value = SFV_GAUGE(self)->value >= 0 ? SFV_GAUGE(self)->value : 0.0f;
 
-    page = ladder_gauge_get_page_for(self, self->value);
+    page = ladder_gauge_get_page_for(self, SFV_GAUGE(self)->value);
 
-    y = ladder_page_resolve_value(page, self->value);
+    y = ladder_page_resolve_value(page, SFV_GAUGE(self)->value);
 //    printf("y = %f for value = %f\n",y,value);
     rubis = (self->rubis < 0) ? base_gauge_h(BASE_GAUGE(self)) / 2.0 : self->rubis;
     SDL_Rect portion = {

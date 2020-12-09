@@ -196,24 +196,8 @@ bool fishbone_gauge_set_value(FishboneGauge *self, float value, bool animated)
     BaseAnimation *animation;
 
     generic_ruler_clip_value(&self->ruler, &value);
-//    printf("%s %p value: %f\n",__FUNCTION__, self, self->value);
-    if(animated){
-        if(BASE_GAUGE(self)->nanimations == 0){
-            animation = base_animation_new(TYPE_FLOAT, 1, &self->value);
-            base_gauge_add_animation(BASE_GAUGE(self), animation);
-            base_animation_unref(animation);/*base_gauge takes ownership*/
-        }else{
-            animation = BASE_GAUGE(self)->animations[0];
-        }
-        base_animation_start(animation, self->value, value, DEFAULT_DURATION);
-    }else{
-        if(value != self->value){
-            self->value = value;
-            BASE_GAUGE(self)->dirty = true;
-        }
-    }
 
-    return rv;
+    return sfv_gauge_set_value(SFV_GAUGE(self), value, animated);
 }
 
 static void fishbone_gauge_update_state(FishboneGauge *self, Uint32 dt)
@@ -221,7 +205,7 @@ static void fishbone_gauge_update_state(FishboneGauge *self, Uint32 dt)
     int xinc;
     int cursor_center;
 
-    xinc = generic_ruler_get_pixel_increment_for(&self->ruler, self->value);
+    xinc = generic_ruler_get_pixel_increment_for(&self->ruler, SFV_GAUGE(self)->value);
 
     cursor_center = self->cursor->canvas->w/2;
 

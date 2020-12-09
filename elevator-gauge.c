@@ -106,7 +106,7 @@ ElevatorGauge *elevator_gauge_init(ElevatorGauge *self,
         font, marks_location, 0,
         bar_max_w, bar_max_h
     );
-    self->value = from;
+    SFV_GAUGE(self)->value = from;
 
     self->nzones = nzones;
     self->zones = calloc(self->nzones, sizeof(ColorZone));
@@ -195,24 +195,7 @@ bool elevator_gauge_set_value(ElevatorGauge *self, float value, bool animated)
 
     generic_ruler_clip_value(&self->ruler, &value);
 
-    if(animated){
-        if(BASE_GAUGE(self)->nanimations == 0){
-            animation = base_animation_new(TYPE_FLOAT, 1, &self->value);
-            base_gauge_add_animation(BASE_GAUGE(self), animation);
-            base_animation_unref(animation);/*base_gauge takes ownership*/
-        }else{
-            animation = BASE_GAUGE(self)->animations[0];
-        }
-        base_animation_start(animation, self->value, value, DEFAULT_DURATION);
-    }else{
-        if(value != self->value){
-            self->value = value;
-            BASE_GAUGE(self)->dirty = true;
-        }
-    }
-
-    return rv;
-
+    return sfv_gauge_set_value(SFV_GAUGE(self), value, animated);
 }
 
 /*
@@ -269,7 +252,7 @@ static void elevator_gauge_update_state(ElevatorGauge *self, Uint32 dt)
     int yinc;
     int elevator_top;
 
-    yinc = generic_ruler_get_pixel_increment_for(&self->ruler, self->value);
+    yinc = generic_ruler_get_pixel_increment_for(&self->ruler, SFV_GAUGE(self)->value);
     elevator_top = SDLExt_RectLastY(&self->ruler.ruler_area) - yinc;
 
     /*Area to copy from the whole elevator image*/

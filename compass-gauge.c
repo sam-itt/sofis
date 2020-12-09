@@ -124,33 +124,17 @@ bool compass_gauge_set_value(CompassGauge *self, float value, bool animated)
     if(value < 0)
         value += 360.0;
 
-    if(animated){
-        if(BASE_GAUGE(self)->nanimations == 0){
-            animation = base_animation_new(TYPE_FLOAT, 1, &self->value);
-            base_gauge_add_animation(BASE_GAUGE(self), animation);
-            base_animation_unref(animation);/*base_gauge takes ownership*/
-        }else{
-            animation = BASE_GAUGE(self)->animations[0];
-        }
-        base_animation_start(animation, self->value, value, DEFAULT_DURATION);
-    }else{
-        if(value != self->value){
-            self->value = value;
-            BASE_GAUGE(self)->dirty = true;
-        }
-    }
-
-    return rv;
+    return sfv_gauge_set_value(SFV_GAUGE(self), value, animated);
 }
 
 static void compass_gauge_update_state(CompassGauge *self, Uint32 dt)
 {
 #if !USE_SDL_GPU
-	if(self->value != 0){
+	if(SFV_GAUGE(self)->value != 0){
         SDL_Texture *tex = SDL_CreateTextureFromSurface(self->renderer, self->inner.canvas);
         SDL_RenderCopyEx(self->renderer, tex,
             NULL, NULL,
-            self->value * -1.0f,
+            SFV_GAUGE(self)->value * -1.0f,
             &self->icenter, SDL_FLIP_NONE
         );
 		SDL_DestroyTexture(tex);
@@ -159,7 +143,7 @@ static void compass_gauge_update_state(CompassGauge *self, Uint32 dt)
     }
 #endif
     char cvalue[5]; //3 digits, degree sign and '\0'
-    snprintf(cvalue, 5, "%03d", (int)self->value);
+    snprintf(cvalue, 5, "%03d", (int)SFV_GAUGE(self)->value);
     text_gauge_set_value(self->caption, cvalue);
 }
 
@@ -172,7 +156,7 @@ static void compass_gauge_render(CompassGauge *self, Uint32 dt, RenderContext *c
     base_gauge_blit_rotated_texture(BASE_GAUGE(self), ctx,
         self->inner.texture,
         NULL,
-        self->value * -1.0f,
+        SFV_GAUGE(self)->value * -1.0f,
         &self->icenter,
         &self->inner_rect,
         NULL);

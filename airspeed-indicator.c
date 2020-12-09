@@ -111,15 +111,15 @@ bool airspeed_indicator_set_value(AirspeedIndicator *self, float value)
     BaseAnimation *animation;
     if(BASE_GAUGE(self)->nanimations == 0){
         animation = base_animation_new(TYPE_FLOAT, 2,
-            &self->ladder->value,
-            &self->odo->value
+            &SFV_GAUGE(self->ladder)->value,
+            &SFV_GAUGE(self->odo)->value
         );
         base_gauge_add_animation(BASE_GAUGE(self), animation);
         base_animation_unref(animation);/*base_gauge takes ownership*/
     }else{
         animation = BASE_GAUGE(self)->animations[0];
     }
-    base_animation_start(animation, self->ladder->value, value, DEFAULT_DURATION);
+    base_animation_start(animation, SFV_GAUGE(self->ladder)->value, value, DEFAULT_DURATION);
 
     return true;
 }

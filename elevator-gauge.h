@@ -1,7 +1,7 @@
 #ifndef ELEVATOR_GAUGE_H
 #define ELEVATOR_GAUGE_H
 
-#include "base-gauge.h"
+#include "sfv-gauge.h"
 #include "generic-layer.h"
 #include "generic-ruler.h"
 
@@ -11,9 +11,7 @@ typedef struct{
 }ElevatorGaugeState;
 
 typedef struct{
-    BaseGauge super;
-
-    float value;
+    SfvGauge super;
 
     GenericRuler ruler;
     Uint32 color;
