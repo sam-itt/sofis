@@ -37,7 +37,7 @@
 
 #define N_COLORS 4
 
-/*BasicHud *hud = NULL;*/
+BasicHud *hud = NULL;
 /*OdoGauge *gauge = NULL;*/
 /*LadderGauge *ladder = NULL;*/
 /*OdoGauge *wheel = NULL;*/
@@ -51,7 +51,7 @@
 /*TextGauge *txt = NULL;*/
 /*FishboneGauge *fish = NULL;*/
 /*ElevatorGauge *elevator = NULL;*/
-CompassGauge *compass = NULL;
+/*CompassGauge *compass = NULL;*/
 /*SidePanel *panel = NULL;*/
 
 float gval = 0.0;
@@ -111,14 +111,14 @@ bool handle_keyboard(SDL_KeyboardEvent *event, Uint32 elapsed)
             if(event->state == SDL_PRESSED){
                 ias += IAS_INC;
                 /*airspeed_indicator_set_value(asi, ias);*/
-                /*basic_hud_set(hud, 1, AIRSPEED, ias);*/
+                basic_hud_set(hud, 1, AIRSPEED, ias);
             }
             break;
         case SDLK_z:
             if(event->state == SDL_PRESSED){
                 ias -= IAS_INC;
                 /*airspeed_indicator_set_value(asi, ias);*/
-                /*basic_hud_set(hud, 1, AIRSPEED, ias);*/
+                basic_hud_set(hud, 1, AIRSPEED, ias);
             }
             break;
         case SDLK_UP:
@@ -130,7 +130,7 @@ bool handle_keyboard(SDL_KeyboardEvent *event, Uint32 elapsed)
                 /*alt_indicator_set_value(alt_ind, alt, true);*/
                 //alt_group_set_altitude(group, alt);
                 /*alt_group_set_values(group, alt, vs);*/
-                /*basic_hud_set(hud, 1, ALTITUDE, alt);*/
+                basic_hud_set(hud, 1, ALTITUDE, alt);
 /*                sprintf(txtbuf, "Altitude: %0.2f", alt);*/
                 /*text_gauge_set_value(txt, txtbuf);*/
             }
@@ -144,7 +144,7 @@ bool handle_keyboard(SDL_KeyboardEvent *event, Uint32 elapsed)
                 /*alt_indicator_set_value(alt_ind, alt, true);*/
                 //alt_group_set_altitude(group, alt);
                 /*alt_group_set_values(group, alt, vs);*/
-                /*basic_hud_set(hud, 1, ALTITUDE, alt);*/
+                basic_hud_set(hud, 1, ALTITUDE, alt);
 /*                sprintf(txtbuf, "Altitude: %0.2f", alt);*/
                 /*text_gauge_set_value(txt, txtbuf);*/
             }
@@ -176,7 +176,7 @@ bool handle_keyboard(SDL_KeyboardEvent *event, Uint32 elapsed)
                     vs += VARIO_INC;
                 /*vertical_stair_set_value(stair, vs, true);*/
                 /*alt_group_set_vertical_speed(group, vs);*/
-                /*basic_hud_set(hud, 1, VERTICAL_SPEED, vs);*/
+                basic_hud_set(hud, 1, VERTICAL_SPEED, vs);
             }
             break;
         case SDLK_m:
@@ -185,21 +185,21 @@ bool handle_keyboard(SDL_KeyboardEvent *event, Uint32 elapsed)
                     vs -= VARIO_INC;
                 /*vertical_stair_set_value(stair, vs, true);*/
                 /*alt_group_set_vertical_speed(group, vs);*/
-                /*basic_hud_set(hud, 1, VERTICAL_SPEED, vs);*/
+                basic_hud_set(hud, 1, VERTICAL_SPEED, vs);
             }
             break;
         case SDLK_x:
             if(event->state == SDL_PRESSED){
                     pitch -= PITCH_INC;
                 /*attitude_indicator_set_pitch(ai, pitch, true);*/
-                /*basic_hud_set(hud, 1, PITCH, pitch);*/
+                basic_hud_set(hud, 1, PITCH, pitch);
             }
             break;
         case SDLK_s:
             if(event->state == SDL_PRESSED){
                     pitch += PITCH_INC;
                 /*attitude_indicator_set_pitch(ai, pitch, true);*/
-                /*basic_hud_set(hud, 1, PITCH, pitch);*/
+                basic_hud_set(hud, 1, PITCH, pitch);
             }
             break;
         case SDLK_c:
@@ -207,7 +207,7 @@ bool handle_keyboard(SDL_KeyboardEvent *event, Uint32 elapsed)
                 roll -= ROLL_INC;
                 /*attitude_indicator_set_roll(ai, roll, true);*/
                 /*roll_slip_gauge_set_value(rsg, roll, true);*/
-                /*basic_hud_set(hud, 1, ROLL, roll);*/
+                basic_hud_set(hud, 1, ROLL, roll);
             }
             break;
         case SDLK_d:
@@ -215,7 +215,7 @@ bool handle_keyboard(SDL_KeyboardEvent *event, Uint32 elapsed)
                 roll += ROLL_INC;
                 /*attitude_indicator_set_roll(ai, roll, true);*/
                 /*roll_slip_gauge_set_value(rsg, roll, true);*/
-                /*basic_hud_set(hud, 1, ROLL, roll);*/
+                basic_hud_set(hud, 1, ROLL, roll);
             }
             break;
         case SDLK_e:
@@ -224,7 +224,8 @@ bool handle_keyboard(SDL_KeyboardEvent *event, Uint32 elapsed)
                 heading = fmod(heading, 360.0);
                 if(heading < 0)
                     heading += 360.0;
-                compass_gauge_set_value(compass, heading, true);
+                /*compass_gauge_set_value(compass, heading, true);*/
+                basic_hud_set(hud, 1, HEADING, heading);
             }
             break;
         case SDLK_y:
@@ -414,7 +415,7 @@ int main(int argc, char **argv)
 /*    rsg = roll_slip_gauge_new();*/
     /*roll_slip_gauge_set_value(rsg, roll, true);*/
 
-    /*hud = basic_hud_new();*/
+    hud = basic_hud_new();
 
 /*    txt = text_gauge_new("HI THERE", true, 300, 30);*/
 /*#if 1*/
@@ -481,7 +482,7 @@ int main(int argc, char **argv)
         /*}}*/
     /*);*/
 
-    compass = compass_gauge_new();
+    /*compass = compass_gauge_new();*/
 
     /*panel = side_panel_new(-1, -1);*/
 
@@ -545,12 +546,12 @@ int main(int argc, char **argv)
 //        base_gauge_render(BASE_GAUGE(ai->rollslip), elapsed);
         /*base_gauge_render(BASE_GAUGE(ai), elapsed, &(RenderContext){rtarget, &whole, NULL});*/
 
-//        base_gauge_render(BASE_GAUGE(hud), elapsed, rtarget, &whole);
+        base_gauge_render(BASE_GAUGE(hud), elapsed, &(RenderContext){rtarget, &whole, NULL});
 //        base_gauge_render(BASE_GAUGE(txt), elapsed, &(RenderContext){rtarget, &txtrect, NULL});
 //        base_gauge_render(BASE_GAUGE(panel), elapsed, rtarget, &sprect);
         /*base_gauge_render(BASE_GAUGE(elevator), elapsed,  &(RenderContext){rtarget, &center_rect, NULL});*/
         /*base_gauge_render(BASE_GAUGE(fish), elapsed, &(RenderContext){rtarget, &center_rect, NULL});*/
-        base_gauge_render(BASE_GAUGE(compass), elapsed, &(RenderContext){rtarget, &center_rect, NULL});
+        /*base_gauge_render(BASE_GAUGE(compass), elapsed, &(RenderContext){rtarget, &center_rect, NULL});*/
 #if USE_SDL_GPU
 		GPU_Flip(gpu_screen);
 #else
@@ -607,12 +608,12 @@ int main(int argc, char **argv)
     /*vertical_stair_free(stair);*/
     /*roll_slip_gauge_free(rsg);*/
     /*attitude_indicator_free(ai);*/
-    /*basic_hud_free(hud);*/
+    basic_hud_free(hud);
     /*text_gauge_free(txt);*/
     /*fishbone_gauge_free(fish);*/
     /*elevator_gauge_free(elevator);*/
     /*side_panel_free(panel);*/
-    compass_gauge_free(compass);
+    /*compass_gauge_free(compass);*/
     resource_manager_shutdown();
 #if USE_SDL_GPU
 	GPU_Quit();

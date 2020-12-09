@@ -5,7 +5,7 @@
 #include "alt-group.h"
 #include "attitude-indicator.h"
 #include "airspeed-indicator.h"
-#include "rich-compass-gauge.h"
+#include "compass-gauge.h"
 
 typedef enum{
     ALTITUDE,
@@ -33,7 +33,7 @@ typedef struct{
     AltGroup *altgroup;
     AirspeedIndicator *airspeed;
     AttitudeIndicator *attitude;
-    RichCompassGauge *compass;
+    CompassGauge *compass;
 
     SDL_Rect locations[LOC_MAX];
 }BasicHud;
