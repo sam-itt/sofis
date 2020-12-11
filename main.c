@@ -4,6 +4,7 @@
 
 #include <SDL2/SDL.h>
 
+#include "SDL_timer.h"
 #include "animated-gauge.h"
 #include "basic-hud.h"
 #include "ladder-gauge.h"
@@ -283,6 +284,9 @@ int main(int argc, char **argv)
 
     Uint32 startms, dtms, last_dtms;
     Uint32 nframes = 0;
+    Uint32 render_start, render_end;
+    Uint32 total_render_time = 0;
+    Uint32 nrender_calls = 0;
 
     startms = SDL_GetTicks();
     do{
@@ -350,8 +354,12 @@ int main(int argc, char **argv)
             GPU_ResetRendererState(); /*end 3d*/
         }
 #endif
+        render_start = SDL_GetTicks();
         base_gauge_render(BASE_GAUGE(hud), elapsed, rtarget, &whole);
         base_gauge_render(BASE_GAUGE(panel), elapsed, rtarget, &sprect);
+        render_end = SDL_GetTicks();
+        total_render_time += render_end - render_start;
+        nrender_calls++;
 #if USE_SDL_GPU
 		GPU_Flip(gpu_screen);
 #else
@@ -417,6 +425,7 @@ int main(int argc, char **argv)
         last_ticks = ticks;
     }while(!done);
 
+    printf("Average rendering time (%d samples): %f ticks\n",nrender_calls, total_render_time*1.0/nrender_calls);
     basic_hud_free(hud);
     side_panel_free(panel);
 #if defined(USE_FGCONN)
