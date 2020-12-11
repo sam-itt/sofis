@@ -5,21 +5,10 @@
 #include <SDL2/SDL.h>
 
 #include "SDL_timer.h"
-#include "animated-gauge.h"
 #include "basic-hud.h"
-#include "ladder-gauge.h"
-#include "alt-ladder-page-descriptor.h"
-
-#include "odo-gauge.h"
-#include "alt-indicator.h"
-#include "vertical-stair.h"
-#include "alt-group.h"
-#include "airspeed-indicator.h"
-#include "attitude-indicator.h"
+#include "side-panel.h"
 #include "resource-manager.h"
 
-#include "roll-slip-gauge.h"
-#include "side-panel.h"
 #if ENABLE_3D
 #include "terrain-viewer.h"
 #endif
@@ -230,7 +219,7 @@ int main(int argc, char **argv)
     hud = basic_hud_new();
 
     panel = side_panel_new(-1, -1);
-    SDL_Rect sprect = {0,0, BASE_GAUGE(panel)->w,BASE_GAUGE(panel)->h};
+    SDL_Rect sprect = {0,0, base_gauge_w(BASE_GAUGE(panel)),base_gauge_h(BASE_GAUGE(panel))};
 #if ENABLE_3D
     TerrainViewer *viewer;
     viewer = terrain_viewer_new();
@@ -355,8 +344,8 @@ int main(int argc, char **argv)
         }
 #endif
         render_start = SDL_GetTicks();
-        base_gauge_render(BASE_GAUGE(hud), elapsed, rtarget, &whole);
-        base_gauge_render(BASE_GAUGE(panel), elapsed, rtarget, &sprect);
+        base_gauge_render(BASE_GAUGE(hud), elapsed, &(RenderContext){rtarget, &whole, NULL});
+        base_gauge_render(BASE_GAUGE(panel), elapsed, &(RenderContext){rtarget, &sprect, NULL});
         render_end = SDL_GetTicks();
         total_render_time += render_end - render_start;
         nrender_calls++;
@@ -425,7 +414,7 @@ int main(int argc, char **argv)
         last_ticks = ticks;
     }while(!done);
 
-    printf("Average rendering time (%d samples): %f ticks\n",nrender_calls, total_render_time*1.0/nrender_calls);
+    printf("Average rendering time (%d samples): %f ticks\n", nrender_calls, total_render_time*1.0/nrender_calls);
     basic_hud_free(hud);
     side_panel_free(panel);
 #if defined(USE_FGCONN)

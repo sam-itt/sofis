@@ -1,9 +1,3 @@
-#include "SDL_gpu.h"
-#include "SDL_render.h"
-#include "buffered-gauge.h"
-#include "generic-layer.h"
-#include "misc.h"
-#include "SDL_pcf.h"
 #define _GNU_SOURCE
 #include <stdio.h>
 #include <stdlib.h>
@@ -11,6 +5,8 @@
 
 #include "digit-barrel.h"
 #include "sdl-colors.h"
+#include "misc.h"
+
 
 DigitBarrel *digit_barrel_new(PCF_Font *font, float start, float end, float step)
 {
@@ -135,14 +131,13 @@ float digit_barrel_resolve_value(DigitBarrel *self, float value)
     return round(y);
 }
 
-
 /*
  * Rubis is the offset in region where to align the value fomr the spinner.
  * if its negative, the rubis will be (vertical) the center dst: the y index
  * in the value spinner representing @param value will be aligned with the middle
  *
  */
-void digit_barrel_render_value(DigitBarrel *self, float value, BufferedGauge *dst, SDL_Rect *region, float rubis)
+void digit_barrel_state_value(DigitBarrel *self, float value, SDL_Rect *region, float rubis, DigitBarrelState *state)
 {
     float y;
     SDL_Rect dst_region = {region->x,region->y,region->w,region->h};
@@ -168,7 +163,7 @@ void digit_barrel_render_value(DigitBarrel *self, float value, BufferedGauge *ds
     if(portion.y + portion.h > generic_layer_h(layer))
         portion.h = generic_layer_h(layer) - portion.y;
 
-
+    state->layer = layer;
     if(portion.y < 0){ //Fill top
         SDL_Rect patch = {
             .x = 0,
@@ -176,13 +171,17 @@ void digit_barrel_render_value(DigitBarrel *self, float value, BufferedGauge *ds
             .w = generic_layer_w(layer),
             .h = generic_layer_h(layer) - patch.y
         };
-        buffered_gauge_blit_layer(dst, layer, &patch, &dst_region);
+        state->patches[state->npatches].src = patch;
+        state->patches[state->npatches].dst = dst_region;
+        state->npatches++;
 
         dst_region.y = patch.h;
         portion.y = 0;
         portion.h -= patch.h;
     }
-    buffered_gauge_blit_layer(dst, layer, &portion, &dst_region);
+    state->patches[state->npatches].src = portion;
+    state->patches[state->npatches].dst = dst_region;
+    state->npatches++;
 
     if(portion.y + region->h > generic_layer_h(layer)){// fill bottom
         float taken = generic_layer_h(layer) - portion.y; //number of pixels taken from the bottom of values pict
@@ -194,9 +193,12 @@ void digit_barrel_render_value(DigitBarrel *self, float value, BufferedGauge *ds
             .w = generic_layer_w(layer),
             .h = delta
         };
-        buffered_gauge_blit_layer(dst, layer, &patch, &dst_region);
+        state->patches[state->npatches].src = patch;
+        state->patches[state->npatches].dst = dst_region;
+        state->npatches++;
     }
 }
+
 
 void digit_barrel_draw_etch_marks(DigitBarrel *self)
 {

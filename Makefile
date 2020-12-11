@@ -6,7 +6,7 @@ FGCONN=$(FG_IO)/flightgear-connector
 FGTAPE=$(FG_IO)/fg-tape
 FG_ROAM=$(SRCDIR)/fg-roam
 CGLM=$(FG_ROAM)/lib/cglm/include
-ENABLE_3D=1
+ENABLE_3D=0
 
 CC=gcc
 CFLAGS=-g3 -O0 `pkg-config glib-2.0 sdl2 SDL2_image --cflags` \
@@ -26,7 +26,6 @@ CFLAGS=-g3 -O0 `pkg-config glib-2.0 sdl2 SDL2_image --cflags` \
 	   -DENABLE_3D=$(ENABLE_3D)
 LDFLAGS=-lz -lm `pkg-config glib-2.0 sdl2 SDL2_image --libs` -Wl,--as-needed -lSDL2_gpu -lGL -lGLU
 EXEC=test-sdl
-#SRC= $(wildcard $(SRCDIR)/*.c)
 SRC= $(filter-out $(SRCDIR)/main.c $(SRCDIR)/testbench.c, $(wildcard $(SRCDIR)/*.c))
 SRC+= $(wildcard $(SRCDIR)/sdl-pcf/src/*.c)
 SRC+= $(filter-out $(FGCONN)/fg-connector-test.c, $(wildcard $(FGCONN)/*.c))

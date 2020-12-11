@@ -1,13 +1,17 @@
 #ifndef ELEVATOR_GAUGE_H
 #define ELEVATOR_GAUGE_H
 
-#include "animated-gauge.h"
+#include "sfv-gauge.h"
 #include "generic-layer.h"
 #include "generic-ruler.h"
 
+typedef struct{
+    SDL_Rect elevator_src;
+    SDL_Rect elevator_dst;
+}ElevatorGaugeState;
 
 typedef struct{
-    AnimatedGauge super;
+    SfvGauge super;
 
     GenericRuler ruler;
     Uint32 color;
@@ -24,6 +28,8 @@ typedef struct{
      * functions need SDL_Rects
      */
     SDL_Rect ruler_rect;
+
+    ElevatorGaugeState state;
 }ElevatorGauge;
 
 ElevatorGauge *elevator_gauge_new(bool marked, Location elevator_location,
@@ -41,4 +47,6 @@ ElevatorGauge *elevator_gauge_init(ElevatorGauge *self,
 
 void elevator_gauge_dispose(ElevatorGauge *self);
 void elevator_gauge_free(ElevatorGauge *self);
+
+bool elevator_gauge_set_value(ElevatorGauge *self, float value, bool animated);
 #endif /* ELEVATOR_GAUGE_H */

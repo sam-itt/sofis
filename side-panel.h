@@ -32,7 +32,6 @@ typedef enum{
     FUEL_QTY,
 
     NSidePanelLocations
-
 }SidePanelLocations;
 
 typedef struct{
