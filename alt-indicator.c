@@ -4,20 +4,14 @@
 #include "alt-indicator.h"
 
 #include "alt-ladder-page-descriptor.h"
-#include "base-gauge.h"
-#include "ladder-gauge.h"
-#include "odo-gauge.h"
 #include "resource-manager.h"
 #include "sdl-colors.h"
-#include "SDL_pcf.h"
-#include "text-gauge.h"
 #include "misc.h"
+#include "tape-gauge.h"
 
-static void alt_indicator_render(AltIndicator *self, Uint32 dt, RenderContext *ctx);
-static void alt_indicator_update_state(AltIndicator *self, Uint32 dt);
 static BaseGaugeOps alt_indicator_ops = {
-   .render = (RenderFunc)alt_indicator_render,
-   .update_state = (StateUpdateFunc)alt_indicator_update_state
+   .render = (RenderFunc)NULL,
+   .update_state = (StateUpdateFunc)NULL
 };
 
 
@@ -44,38 +38,18 @@ AltIndicator *alt_indicator_init(AltIndicator *self)
      * temporary fixed in the rendering function by drawing the ladder first
      * and then drawing on it
      * */
-    self->ladder = ladder_gauge_new((LadderPageDescriptor *)alt_ladder_page_descriptor_new(), -1);
-    base_gauge_add_child(BASE_GAUGE(self), BASE_GAUGE(self->ladder), 0, 19);
-#if 0
-    buffered_gauge_share_buffer(BUFFERED_GAUGE(self->ladder),
-        BUFFERED_GAUGE(self),
-        0, 19
-    );
-#endif
     fnt = resource_manager_get_font(TERMINUS_18);
     DigitBarrel *db = digit_barrel_new(fnt, 0, 9.999, 1);
     DigitBarrel *db2 = digit_barrel_new(fnt, 0, 99, 10);
-    self->odo = odo_gauge_new_multiple(-1, 4,
-            -1, db2,
-            -2, db,
-            -2, db,
-            -2, db
+    self->tape = tape_gauge_new(
+        (LadderPageDescriptor*)alt_ladder_page_descriptor_new(),
+        AlignRight, 0, 4,
+        -1, db2,
+        -2, db,
+        -2, db,
+        -2, db
     );
-    /*The last -1 in there to prevent eating the border*/
-    int odox = (base_gauge_w(BASE_GAUGE(self->ladder)) - base_gauge_w(BASE_GAUGE(self->odo))-1) -1;
-    int odoy = 19 + (base_gauge_h(BASE_GAUGE(self->ladder))-1)/2.0 - base_gauge_h(BASE_GAUGE(self->odo))/2.0 +1;
-    base_gauge_add_child(BASE_GAUGE(self), BASE_GAUGE(self->odo),
-        odox,
-        odoy
-    );
-#if 0
-    buffered_gauge_share_buffer(BUFFERED_GAUGE(self->odo),
-        BUFFERED_GAUGE(self->ladder),
-        (BASE_GAUGE(self->ladder)->w - BASE_GAUGE(self->odo)->w-1) -1,/*The last -1 in there to prevent eating the border*/
-        19 + (BASE_GAUGE(self->ladder)->h-1)/2.0 - BASE_GAUGE(self->odo)->h/2.0 +1
-    );
-#endif
-//    buffered_gauge_clear(BUFFERED_GAUGE(self));
+    base_gauge_add_child(BASE_GAUGE(self), BASE_GAUGE(self->tape), 0, 19);
 
     self->talt_txt = text_gauge_new(NULL, true, 68, 20);
     self->talt_txt->alignment = HALIGN_CENTER | VALIGN_MIDDLE;
@@ -86,12 +60,7 @@ AltIndicator *alt_indicator_init(AltIndicator *self)
         )
     );
     base_gauge_add_child(BASE_GAUGE(self), BASE_GAUGE(self->talt_txt), 0, 0);
-#if 0
-    buffered_gauge_share_buffer(BUFFERED_GAUGE(self->talt_txt),
-        BUFFERED_GAUGE(self),
-        0, 0
-    );
-#endif
+
     text_gauge_set_color(self->talt_txt, SDL_BLACK, BACKGROUND_COLOR);
     text_gauge_set_value(self->talt_txt, "0");
 
@@ -107,13 +76,7 @@ AltIndicator *alt_indicator_init(AltIndicator *self)
         0,
         base_gauge_h(BASE_GAUGE(self)) - 20 - 2
     );
-#if 0
-    buffered_gauge_share_buffer(BUFFERED_GAUGE(self->qnh_txt),
-        BUFFERED_GAUGE(self),
-        0,
-        BASE_GAUGE(self)->h - 20 -2
-    );
-#endif
+
     text_gauge_set_color(self->qnh_txt, SDL_BLACK, BACKGROUND_COLOR);
     alt_indicator_set_alt_src(self, ALT_SRC_GPS);
 
@@ -122,8 +85,7 @@ AltIndicator *alt_indicator_init(AltIndicator *self)
 
 void alt_indicator_free(AltIndicator *self)
 {
-    ladder_gauge_free(self->ladder);
-    odo_gauge_free(self->odo);
+    tape_gauge_free(self->tape);
     text_gauge_free(self->talt_txt);
     text_gauge_free(self->qnh_txt);
     base_gauge_dispose(BASE_GAUGE(self));
@@ -132,25 +94,7 @@ void alt_indicator_free(AltIndicator *self)
 
 bool alt_indicator_set_value(AltIndicator *self, float value, bool animated)
 {
-    BaseAnimation *animation;
-    if(animated){
-        if(BASE_GAUGE(self)->nanimations == 0){
-            animation = base_animation_new(TYPE_FLOAT, 2,
-                &SFV_GAUGE(self->ladder)->value,
-                &SFV_GAUGE(self->odo)->value
-            );
-            base_gauge_add_animation(BASE_GAUGE(self), animation);
-            base_animation_unref(animation);/*base_gauge takes ownership*/
-        }else{
-            animation = BASE_GAUGE(self)->animations[0];
-        }
-        base_animation_start(animation, SFV_GAUGE(self->ladder)->value, value, DEFAULT_DURATION);
-    }else{
-        ladder_gauge_set_value(self->ladder, value, false);
-        odo_gauge_set_value(self->odo, value, false);
-        BASE_GAUGE(self)->dirty = true;
-    }
-    return true;
+    tape_gauge_set_value(self->tape, value, animated);
 }
 
 /*HPa*/
@@ -186,22 +130,3 @@ void alt_indicator_set_alt_src(AltIndicator *self, AltSource source)
         alt_indicator_set_qnh(self, 1013.25);
     }
 }
-
-static void alt_indicator_update_state(AltIndicator *self, Uint32 dt)
-{
-    BaseAnimation *animation;
-
-    if(BASE_GAUGE(self)->nanimations > 0){
-        animation = BASE_GAUGE(self)->animations[0];
-        if(!animation->finished){
-            BASE_GAUGE(self->ladder)->dirty = true;
-            BASE_GAUGE(self->odo)->dirty = true;
-        }
-    }
-}
-
-static void alt_indicator_render(AltIndicator *self, Uint32 dt, RenderContext *ctx)
-{
-    base_gauge_draw_outline(BASE_GAUGE(self), ctx, &SDL_WHITE, NULL);
-}
-

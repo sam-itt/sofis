@@ -3,8 +3,7 @@
 
 #include "base-gauge.h"
 #include "generic-layer.h"
-#include "ladder-gauge.h"
-#include "odo-gauge.h"
+#include "tape-gauge.h"
 #include "text-gauge.h"
 
 typedef enum {ALT_SRC_GPS,ALT_SRC_BARO} AltSource;
@@ -12,8 +11,7 @@ typedef enum {ALT_SRC_GPS,ALT_SRC_BARO} AltSource;
 typedef struct{
     BaseGauge super;
 
-    LadderGauge *ladder;
-    OdoGauge *odo;
+    TapeGauge *tape;
     TextGauge *talt_txt; /*Target altitude*/
     TextGauge *qnh_txt;
 

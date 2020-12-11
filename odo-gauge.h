@@ -33,6 +33,7 @@ typedef struct{
 
 OdoGauge *odo_gauge_new(DigitBarrel *barrel, int height, int rubis);
 OdoGauge *odo_gauge_new_multiple(int rubis, int nbarrels, ...);
+OdoGauge *odo_gauge_vanew_multiple(int rubis, int nbarrels, va_list ap);
 OdoGauge *odo_gauge_init(OdoGauge *self, int rubis, int nbarrels, ...);
 OdoGauge *odo_gauge_vainit(OdoGauge *self, int rubis, int nbarrels, va_list ap);
 void odo_gauge_free(OdoGauge *self);

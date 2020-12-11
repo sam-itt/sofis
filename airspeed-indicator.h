@@ -2,18 +2,16 @@
 #define AIRSPEED_INDICATOR_H
 
 #include "base-gauge.h"
-#include "ladder-gauge.h"
-#include "odo-gauge.h"
-#include "airspeed-page-descriptor.h"
+#include "tape-gauge.h"
 #include "text-gauge.h"
+#include "airspeed-page-descriptor.h"
 
 #define RHO_0 1.225 /* kg/m3, Sea level ISA */
 
 typedef struct{
     BaseGauge super;
 
-    LadderGauge *ladder;
-    OdoGauge *odo;
+    TapeGauge *tape;
     TextGauge *txt;
 
     int tas;

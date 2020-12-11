@@ -40,4 +40,8 @@ void SDLExt_RectDump(SDL_Rect *self);
 #define SDLExt_RectMidY(rect) ((rect)->y + roundf(((rect)->h-1)/2.0f))
 #define SDLExt_RectMidX(rect) ((rect)->x + roundf(((rect)->w-1)/2.0f))
 
+static inline int clamp(int x, int low, int high)
+{
+    return (x > high) ? high : ((x < low) ? low : x);
+}
 #endif /* MISC_H */

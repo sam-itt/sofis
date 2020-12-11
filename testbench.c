@@ -5,7 +5,6 @@
 #include <SDL2/SDL.h>
 #include <SDL_gpu.h>
 
-//#include "animated-gauge.h"
 #include "base-gauge.h"
 #include "basic-hud.h"
 #include "compass-gauge.h"
@@ -14,6 +13,7 @@
 #include "ladder-gauge.h"
 #include "alt-ladder-page-descriptor.h"
 
+#include "ladder-page.h"
 #include "odo-gauge.h"
 #include "alt-indicator.h"
 #include "resource-manager.h"
@@ -24,8 +24,8 @@
 #include "alt-group.h"
 #include "airspeed-indicator.h"
 #include "attitude-indicator.h"
-
 #include "roll-slip-gauge.h"
+#include "tape-gauge.h"
 
 #include "sdl-colors.h"
 
@@ -42,16 +42,18 @@ BasicHud *hud = NULL;
 /*LadderGauge *ladder = NULL;*/
 /*OdoGauge *wheel = NULL;*/
 /*OdoGauge *odo = NULL;*/
-/*AltIndicator *alt_ind = NULL;*/
+AltIndicator *alt_ind = NULL;
 /*VerticalStair *stair = NULL;*/
 /*AltGroup *group = NULL;*/
-/*AirspeedIndicator *asi = NULL;*/
+AirspeedIndicator *asi = NULL;
 /*AttitudeIndicator *ai = NULL;*/
 /*RollSlipGauge *rsg = NULL;*/
 /*TextGauge *txt = NULL;*/
 /*FishboneGauge *fish = NULL;*/
 /*ElevatorGauge *elevator = NULL;*/
 /*CompassGauge *compass = NULL;*/
+/*TapeGauge *tape_gauge = NULL;*/
+/*TapeGauge *tape_gauge2 = NULL;*/
 SidePanel *panel = NULL;
 
 float gval = 0.0;
@@ -110,15 +112,17 @@ bool handle_keyboard(SDL_KeyboardEvent *event, Uint32 elapsed)
         case SDLK_a:
             if(event->state == SDL_PRESSED){
                 ias += IAS_INC;
-                /*airspeed_indicator_set_value(asi, ias);*/
-                basic_hud_set(hud, 1, AIRSPEED, ias);
+                airspeed_indicator_set_value(asi, ias);
+                /*basic_hud_set(hud, 1, AIRSPEED, ias);*/
+                /*tape_gauge_set_value(tape_gauge2, ias, true);*/
             }
             break;
         case SDLK_z:
             if(event->state == SDL_PRESSED){
                 ias -= IAS_INC;
-                /*airspeed_indicator_set_value(asi, ias);*/
-                basic_hud_set(hud, 1, AIRSPEED, ias);
+                airspeed_indicator_set_value(asi, ias);
+                /*basic_hud_set(hud, 1, AIRSPEED, ias);*/
+                /*tape_gauge_set_value(tape_gauge2, ias, true);*/
             }
             break;
         case SDLK_UP:
@@ -127,12 +131,13 @@ bool handle_keyboard(SDL_KeyboardEvent *event, Uint32 elapsed)
                 alt += ALT_INC;
 /*                ladder_gauge_set_value(ladder, alt, true);*/
                 /*odo_gauge_set_value(wheel, alt, true);*/
-                /*alt_indicator_set_value(alt_ind, alt, true);*/
+                alt_indicator_set_value(alt_ind, alt, true);
                 //alt_group_set_altitude(group, alt);
                 /*alt_group_set_values(group, alt, vs);*/
-                basic_hud_set(hud, 1, ALTITUDE, alt);
+                /*basic_hud_set(hud, 1, ALTITUDE, alt);*/
 /*                sprintf(txtbuf, "Altitude: %0.2f", alt);*/
                 /*text_gauge_set_value(txt, txtbuf);*/
+                /*tape_gauge_set_value(tape_gauge, alt, true);*/
             }
             break;
         case SDLK_DOWN:
@@ -141,12 +146,13 @@ bool handle_keyboard(SDL_KeyboardEvent *event, Uint32 elapsed)
                 alt -= ALT_INC;
 /*                ladder_gauge_set_value(ladder, alt, true);*/
                 /*odo_gauge_set_value(wheel, alt, true);*/
-                /*alt_indicator_set_value(alt_ind, alt, true);*/
+                alt_indicator_set_value(alt_ind, alt, true);
                 //alt_group_set_altitude(group, alt);
                 /*alt_group_set_values(group, alt, vs);*/
-                basic_hud_set(hud, 1, ALTITUDE, alt);
+                /*basic_hud_set(hud, 1, ALTITUDE, alt);*/
 /*                sprintf(txtbuf, "Altitude: %0.2f", alt);*/
                 /*text_gauge_set_value(txt, txtbuf);*/
+                /*tape_gauge_set_value(tape_gauge, alt, true);*/
             }
             break;
         case SDLK_l:
@@ -390,8 +396,8 @@ int main(int argc, char **argv)
     /*);*/
     /*odo_gauge_set_value(odo, odo_val, true);*/
 
-    /*alt_ind = alt_indicator_new();*/
-    /*alt_indicator_set_value(alt_ind, alt, true);*/
+    alt_ind = alt_indicator_new();
+    alt_indicator_set_value(alt_ind, alt, true);
 
 /*    stair = vertical_stair_new(*/
         /*"vs-bg.png",*/
@@ -404,8 +410,8 @@ int main(int argc, char **argv)
     /*alt_group_set_values(group, alt, vs);*/
 
 
-/*    asi = airspeed_indicator_new(50,60,85,155,200);*/
-    /*airspeed_indicator_set_value(asi, ias);*/
+    asi = airspeed_indicator_new(50,60,85,155,200);
+    airspeed_indicator_set_value(asi, ias);
 
 
     /*ai = attitude_indicator_new(640,480);*/
@@ -415,7 +421,7 @@ int main(int argc, char **argv)
 /*    rsg = roll_slip_gauge_new();*/
     /*roll_slip_gauge_set_value(rsg, roll, true);*/
 
-    hud = basic_hud_new();
+    /*hud = basic_hud_new();*/
 
 /*    txt = text_gauge_new("HI THERE", true, 300, 30);*/
 /*#if 1*/
@@ -484,8 +490,29 @@ int main(int argc, char **argv)
 
     /*compass = compass_gauge_new();*/
 
-    panel = side_panel_new(-1, -1);
+/*    PCF_Font *fnt = resource_manager_get_font(TERMINUS_18);*/
+    /*DigitBarrel *db = digit_barrel_new(fnt, 0, 9.999, 1);*/
+    /*DigitBarrel *db2 = digit_barrel_new(fnt, 0, 99, 10);*/
+    /*tape_gauge = tape_gauge_new(*/
+        /*(LadderPageDescriptor*)alt_ladder_page_descriptor_new(),*/
+        /*AlightRight, 0, 4,*/
+        /*-1, db2,*/
+        /*-2, db,*/
+        /*-2, db,*/
+        /*-2, db*/
+    /*);*/
 
+/*    fnt = resource_manager_get_font(TERMINUS_18);*/
+    /*db = digit_barrel_new(fnt, 0, 9.999, 1);*/
+    /*tape_gauge2 = tape_gauge_new(*/
+        /*(LadderPageDescriptor*)airspeed_page_descriptor_new(50,60,85,155,200),*/
+        /*AlignRight, -12, 3,*/
+        /*-1, db,*/
+        /*-2, db,*/
+        /*-2, db*/
+    /*);*/
+
+    /*panel = side_panel_new(-1, -1);*/
 
     SDL_Rect dst = {SCREEN_WIDTH/2,SCREEN_HEIGHT/2,0,0};
     SDL_Rect lrect = {150,20,0,0};
@@ -500,7 +527,7 @@ int main(int argc, char **argv)
     SDL_Rect whole = {0,0,SCREEN_WIDTH,SCREEN_HEIGHT};
     SDL_Rect center_rect = {(640-1)/2,(480-1)/2,0,0};
 //    SDL_Rect center_rect = {0,0,0,0};
-    SDL_Rect sprect = {50,0, base_gauge_w(BASE_GAUGE(panel)), base_gauge_h(BASE_GAUGE(panel))};
+    /*SDL_Rect sprect = {50,0, base_gauge_w(BASE_GAUGE(panel)), base_gauge_h(BASE_GAUGE(panel))};*/
 
 #if USE_SDL_GPU
     GPU_ClearRGB(gpu_screen, 0x11, 0x56, 0xFF);
@@ -535,23 +562,25 @@ int main(int argc, char **argv)
 //        base_gauge_render(BASE_GAUGE(wheel), elapsed, &(RenderContext){rtarget, &wheelrect, NULL});
 //        base_gauge_render(BASE_GAUGE(odo), elapsed, &(RenderContext){rtarget, &odorect, NULL});
 
-        /*base_gauge_render(BASE_GAUGE(alt_ind), elapsed, &(RenderContext){rtarget, &airect, NULL});*/
+        base_gauge_render(BASE_GAUGE(alt_ind), elapsed, &(RenderContext){rtarget, &airect, NULL});
         /*base_gauge_render(BASE_GAUGE(stair), elapsed, &(RenderContext){rtarget, &vrect, NULL});*/
 
         /*base_gauge_render(BASE_GAUGE(group), elapsed, &(RenderContext){rtarget, &airect, NULL});*/
-        /*base_gauge_render(BASE_GAUGE(asi), elapsed, &(RenderContext){rtarget, &vrect, NULL});*/
+        base_gauge_render(BASE_GAUGE(asi), elapsed, &(RenderContext){rtarget, &vrect, NULL});
 //
 
         /*base_gauge_render(BASE_GAUGE(rsg), elapsed, &(RenderContext){rtarget, &dst, NULL});*/
 //        base_gauge_render(BASE_GAUGE(ai->rollslip), elapsed);
         /*base_gauge_render(BASE_GAUGE(ai), elapsed, &(RenderContext){rtarget, &whole, NULL});*/
 
-        base_gauge_render(BASE_GAUGE(hud), elapsed, &(RenderContext){rtarget, &whole, NULL});
+        /*base_gauge_render(BASE_GAUGE(hud), elapsed, &(RenderContext){rtarget, &whole, NULL});*/
 //        base_gauge_render(BASE_GAUGE(txt), elapsed, &(RenderContext){rtarget, &txtrect, NULL});
-        base_gauge_render(BASE_GAUGE(panel), elapsed, &(RenderContext){rtarget, &sprect, NULL});
+        /*base_gauge_render(BASE_GAUGE(panel), elapsed, &(RenderContext){rtarget, &sprect, NULL});*/
         /*base_gauge_render(BASE_GAUGE(elevator), elapsed,  &(RenderContext){rtarget, &center_rect, NULL});*/
         /*base_gauge_render(BASE_GAUGE(fish), elapsed, &(RenderContext){rtarget, &center_rect, NULL});*/
         /*base_gauge_render(BASE_GAUGE(compass), elapsed, &(RenderContext){rtarget, &center_rect, NULL});*/
+        /*base_gauge_render(BASE_GAUGE(tape_gauge), elapsed, &(RenderContext){rtarget, &vrect, NULL});*/
+        /*base_gauge_render(BASE_GAUGE(tape_gauge2), elapsed, &(RenderContext){rtarget, &vrect, NULL});*/
 #if USE_SDL_GPU
 		GPU_Flip(gpu_screen);
 #else
@@ -603,17 +632,19 @@ int main(int argc, char **argv)
     /*odo_gauge_free(odo);*/
     /*ladder_gauge_free(ladder);*/
     /*alt_group_free(group);*/
-    /*airspeed_indicator_free(asi);*/
-    /*alt_indicator_free(alt_ind);*/
+    airspeed_indicator_free(asi);
+    alt_indicator_free(alt_ind);
     /*vertical_stair_free(stair);*/
     /*roll_slip_gauge_free(rsg);*/
     /*attitude_indicator_free(ai);*/
-    basic_hud_free(hud);
+    /*basic_hud_free(hud);*/
     /*text_gauge_free(txt);*/
     /*fishbone_gauge_free(fish);*/
     /*elevator_gauge_free(elevator);*/
-    side_panel_free(panel);
+    /*side_panel_free(panel);*/
     /*compass_gauge_free(compass);*/
+    /*tape_gauge_free(tape_gauge);*/
+    /*tape_gauge_free(tape_gauge2);*/
     resource_manager_shutdown();
 #if USE_SDL_GPU
 	GPU_Quit();

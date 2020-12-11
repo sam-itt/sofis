@@ -52,6 +52,8 @@ typedef struct _BaseGauge{
 
 #define base_gauge_w(self) ((self)->frame.w)
 #define base_gauge_h(self) ((self)->frame.h)
+#define base_gauge_center_y(self) ((base_gauge_h((self))-1)/2)
+#define base_gauge_center_x(self) ((base_gauge_w((self))-1)/2)
 
 BaseGauge *base_gauge_init(BaseGauge *self, BaseGaugeOps *ops, int w, int h);
 void base_gauge_dispose(BaseGauge *self);

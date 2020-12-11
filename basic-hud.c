@@ -11,6 +11,7 @@
 #include "misc.h"
 #include "compass-gauge.h"
 #include "sfv-gauge.h"
+#include "tape-gauge.h"
 
 static BaseGaugeOps basic_hud_ops = {
    .render = (RenderFunc)NULL,
@@ -144,13 +145,13 @@ float basic_hud_get(BasicHud *self, HudValue hv)
 {
     switch(hv){
       case ALTITUDE:
-        return sfv_gauge_get_value(SFV_GAUGE(self->altgroup->altimeter->ladder));
+        return tape_gauge_get_value(self->altgroup->altimeter->tape);
         break;
       case VERTICAL_SPEED:
         return sfv_gauge_get_value(SFV_GAUGE(self->altgroup->vsi));
         break;
       case AIRSPEED:
-        return sfv_gauge_get_value(SFV_GAUGE(self->airspeed->ladder));
+        return tape_gauge_get_value(self->airspeed->tape);
         break;
       case PITCH:
         return self->attitude->pitch; /*will return the frame's value*/

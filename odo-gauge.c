@@ -61,6 +61,21 @@ OdoGauge *odo_gauge_new_multiple(int rubis, int nbarrels, ...)
     return self;
 }
 
+OdoGauge *odo_gauge_vanew_multiple(int rubis, int nbarrels, va_list ap)
+{
+    OdoGauge *self, *rv;
+
+    self = calloc(1, sizeof(OdoGauge));
+    if(self){
+        rv = odo_gauge_vainit(self, rubis, nbarrels, ap);
+        if(!rv){
+            free(self);
+            return NULL;
+        }
+    }
+    return self;
+}
+
 
 OdoGauge *odo_gauge_init(OdoGauge *self, int rubis, int nbarrels, ...)
 {
