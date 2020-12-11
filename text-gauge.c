@@ -108,6 +108,7 @@ bool text_gauge_set_value(TextGauge *self, const char *value)
         char *tmp;
         tmp = realloc(self->value, (newlen+1) * sizeof(char));
         if(!tmp) return false;
+        self->asize = newlen;
         self->value = tmp;
     }
     strcpy(self->value, value);
