@@ -57,6 +57,7 @@ bool base_gauge_add_child(BaseGauge *self, BaseGauge *child, int x, int y)
     self->children[self->nchildren] = child;
     child->frame.x = x;
     child->frame.y = y;
+    child->parent = self;
     self->nchildren++;
 
     return true;
