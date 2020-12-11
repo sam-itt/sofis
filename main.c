@@ -19,8 +19,9 @@
 
 #include "roll-slip-gauge.h"
 #include "side-panel.h"
-
+#if ENABLE_3D
 #include "terrain-viewer.h"
+#endif
 //#define USE_FGCONN 0
 #define USE_FGTAPE 1
 
@@ -229,10 +230,10 @@ int main(int argc, char **argv)
 
     panel = side_panel_new(-1, -1);
     SDL_Rect sprect = {0,0, BASE_GAUGE(panel)->w,BASE_GAUGE(panel)->h};
-
+#if ENABLE_3D
     TerrainViewer *viewer;
     viewer = terrain_viewer_new();
-
+#endif
 
     done = false;
     Uint32 ticks;
@@ -321,6 +322,7 @@ int main(int argc, char **argv)
             side_panel_set_fuel_px(panel, record.fuel_px);
             side_panel_set_fuel_qty(panel, record.fuel_qty);
 
+#if ENABLE_3D
             float lon = fmod(record.longitude+180, 360.0) - 180;
             record.altitude = record.altitude/3.281;
             terrain_viewer_update_plane(viewer,
@@ -332,6 +334,7 @@ int main(int argc, char **argv)
                 terrain_viewer_frame(viewer);
                 GPU_ResetRendererState(); /*end 3d*/
             }
+#endif
         }
 #endif
 
@@ -340,12 +343,13 @@ int main(int argc, char **argv)
 #else
         SDL_FillRect(screenSurface, NULL, SDL_UFBLUE(screenSurface));
 #endif
+#if ENABLE_3D
         if(g_show3d){
             GPU_FlushBlitBuffer(); /*begin 3*/
             terrain_viewer_frame(viewer);
             GPU_ResetRendererState(); /*end 3d*/
         }
-
+#endif
         base_gauge_render(BASE_GAUGE(hud), elapsed, rtarget, &whole);
         base_gauge_render(BASE_GAUGE(panel), elapsed, rtarget, &sprect);
 #if USE_SDL_GPU
