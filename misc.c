@@ -140,6 +140,23 @@ void SDLExt_RectAlign(SDL_Rect *self, SDL_Rect *reference, uint8_t alignment)
     }
 }
 
+/**
+ * @brief Checks if @p other completely overlaps/hides @p self
+ * i.e all the points of @p self are alos in @p other
+ *
+ * @param self a SDL_Rect
+ * @param other a SDL_Rect
+ * @return true if @p other overlaps @p self
+ */
+bool SDLExt_RectTotalOverlap(SDL_Rect *self, SDL_Rect *other)
+{
+    bool xoverlap = self->x >= other->x && self->x <= SDLExt_RectLastX(other);
+    bool yoverlap = self->y >= other->y && self->y <= SDLExt_RectLastY(other);
+
+    if(xoverlap && yoverlap)
+        return true;
+    return false;
+}
 
 void SDLExt_RectDump(SDL_Rect *self)
 {

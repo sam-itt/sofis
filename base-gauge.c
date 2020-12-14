@@ -93,6 +93,32 @@ bool base_gauge_add_animation(BaseGauge *self, BaseAnimation *animation)
     return true;
 }
 
+int base_gauge_get_children_count(BaseGauge *self, bool include_descendants)
+{
+    int rv = 0;
+    for(int i = 0; i < self->nchildren; i++){
+        rv++;
+        if(include_descendants)
+            rv += base_gauge_get_children_count(self->children[i], true);
+    }
+    return rv;
+}
+
+/**
+ * @brief returns true of @p other is an ancestor of @p self
+ *
+ *
+ */
+bool base_gauge_has_ancestor(BaseGauge *self, BaseGauge *other)
+{
+    BaseGauge *cursor;
+
+    for(cursor = self; cursor != NULL; cursor = cursor->parent){
+        if(cursor->parent == other)
+            return true;
+    }
+    return false;
+}
 
 void base_gauge_render(BaseGauge *self, Uint32 dt, RenderContext *ctx)
 {

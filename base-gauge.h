@@ -7,6 +7,7 @@
 #include "SDL_pcf.h"
 #include "base-animation.h"
 #include "generic-layer.h"
+#include "scene-node.h"
 
 typedef union{
     SDL_Surface *surface;
@@ -35,6 +36,7 @@ typedef struct _BaseGauge{
     SDL_Rect frame;
 
     bool dirty;
+    bool transparent;
 
     struct _BaseGauge *parent;
 
@@ -45,6 +47,9 @@ typedef struct _BaseGauge{
     BaseAnimation **animations;
     size_t nanimations;
     size_t animations_size; /*allocated animations*/
+
+    /*Scene node stuff*/
+    SceneNode *node;
 }BaseGauge;
 
 #define BASE_GAUGE_OPS(self) ((BaseGaugeOps*)(self))
@@ -61,6 +66,8 @@ void base_gauge_dispose(BaseGauge *self);
 bool base_gauge_add_child(BaseGauge *self, BaseGauge *child, int x, int y);
 bool base_gauge_add_animation(BaseGauge *self, BaseAnimation *animation);
 
+int base_gauge_get_children_count(BaseGauge *self, bool include_descendants);
+bool base_gauge_has_ancestor(BaseGauge *self, BaseGauge *other);
 
 void base_gauge_render(BaseGauge *self, Uint32 dt, RenderContext *ctx);
 

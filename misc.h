@@ -34,6 +34,7 @@ void filter_dedup(char *base, size_t len);
 
 void SDLExt_RectCenter(SDL_Rect *self, SDL_Rect *reference);
 void SDLExt_RectAlign(SDL_Rect *self, SDL_Rect *reference, uint8_t alignment);
+bool SDLExt_RectTotalOverlap(SDL_Rect *self, SDL_Rect *other);
 void SDLExt_RectDump(SDL_Rect *self);
 #define SDLExt_RectLastX(rect) ((rect)->x + (rect)->w - 1)
 #define SDLExt_RectLastY(rect) ((rect)->y + (rect)->h - 1)
