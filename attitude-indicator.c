@@ -91,11 +91,12 @@ AttitudeIndicator *attitude_indicator_init(AttitudeIndicator *self, int width, i
         self->locations[ROLL_SLIP].y
     );
 
+    attitude_indicator_get_etched_ball(self);
 #if !USE_SDL_GPU
 	self->state.rbuffer = SDL_CreateRGBSurfaceWithFormat(0, width*2, height*2, 32, SDL_PIXELFORMAT_RGBA32);
 	self->renderer =  SDL_CreateSoftwareRenderer(self->state.rbuffer);
+    self->ball_texture = SDL_CreateTextureFromSurface(self->renderer, self->etched_ball.canvas);
 #endif
-    attitude_indicator_get_etched_ball(self);
 
     return self;
 }
@@ -136,8 +137,8 @@ void attitude_indicator_dispose(AttitudeIndicator *self)
         generic_layer_dispose(&self->markers[i]);
 	}
 #if !USE_SDL_GPU
-	if(self->state.buffer)
-		SDL_FreeSurface(self->state.buffer);
+	if(self->state.rbuffer)
+		SDL_FreeSurface(self->state.rbuffer);
 	SDL_DestroyRenderer(self->renderer);
 #endif
     generic_layer_dispose(&self->etched_ball);
@@ -553,9 +554,11 @@ static void attitude_indicator_update_state(AttitudeIndicator *self, Uint32 dt)
     };
 #if !USE_SDL_GPU
 	if(self->roll != 0){
-        SDL_Texture *tex = SDL_CreateTextureFromSurface(self->renderer, self->etched_ball.canvas);
-        SDL_RenderCopyEx(self->renderer, tex, NULL, NULL, self->roll, &rcenter, SDL_FLIP_NONE);
-		SDL_DestroyTexture(tex);
+        SDL_RenderCopyEx(self->renderer, self->ball_texture,
+            NULL, NULL,
+            self->roll, &self->state.rcenter,
+            SDL_FLIP_NONE
+        );
 	}else{
         SDL_BlitSurface(self->etched_ball.canvas, NULL, self->state.rbuffer, NULL);
     }

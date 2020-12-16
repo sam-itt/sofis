@@ -1,5 +1,6 @@
 #ifndef GENERIC_LAYER_H
 #define GENERIC_LAYER_H
+#include <stdbool.h>
 
 #include <SDL2/SDL.h>
 

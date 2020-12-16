@@ -4,11 +4,7 @@
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_image.h>
 
-#include "SDL_surface.h"
-#include "base-gauge.h"
-#include "generic-layer.h"
 #include "roll-slip-gauge.h"
-#include "sdl-colors.h"
 
 #define sign(x) (((x) > 0) - ((x) < 0))
 
@@ -109,10 +105,11 @@ bool roll_slip_gauge_set_value(RollSlipGauge *self, float value, bool animated)
 static void roll_slip_gauge_update_state(RollSlipGauge *self, Uint32 dt)
 {
 #if !USE_SDL_GPU
+    SDL_FillRect(self->state.rbuffer, NULL, 0x00000000);
 	SDL_RenderCopyEx(self->renderer,
         self->arrow, NULL,
         &self->arrow_rect,
-        value,
+        SFV_GAUGE(self)->value,
         &self->arrow_center,
         SDL_FLIP_NONE);
 #endif
@@ -137,6 +134,6 @@ static void roll_slip_gauge_render(RollSlipGauge *self, Uint32 dt, RenderContext
         NULL
     );
 #else
-    base_gauge_blit(BASE_GAUGE(self), ctx, self->state.rbuffer, NULL, &self->state.arrow_rect);
+    base_gauge_blit(BASE_GAUGE(self), ctx, self->state.rbuffer, NULL, NULL);
 #endif
 }

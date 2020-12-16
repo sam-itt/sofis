@@ -4,10 +4,10 @@
 
 #include <SDL2/SDL.h>
 
-#include "SDL_timer.h"
 #include "basic-hud.h"
 #include "side-panel.h"
 #include "resource-manager.h"
+#include "sdl-colors.h"
 
 #if ENABLE_3D
 #include "terrain-viewer.h"

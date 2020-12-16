@@ -24,6 +24,7 @@ typedef struct{
     SDL_Rect outer_rect;
 #if !USE_SDL_GPU
     SDL_Renderer *renderer;
+    SDL_Texture *texture;
 #endif
     CompassGaugeState state;
 }CompassGauge;

@@ -2,8 +2,10 @@
 #include <stdlib.h>
 
 #include "SDL_gpu.h"
-#include "base-animation.h"
+
 #include "base-gauge.h"
+#include "sdl-colors.h"
+#include "view.h"
 
 #define ALLOC_CHUNK 4
 #define ENABLE_SDL_GPU_FUNNY_COORDS 1
@@ -386,7 +388,7 @@ void base_gauge_draw_static_font_glyph(BaseGauge *self, RenderContext *ctx,
 
     base_gauge_blit_texture(self, ctx, font->texture, &src_rect, &dst_rect);
 #else
-    base_gauge_blit(self, ctx, font->raster, src_rect, dst_rect)
+    base_gauge_blit(self, ctx, font->raster, &src_rect, &dst_rect);
 #endif
 }
 
@@ -432,4 +434,3 @@ int base_gauge_blit_rotated_texture(BaseGauge *self, RenderContext *ctx,
 	}
     return 1;
 }
-

@@ -92,11 +92,12 @@ CompassGauge *compass_gauge_init(CompassGauge *self)
 
 #if !USE_SDL_GPU
 	self->state.rbuffer = SDL_CreateRGBSurfaceWithFormat(0,
-        base_gauge_w(BASE_GAUGE(self)),
-        base_gauge_h(BASE_GAUGE(self)),
+        generic_layer_w(&self->inner),
+        generic_layer_h(&self->inner),
         32, SDL_PIXELFORMAT_RGBA32
     );
 	self->renderer =  SDL_CreateSoftwareRenderer(self->state.rbuffer);
+    self->texture = SDL_CreateTextureFromSurface(self->renderer, self->inner.canvas);
 #endif
     return self;
 }
@@ -130,14 +131,13 @@ bool compass_gauge_set_value(CompassGauge *self, float value, bool animated)
 static void compass_gauge_update_state(CompassGauge *self, Uint32 dt)
 {
 #if !USE_SDL_GPU
+    SDL_FillRect(self->state.rbuffer, NULL, 0x00000000);
 	if(SFV_GAUGE(self)->value != 0){
-        SDL_Texture *tex = SDL_CreateTextureFromSurface(self->renderer, self->inner.canvas);
-        SDL_RenderCopyEx(self->renderer, tex,
+        SDL_RenderCopyEx(self->renderer, self->texture,
             NULL, NULL,
             SFV_GAUGE(self)->value * -1.0f,
             &self->icenter, SDL_FLIP_NONE
         );
-		SDL_DestroyTexture(tex);
 	}else{
         SDL_BlitSurface(self->inner.canvas, NULL,self->state.rbuffer, NULL);
     }
@@ -160,6 +160,8 @@ static void compass_gauge_render(CompassGauge *self, Uint32 dt, RenderContext *c
         &self->icenter,
         &self->inner_rect,
         NULL);
+#else
+    base_gauge_blit(BASE_GAUGE(self), ctx, self->state.rbuffer, NULL, &self->inner_rect);
 #endif
 }
 

@@ -51,7 +51,7 @@ typedef struct{
 	SDL_Rect locations[LOCATION_MAX];
 #if !USE_SDL_GPU
 	SDL_Renderer *renderer;
-	SDL_Texture *horizon;
+	SDL_Texture *ball_texture;
 #endif
 
     GenericLayer etched_ball;
