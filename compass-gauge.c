@@ -124,7 +124,10 @@ bool compass_gauge_set_value(CompassGauge *self, float value, bool animated)
     value = fmod(value, 360.0);
     if(value < 0)
         value += 360.0;
-
+    /*Temp fix for 'goes backwards effet when going from a value
+     * near 360 to a value after 360
+     * */
+    animated = false;
     return sfv_gauge_set_value(SFV_GAUGE(self), value, animated);
 }
 
