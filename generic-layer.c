@@ -158,6 +158,39 @@ void generic_layer_free(GenericLayer *self)
 }
 
 /**
+ * @brief Prevent others to remove @p self from under
+ * your feets.
+ *
+ * Match call with generic_layer_unref when you're done.
+ *
+ * @param self a GenericLayer
+ *
+ * @see generic_layer_unref
+ */
+/*TODO: Use inderlying refcounts from SDL_Surface/GPU_Image?*/
+/*TODO: inline*/
+void generic_layer_ref(GenericLayer *self)
+{
+    self->refcount++;
+}
+
+/**
+ * @brief Matching call to generic_layer_ref. Frees the memory
+ * when refcount reaches 0
+ *
+ * @param self a GenericLayer
+ *
+ * @see generic_layer_ref
+ *
+ */
+void generic_layer_unref(GenericLayer *self)
+{
+    if(--self->refcount == 0){
+        generic_layer_free(self);
+    }
+}
+
+/**
  * @brief Loads a file into a newly-created/uninited GenericLayer.
  *
  * Supported formats are those supported by SDL_Image which does the loading.

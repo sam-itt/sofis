@@ -3,6 +3,7 @@
 
 #include "SDL_gpu.h"
 
+#include "SDL_rect.h"
 #include "base-gauge.h"
 #include "sdl-colors.h"
 #include "view.h"
@@ -413,6 +414,9 @@ int base_gauge_blit_rotated_texture(BaseGauge *self, RenderContext *ctx,
     }
     if(clip)
         fclip = rect_offset(clip, ctx->location);
+
+    about = about ? about : (srcrect ? &(SDL_Point){.x = srcrect->w/2, .y = srcrect->h/2}
+                                     : &(SDL_Point){.x = src->w/2, .y = src->h/2});
 
 	if(!clip){
 		GPU_BlitRectX(src,

@@ -1,5 +1,6 @@
 #ifndef GENERIC_LAYER_H
 #define GENERIC_LAYER_H
+#include "misc.h"
 #include <stdbool.h>
 
 #include <SDL2/SDL.h>
@@ -9,6 +10,7 @@
 #endif
 
 typedef struct{
+    uintf8_t refcount;
     SDL_Surface *canvas;
 #if USE_SDL_GPU
     GPU_Image *texture;
@@ -31,6 +33,9 @@ bool generic_layer_init_from_file(GenericLayer *self, const char *filename);
 
 void generic_layer_dispose(GenericLayer *self);
 void generic_layer_free(GenericLayer *self);
+
+void generic_layer_ref(GenericLayer *self);
+void generic_layer_unref(GenericLayer *self);
 
 bool generic_layer_build_texture(GenericLayer *self);
 void generic_layer_update_texture(GenericLayer *self);
