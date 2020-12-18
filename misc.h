@@ -21,6 +21,9 @@
 #define VALIGN_MIDDLE 0x0c  /*xxxx11hh*/
 #define VALIGN_MASK   0x0c  /*00001100*/
 
+#define MIN(a, b)  (((a) < (b)) ? (a) : (b))
+#define MAX(a, b)  (((a) > (b)) ? (a) : (b))
+
 
 typedef uint_fast8_t uintf8_t;
 typedef uint_fast16_t uintf16_t;
