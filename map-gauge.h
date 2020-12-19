@@ -26,6 +26,20 @@ typedef struct{
 }MapGaugeState;
 
 typedef struct{
+    GenericLayer layer;
+    /* Marker position in "world" coordinates
+     * world coordinates are respective to the
+     * current level.
+     *
+     * Note: this is the point marked, the icon
+     * itself is centered on these coordinates
+     */
+    uint32_t x;
+    uint32_t y;
+    float heading;
+}MapGaugeMarker;
+
+typedef struct{
     BaseGauge super;
 
     /*current zoom level*/
@@ -35,13 +49,10 @@ typedef struct{
     uint32_t world_y;
 
     /*The little plane on the map*/
-    GenericLayer marker;
-    /* Marker position in "world" coordinates
-     * world coordinates are respective to the
-     * current level.
-     */
-    uint32_t marker_x;
-    uint32_t marker_y;
+    MapGaugeMarker marker;
+
+    bool roaming; /*The view is roaming around and not tied to the marker*/
+    Uint32 last_manipulation;
 
     MapTileProvider *tile_provider;
     MapGaugeState state;
@@ -54,10 +65,13 @@ MapGauge *map_gauge_init(MapGauge *self, int w, int h);
 MapGauge *map_gauge_dispose(MapGauge *self);
 MapGauge *map_gauge_free(MapGauge *self);
 
-
 bool map_gauge_set_level(MapGauge *self, uintf8_t level);
 bool map_gauge_set_marker_position(MapGauge *self, double latitude, double longitude);
+bool map_gauge_set_marker_heading(MapGauge *self, float heading);
+bool map_gauge_manipulate_viewport(MapGauge *self, int32_t dx, int32_t dy, bool animated);
 bool map_gauge_center_on_marker(MapGauge *self, bool animated);
+
+bool map_gauge_follow_marker(MapGauge *self);
 bool map_gauge_move_viewport(MapGauge *self, int32_t dx, int32_t dy, bool animated);
 bool map_gauge_set_viewport(MapGauge *self, uint32_t x, uint32_t y, bool animated);
 #endif /* MAP_GAUGE_H */

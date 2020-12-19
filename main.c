@@ -4,8 +4,11 @@
 
 #include <SDL2/SDL.h>
 
+#include "SDL_keycode.h"
+#include "base-gauge.h"
 #include "basic-hud.h"
 #include "side-panel.h"
+#include "map-gauge.h"
 #include "resource-manager.h"
 #include "sdl-colors.h"
 
@@ -47,6 +50,7 @@ typedef struct{
 
 BasicHud *hud = NULL;
 SidePanel *panel = NULL;
+MapGauge *map = NULL;
 bool g_show3d = false;
 
 
@@ -86,15 +90,44 @@ bool handle_keyboard(SDL_KeyboardEvent *event, Uint32 elapsed)
         case SDLK_UP:
             if(event->state == SDL_PRESSED){
                 alt += ALT_INC;
-                basic_hud_set(hud, 1, ALTITUDE, alt);
+                //basic_hud_set(hud, 1, ALTITUDE, alt);
+                map_gauge_manipulate_viewport(map, 0, -10, true);
             }
             break;
         case SDLK_DOWN:
             if(event->state == SDL_PRESSED){
                 alt -= ALT_INC;
-                basic_hud_set(hud, 1, ALTITUDE, alt);
+//                basic_hud_set(hud, 1, ALTITUDE, alt);
+                map_gauge_manipulate_viewport(map, 0, 10, true);
             }
             break;
+        case SDLK_LEFT:
+            if(event->state == SDL_PRESSED){
+                map_gauge_manipulate_viewport(map, -10, 0, true);
+            }
+            break;
+        case SDLK_RIGHT:
+            if(event->state == SDL_PRESSED){
+                map_gauge_manipulate_viewport(map, 10, 0, true);
+            }
+            break;
+        case SDLK_KP_PLUS:
+            if(event->state == SDL_PRESSED){
+                map_gauge_set_level(map, map->level+1);
+            }
+            break;
+        case SDLK_KP_MINUS:
+            if(event->state == SDL_PRESSED){
+                map_gauge_set_level(map, map->level-1);
+            }
+            break;
+        case SDLK_KP_DIVIDE:
+            if(event->state == SDL_PRESSED){
+                map_gauge_center_on_marker(map, true);
+            }
+            break;
+
+
         case SDLK_PAGEUP:
             if(event->state == SDL_PRESSED){
                 vs += VARIO_INC;
@@ -220,6 +253,11 @@ int main(int argc, char **argv)
 
     panel = side_panel_new(-1, -1);
     SDL_Rect sprect = {0,0, base_gauge_w(BASE_GAUGE(panel)),base_gauge_h(BASE_GAUGE(panel))};
+
+    map = map_gauge_new(190,150);
+    map->level = 7;
+    SDL_Rect maprect = {SCREEN_WIDTH-200,SCREEN_HEIGHT-160,base_gauge_w(BASE_GAUGE(map)),base_gauge_h(BASE_GAUGE(map))};
+
 #if ENABLE_3D
     TerrainViewer *viewer;
     viewer = terrain_viewer_new();
@@ -315,6 +353,8 @@ int main(int argc, char **argv)
             side_panel_set_fuel_px(panel, record.fuel_px);
             side_panel_set_fuel_qty(panel, record.fuel_qty);
 
+            map_gauge_set_marker_position(map, record.latitude, record.longitude);
+            map_gauge_set_marker_heading(map, record.heading);
 #if ENABLE_3D
             float lon = fmod(record.longitude+180, 360.0) - 180;
             record.altitude = record.altitude/3.281;
@@ -346,6 +386,7 @@ int main(int argc, char **argv)
         render_start = SDL_GetTicks();
         base_gauge_render(BASE_GAUGE(hud), elapsed, &(RenderContext){rtarget, &whole, NULL});
         base_gauge_render(BASE_GAUGE(panel), elapsed, &(RenderContext){rtarget, &sprect, NULL});
+        base_gauge_render(BASE_GAUGE(map), elapsed, &(RenderContext){rtarget, &maprect, NULL});
         render_end = SDL_GetTicks();
         total_render_time += render_end - render_start;
         nrender_calls++;
@@ -417,6 +458,7 @@ int main(int argc, char **argv)
     printf("Average rendering time (%d samples): %f ticks\n", nrender_calls, total_render_time*1.0/nrender_calls);
     basic_hud_free(hud);
     side_panel_free(panel);
+    map_gauge_free(map);
 #if defined(USE_FGCONN)
     flightgear_connector_free(fglink);
 #elif defined(USE_FGTAPE)

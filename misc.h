@@ -47,4 +47,9 @@ static inline int clamp(int x, int low, int high)
 {
     return (x > high) ? high : ((x < low) ? low : x);
 }
+
+static inline float clampf(float x, float low, float high)
+{
+    return (x > high) ? high : ((x < low) ? low : x);
+}
 #endif /* MISC_H */
