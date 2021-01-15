@@ -4,8 +4,6 @@
 
 #include <SDL2/SDL.h>
 
-#include "SDL_keycode.h"
-#include "base-gauge.h"
 #include "basic-hud.h"
 #include "side-panel.h"
 #include "map-gauge.h"
@@ -52,52 +50,45 @@ BasicHud *hud = NULL;
 SidePanel *panel = NULL;
 MapGauge *map = NULL;
 bool g_show3d = false;
-
-
-float alt = 900.0;
-float odo_val = 0.0;
-float vs = 0.0;
-float ias = 10.0;
-float pitch = 0.0;
-float roll = 0.0;
-#define VARIO_INC 100
-#define IAS_INC 1
-#define ALT_INC 150
-#define PITCH_INC 1;
-#define ROLL_INC 1;
-
+bool g_playing = true;
 
 /*Return true to quit the app*/
-bool handle_keyboard(SDL_KeyboardEvent *event, Uint32 elapsed)
+bool handle_keyboard(SDL_KeyboardEvent *event, Uint32 elapsed, TapeRecord *record)
 {
     switch(event->keysym.sym){
+        /*App control*/
         case SDLK_ESCAPE:
             if(event->state == SDL_PRESSED)
                 return true;
             break;
-        case SDLK_a:
-            if(event->state == SDL_PRESSED){
-                ias += IAS_INC;
-                basic_hud_set(hud, 1, AIRSPEED, ias);
-            }
+        case SDLK_SPACE:
+            if(event->state == SDL_PRESSED)
+                g_show3d = !g_show3d;
+            hud->attitude->hide_ball = (g_show3d) ? true : false;
             break;
-        case SDLK_z:
-            if(event->state == SDL_PRESSED){
-                ias -= IAS_INC;
-                basic_hud_set(hud, 1, AIRSPEED, ias);
-            }
+        case SDLK_RETURN:
+            if(event->state == SDL_PRESSED)
+                g_playing = !g_playing;
             break;
+        case SDLK_p:
+            if(event->state == SDL_PRESSED){
+                printf("Pitch: %f\nHeading: %f\n",
+                    record->pitch,
+                    record->heading
+                );
+            }
+
+            break;
+
+
+        /*MapGauge controls*/
         case SDLK_UP:
             if(event->state == SDL_PRESSED){
-                alt += ALT_INC;
-                //basic_hud_set(hud, 1, ALTITUDE, alt);
                 map_gauge_manipulate_viewport(map, 0, -10, true);
             }
             break;
         case SDLK_DOWN:
             if(event->state == SDL_PRESSED){
-                alt -= ALT_INC;
-//                basic_hud_set(hud, 1, ALTITUDE, alt);
                 map_gauge_manipulate_viewport(map, 0, 10, true);
             }
             break;
@@ -127,55 +118,49 @@ bool handle_keyboard(SDL_KeyboardEvent *event, Uint32 elapsed)
             }
             break;
 
-
-        case SDLK_PAGEUP:
-            if(event->state == SDL_PRESSED){
-                vs += VARIO_INC;
-                basic_hud_set(hud, 1, VERTICAL_SPEED, vs);
-            }
-            break;
-        case SDLK_PAGEDOWN:
-            if(event->state == SDL_PRESSED){
-                vs -= VARIO_INC;
-                basic_hud_set(hud, 1, VERTICAL_SPEED, vs);
-            }
-            break;
-        case SDLK_x:
-            if(event->state == SDL_PRESSED){
-                pitch -= PITCH_INC;
-                basic_hud_set(hud, 1, PITCH, pitch);
-            }
+        /*Manual camera/position control*/
+        case SDLK_z:
+            if(event->state == SDL_PRESSED)
+                record->pitch += 1.0;
             break;
         case SDLK_s:
-            if(event->state == SDL_PRESSED){
-                pitch += PITCH_INC;
-                basic_hud_set(hud, 1, PITCH, pitch);
-            }
+            if(event->state == SDL_PRESSED)
+                record->pitch -= 1.0;
             break;
-        case SDLK_c:
-            if(event->state == SDL_PRESSED){
-                roll -= ROLL_INC;
-                basic_hud_set(hud, 1, ROLL, roll);
-            }
+        case SDLK_q:
+            if(event->state == SDL_PRESSED)
+                record->roll -= 1.0;
             break;
         case SDLK_d:
+            if(event->state == SDL_PRESSED)
+                record->roll += 1.0;
+            break;
+        case SDLK_a:
             if(event->state == SDL_PRESSED){
-                roll += ROLL_INC;
-                basic_hud_set(hud, 1, ROLL, roll);
+                record->heading -= 1.0;
+                record->heading = fmodf(record->heading, 360.0);
             }
             break;
-        case SDLK_SPACE:
-            if(event->state == SDL_PRESSED)
-                g_show3d = !g_show3d;
-            hud->attitude->hide_ball = (g_show3d) ? true : false;
+        case SDLK_e:
+            if(event->state == SDL_PRESSED){
+                record->heading += 1.0;
+                record->heading = fmodf(record->heading, 360.0);
+            }
             break;
-
+        case SDLK_PAGEUP:
+            if(event->state == SDL_PRESSED)
+                record->altitude += 10;
+            break;
+        case SDLK_PAGEDOWN:
+            if(event->state == SDL_PRESSED)
+                record->altitude -= 10;
+            break;
     }
     return false;
 }
 
 /*Return true to quit the app*/
-bool handle_events(Uint32 elapsed)
+bool handle_events(Uint32 elapsed, TapeRecord *record)
 {
     SDL_Event event;
 
@@ -190,7 +175,7 @@ bool handle_events(Uint32 elapsed)
             break;
             case SDL_KEYUP:
             case SDL_KEYDOWN:
-                return handle_keyboard(&(event.key), elapsed);
+                return handle_keyboard(&(event.key), elapsed, record);
                 break;
         }
     }
@@ -315,13 +300,16 @@ int main(int argc, char **argv)
     Uint32 total_render_time = 0;
     Uint32 nrender_calls = 0;
 
+    g_show3d = true;
+    hud->attitude->hide_ball = (g_show3d) ? true : false;
+
     startms = SDL_GetTicks();
     do{
         ticks = SDL_GetTicks();
         elapsed = ticks - last_ticks;
         dtms = ticks - startms + (start_pos * 1000.0);
 
-        done = handle_events(elapsed);
+        done = handle_events(elapsed, &record);
 
 #if defined(USE_FGCONN)
         if(flightgear_connector_get_packet(fglink, &packet)){
@@ -335,12 +323,14 @@ int main(int argc, char **argv)
         }
 #elif defined(USE_FGTAPE)
         if(dtms - last_dtms >= (1000/25)){ //One update per 1/25 second
-            fg_tape_get_data_at(tape, dtms / 1000.0, 15, signals, &record);
+            if(g_playing){
+                fg_tape_get_data_at(tape, dtms / 1000.0, 15, signals, &record);
+            }
             last_dtms = dtms;
             basic_hud_set(hud,  6,
                 ALTITUDE, (double)record.altitude,
                 AIRSPEED, (double)record.airspeed,
-            VERTICAL_SPEED, record.vertical_speed * 60, /*Convert fps to fpm*/
+                VERTICAL_SPEED, record.vertical_speed * 60, /*Convert fps to fpm*/
                 PITCH, (double)record.pitch,
                 ROLL, (double)record.roll,
                 HEADING, (double)record.heading
@@ -357,9 +347,8 @@ int main(int argc, char **argv)
             map_gauge_set_marker_heading(map, record.heading);
 #if ENABLE_3D
             float lon = fmod(record.longitude+180, 360.0) - 180;
-            record.altitude = record.altitude/3.281;
             terrain_viewer_update_plane(viewer,
-                record.latitude, record.longitude, record.altitude + 2,
+                record.latitude, record.longitude, record.altitude/3.281 + 2,
                 record.roll, record.pitch, record.heading
             );
             if(last_ticks == 0){ //Do an invisible frame to trigger preload
@@ -390,6 +379,7 @@ int main(int argc, char **argv)
         render_end = SDL_GetTicks();
         total_render_time += render_end - render_start;
         nrender_calls++;
+
 #if USE_SDL_GPU
 		GPU_Flip(gpu_screen);
 #else
@@ -400,43 +390,6 @@ int main(int argc, char **argv)
         if(elapsed < 20){
             SDL_Delay(20 - elapsed);
         }
-#if 0
-        if(acc >= 1000){
-            float tmp;
-
-            tmp = basic_hud_get(hud, ALTITUDE);
-            if(tmp != oldv[0]){
-                printf("Altitude: %f\n", tmp);
-                oldv[0] = tmp;
-            }
-
-            tmp = basic_hud_get(hud, VERTICAL_SPEED);
-            if(tmp != oldv[1]){
-                printf("Vertical speed: %f\n", tmp);
-                oldv[1] = tmp;
-            }
-
-            tmp = basic_hud_get(hud, AIRSPEED);
-            if(tmp != oldv[2]){
-                printf("Airspeed: %f\n", tmp);
-                oldv[2] = tmp;
-            }
-
-            tmp = basic_hud_get(hud, PITCH);
-            if(tmp != oldv[3]){
-                printf("Pitch: %f\n", tmp);
-                oldv[3] = tmp;
-            }
-
-            tmp = basic_hud_get(hud, ROLL);
-            if(tmp != oldv[4]){
-                printf("Roll: %f\n", tmp);
-                oldv[4] = tmp;
-            }
-
-            acc = 0;
-        }
-#endif
         if(acc >= 1000){ /*1sec*/
             int h,m,s;
 
