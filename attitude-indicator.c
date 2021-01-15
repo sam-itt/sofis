@@ -4,9 +4,8 @@
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_image.h>
 
-#include "SDL_rect.h"
-#include "SDL_render.h"
-#include "SDL_surface.h"
+#include "SDL_pcf.h"
+
 #include "attitude-indicator.h"
 #include "base-animation.h"
 #include "base-gauge.h"
@@ -15,7 +14,6 @@
 #include "resource-manager.h"
 #include "roll-slip-gauge.h"
 #include "sdl-colors.h"
-#include "SDL_pcf.h"
 
 #define sign(x) (((x) > 0) - ((x) < 0))
 
@@ -27,6 +25,7 @@ static BaseGaugeOps attitude_indicator_ops = {
 };
 
 static SDL_Surface *attitude_indicator_get_etched_ball(AttitudeIndicator *self);
+static SDL_Surface *attitude_indicator_draw_ruler(AttitudeIndicator *self, int size, int ppm, PCF_Font *font, SDL_Color *col);
 
 AttitudeIndicator *attitude_indicator_new(int width, int height)
 {
@@ -48,7 +47,11 @@ AttitudeIndicator *attitude_indicator_init(AttitudeIndicator *self, int width, i
     base_gauge_init(BASE_GAUGE(self), &attitude_indicator_ops, width, height);
 
 	self->common_center.x = round((base_gauge_w(BASE_GAUGE(self)))/2.0);
+#if 1
 	self->common_center.y = round(base_gauge_h(BASE_GAUGE(self))*0.4);
+#else
+	self->common_center.y = round(base_gauge_h(BASE_GAUGE(self))/2.0);
+#endif
 	self->size = 2; /*In tens of degrees, here 20deg (+/-)*/
 
     /*TODO: Failure*/
@@ -67,7 +70,7 @@ AttitudeIndicator *attitude_indicator_init(AttitudeIndicator *self, int width, i
 	self->locations[MARKER_LEFT] = (SDL_Rect){
 	/*The left marker has its arrow pointing right and the arrow X is at marker->w-1*/
 		self->common_center.x - 78 - (generic_layer_w(&self->markers[0])-1),
-		round(base_gauge_h(BASE_GAUGE(self))*0.4) - round(generic_layer_h(&self->markers[0])/2.0) +1,
+		self->common_center.y - round(generic_layer_h(&self->markers[0])/2.0) /*+1*/,
 		generic_layer_w(&self->markers[MARKER_LEFT]), generic_layer_h(&self->markers[MARKER_LEFT])
 	};
 	self->locations[MARKER_RIGHT] = (SDL_Rect){
@@ -77,7 +80,7 @@ AttitudeIndicator *attitude_indicator_init(AttitudeIndicator *self, int width, i
 	};
 	self->locations[MARKER_CENTER] = (SDL_Rect){
 		self->common_center.x - round((generic_layer_w(&self->markers[2])-1)/2.0),
-		round(base_gauge_h(BASE_GAUGE(self))*0.4) +1,
+		self->common_center.y /*+ 1*/,
 		generic_layer_w(&self->markers[MARKER_CENTER]), generic_layer_h(&self->markers[MARKER_CENTER])
 	};
 
@@ -92,6 +95,25 @@ AttitudeIndicator *attitude_indicator_init(AttitudeIndicator *self, int width, i
     );
 
     attitude_indicator_get_etched_ball(self);
+#if ENABLE_3D
+    /* Verticaly 7 pixels -> 1 degree, 2.5 degrees = 17 pixels
+     * Horizontaly 8 pixels -> 1 degree.
+     * Values found using screenshots and dividing
+     * pixels by degrees. TODO: Find out how to
+     * properly compute those values
+     * */
+
+    self->pitch_ruler.canvas = attitude_indicator_draw_ruler(self,
+        self->size, 17,
+        resource_manager_get_font(TERMINUS_12),
+        &(SDL_Color){0,255,0}
+    );
+    /*TODO: Generate*/
+    generic_layer_init_from_file(&self->etched_horizon, "horizon-grads-scaled.png");
+    generic_layer_build_texture(&self->pitch_ruler);
+    generic_layer_build_texture(&self->etched_horizon);
+#endif
+
 #if !USE_SDL_GPU
 	self->state.rbuffer = SDL_CreateRGBSurfaceWithFormat(0, width*2, height*2, 32, SDL_PIXELFORMAT_RGBA32);
 	self->renderer =  SDL_CreateSoftwareRenderer(self->state.rbuffer);
@@ -155,7 +177,8 @@ bool attitude_indicator_set_roll(AttitudeIndicator *self, float value, bool anim
     BaseAnimation *animation;
     bool rv;
 
-//    animated = false;
+    animated = (self->mode == AI_MODE_3D) ? false : animated;
+
     if(animated){
         if(BASE_GAUGE(self)->nanimations == 0){
             rv = attitude_indicator_init_animations(self);
@@ -177,11 +200,11 @@ bool attitude_indicator_set_pitch(AttitudeIndicator *self, float value, bool ani
 {
     BaseAnimation *animation;
     bool rv;
-//    animated = false;
 
 	value = (value > self->size*10) ? self->size*10 + 5 : value;
 	value = (value < self->size*-10) ? self->size*-10 - 5: value;
 
+    animated = (self->mode == AI_MODE_3D) ? false : animated;
 
 //    printf("%s %p value: %f\n",__FUNCTION__, self, value);
     if(animated){
@@ -199,6 +222,18 @@ fallback:
             BASE_GAUGE(self)->dirty = true;
         }
     }
+    return true;
+}
+
+bool attitude_indicator_set_heading(AttitudeIndicator *self, float value)
+{
+    bool rv;
+
+    if(value > 360 || value < 0) return false;
+
+    self->heading = value;
+    BASE_GAUGE(self)->dirty = true;
+
     return true;
 }
 
@@ -287,6 +322,7 @@ SDL_Surface *attitude_indicator_draw_ball(AttitudeIndicator *self)
 	int first_gradient = round(limit * 0.25); /*First gradiant from the centerline to 25% up*/
 	int first_gradiant_stop = limit - first_gradient;
 	Uint32 color;
+
     /*Draw the sky*/
     for(y = limit; y >= 0; y--){
 		if(y  > first_gradiant_stop){
@@ -302,6 +338,7 @@ SDL_Surface *attitude_indicator_draw_ball(AttitudeIndicator *self)
 	        pixels[y * surface->w + x] = color;
         }
     }
+
     /*Draw a white center line*/
 	y = limit;
     for(x = 0; x < surface->w; x++){
@@ -321,7 +358,22 @@ SDL_Surface *attitude_indicator_draw_ball(AttitudeIndicator *self)
     return surface;
 }
 
-SDL_Surface *attitude_indicator_draw_ruler(AttitudeIndicator *self, int size, PCF_Font *font)
+/**
+ * Draws a vertical pitch "ruler".
+ *
+ * Calling code must free the returned surface.
+ * Internal use only
+ *
+ * TODO: Replace this with GenericRuler
+ *
+ * @param self a AttitudeIndicator
+ * @param size The number of 10th graduations, both ways. A value of 2 means
+ * etches from 20 to -20 degrees.
+ * @param ppm Pixels per 2.5 etch. How much pixel a 2.5 degree interval
+ * (base etching) does take.
+ * @param font the PCF_Font used to draw the marks
+ */
+static SDL_Surface *attitude_indicator_draw_ruler(AttitudeIndicator *self, int size, int ppm, PCF_Font *font, SDL_Color *col)
 {
     SDL_Surface *rv;
 	Uint32 *pixels;
@@ -330,26 +382,29 @@ SDL_Surface *attitude_indicator_draw_ruler(AttitudeIndicator *self, int size, PC
 	int start_x, middle_x, end_x;
 	int middle_y;
 
+//    int ppm = 9; /*17*/ /*pixels per mark*/
+    int hfactor = (20/2.5)*ppm + 1; /*20 is the span between -10 to 10*/
 	int yoffset = 10;
+
 	/* Width: 57px wide for the 10s graduations plus 2x20 to allow space for the font*/
 	width = 57+(2*20);
 	middle_x = (57-1)/2 + 19;
-	 /* Height: 73px for +10 and -10 graduations by the size */
-	height = 73*size + 20;
+	 /* Height: hfactor px for +10 and -10 graduations by the size */
+	height = hfactor*size + 20;
 	printf("max height: %d\n", height-1); //166 values from 0 to 165
-	middle_y = ((73*size)-1)/2.0 + yoffset;
+	middle_y = ((hfactor*size)-1)/2.0 + yoffset;
 
 	self->ruler_center.x = middle_x;
 	self->ruler_center.y = middle_y;
 
 	rv = SDL_CreateRGBSurfaceWithFormat(0, width, height, 32, SDL_PIXELFORMAT_RGBA32);
-	SDL_SetColorKey(rv, SDL_TRUE, SDL_UCKEY(rv));
-	SDL_FillRect(rv, NULL, SDL_UCKEY(rv));
+//	SDL_SetColorKey(rv, SDL_TRUE, SDL_UCKEY(rv));
+//	SDL_FillRect(rv, NULL, SDL_UCKEY(rv));
 
 
     SDL_LockSurface(rv);
     pixels = rv->pixels;
-    Uint32 color = SDL_UWHITE(rv);
+    Uint32 color = SDL_MapRGB(rv->format, col->r, col->g, col->b);
     Uint32 mcolor = SDL_URED(rv);
 
 	int grad_level;
@@ -358,7 +413,7 @@ SDL_Surface *attitude_indicator_draw_ruler(AttitudeIndicator *self, int size, PC
 	/*Go upwards*/
 	grad_level = 0;
 	for(y = middle_y; y >= 0+yoffset; y--){
-		if( (y-middle_y) % 9 == 0){
+		if( (y-middle_y) % ppm == 0){
 			start_x = middle_x - (grad_sizes[grad_level]-1)/2;
 			end_x = middle_x + (grad_sizes[grad_level]-1)/2;
 
@@ -373,7 +428,7 @@ SDL_Surface *attitude_indicator_draw_ruler(AttitudeIndicator *self, int size, PC
 	/*Go downwards*/
 	grad_level = 0;
 	for(y = middle_y; y < rv->h-yoffset; y++){
-		if( (y-middle_y) % 9 == 0){
+		if( (y-middle_y) % ppm == 0){
 			start_x = middle_x - (grad_sizes[grad_level]-1)/2;
 			end_x = middle_x + (grad_sizes[grad_level]-1)/2;
 
@@ -390,12 +445,12 @@ SDL_Surface *attitude_indicator_draw_ruler(AttitudeIndicator *self, int size, PC
     int current_grad;
     Uint32 tcol; /*text color*/
 
-    tcol = SDL_UWHITE(rv);
+    tcol = SDL_MapRGB(rv->format, col->r, col->g, col->b);
 
 	/*Go upwards*/
 	current_grad = 0;
 	for(y = middle_y; y >= 0+yoffset; y--){
-		if((y-middle_y) % 36 == 0){ // 10 graduation
+		if((y-middle_y) % (4*ppm) == 0){ // 10 graduation
 			if(current_grad > 0){
                 PCF_FontWriteNumberAt(font,
                     &current_grad, TypeInt, 2,
@@ -415,7 +470,7 @@ SDL_Surface *attitude_indicator_draw_ruler(AttitudeIndicator *self, int size, PC
 	/*Go downwards*/
 	current_grad = 0;
 	for(y = middle_y; y < rv->h-yoffset; y++){
-		if((y-middle_y) % 36 == 0){ // 10 graduation
+		if((y-middle_y) % (4*ppm) == 0){ // 10 graduation
 			if(current_grad > 0){
                 PCF_FontWriteNumberAt(font,
                     &current_grad, TypeInt, 2,
@@ -494,11 +549,9 @@ static SDL_Surface *attitude_indicator_get_etched_ball(AttitudeIndicator *self)
 		SDL_Rect ruler_pos;
 
         ball = attitude_indicator_draw_ball(self);
-        ruler = attitude_indicator_draw_ruler(self, self->size, resource_manager_get_font(TERMINUS_12));
+        ruler = attitude_indicator_draw_ruler(self, self->size, 9, resource_manager_get_font(TERMINUS_12), &SDL_WHITE);
 
         generic_layer_init(&self->etched_ball, self->ball_all.w, self->ball_all.h);
-		//int common_y = attitude_indicator_resolve_value(self, value);
-		int common_y = attitude_indicator_resolve_value(self, 0);
 
 		/* First place the ball and the scale, such has the middle of the the scale is on
 		 * the same line as the "middle" of the ball. They both need to have the same y coordinate
@@ -533,12 +586,13 @@ static void attitude_indicator_update_state(AttitudeIndicator *self, Uint32 dt)
     /*First find out a view-sized window into the larger ball buffer for a 0deg pitch*/
     self->state.win = (SDL_Rect){
         .x = self->ball_center.x - (round(base_gauge_w(BASE_GAUGE(self))/2.0) -1), /*Is ball_window useless?*/
-        .y = self->ball_center.y - (round(base_gauge_h(BASE_GAUGE(self))*0.4) -1),
+        .y = self->ball_center.y - (self->common_center.y - 1),
         .w = base_gauge_w(BASE_GAUGE(self)),
         .h = base_gauge_h(BASE_GAUGE(self))
     };
     /*Then apply to correct y offset to account for pitch*/
     self->state.win.y += attitude_indicator_resolve_increment(self, self->pitch * -1.0);
+
     /* Now that we have the correct self->state.window, rotate it to account for roll
      * The rotation center must be 40% of the height and middle width
      * */
@@ -563,19 +617,117 @@ static void attitude_indicator_update_state(AttitudeIndicator *self, Uint32 dt)
         SDL_BlitSurface(self->etched_ball.canvas, NULL, self->state.rbuffer, NULL);
     }
 #endif
+#if ENABLE_3D
+    int horizon_y = self->common_center.y-1;
+    int increment = 0;
+    increment = self->pitch * 7; /*7 pixels 1 degree*/
+    horizon_y += increment;
+
+    /*TODO: This should go in a common infinite/looping ruler handler*/
+    self->state.npatches = 0;
+    /*Resolve the heading value in a pixel x-coordinate in the image*/
+    int value_x = 0;
+    if(self->heading >= 0 && self->heading <= 230){
+        value_x = 1024 + self->heading / (1.0/8.0); /*degrees per pixel*/
+    }else if(self->heading >= 232 && self->heading <= 359){
+        float tmp = self->heading - 232;
+        value_x = 0 + tmp / (1.0/8.0);
+    }
+
+    /*
+     * Postionning / centering to have
+     * hz_srect.x + rubis = value_x
+     */
+    int rubis = self->common_center.x;
+    int xbegin = value_x - rubis;
+    int xend;
+    bool rpatch;
+    int xcursor = 0;
+    if(xbegin < 0){ /* we went before the image begining and need to fill the left side*/
+        self->state.hz_srects[self->state.npatches].x = generic_layer_w(&self->etched_horizon)-1 - abs(xbegin);
+        self->state.hz_srects[self->state.npatches].w = abs(xbegin);
+        self->state.hz_srects[self->state.npatches].y = 0;
+        self->state.hz_srects[self->state.npatches].h = generic_layer_h(&self->etched_horizon);
+
+        self->state.hz_drects[self->state.npatches].x = xcursor;
+        self->state.hz_drects[self->state.npatches].w = self->state.hz_srects[self->state.npatches].w;
+        self->state.hz_drects[self->state.npatches].y = horizon_y - generic_layer_h(&self->etched_horizon);
+        self->state.hz_drects[self->state.npatches].h = generic_layer_h(&self->etched_horizon);
+
+        xcursor += self->state.hz_drects[self->state.npatches].w;
+        xbegin = 0;
+        self->state.npatches++;
+    }
+    self->state.hz_srects[self->state.npatches].x = xbegin;
+    self->state.hz_srects[self->state.npatches].w = base_gauge_w(BASE_GAUGE(self));
+    self->state.hz_srects[self->state.npatches].y = 0;
+    self->state.hz_srects[self->state.npatches].h = generic_layer_h(&self->etched_horizon);
+
+    xend = self->state.hz_srects[self->state.npatches].x + self->state.hz_srects[self->state.npatches].w;
+    if(xend > generic_layer_w(&self->etched_horizon)-1){
+        self->state.hz_srects[self->state.npatches].w = generic_layer_w(&self->etched_horizon) - self->state.hz_srects[self->state.npatches].x;
+    }
+
+    self->state.hz_drects[self->state.npatches].x = xcursor;
+    self->state.hz_drects[self->state.npatches].w = self->state.hz_srects[self->state.npatches].w;
+    self->state.hz_drects[self->state.npatches].y = horizon_y - generic_layer_h(&self->etched_horizon);
+    self->state.hz_drects[self->state.npatches].h = generic_layer_h(&self->etched_horizon);
+
+    xcursor += self->state.hz_drects[self->state.npatches].w;
+    self->state.npatches++;
+
+    if(xend > generic_layer_w(&self->etched_horizon)-1){
+        int pixels = xend - generic_layer_w(&self->etched_horizon)-1;
+        self->state.hz_srects[self->state.npatches].x = 0;
+        self->state.hz_srects[self->state.npatches].w = pixels;
+        self->state.hz_srects[self->state.npatches].y = 0;
+        self->state.hz_srects[self->state.npatches].h = generic_layer_h(&self->etched_horizon);
+
+        self->state.hz_drects[self->state.npatches].x = xcursor;
+        self->state.hz_drects[self->state.npatches].w = self->state.hz_srects[self->state.npatches].w;
+        self->state.hz_drects[self->state.npatches].y = horizon_y - generic_layer_h(&self->etched_horizon);
+        self->state.hz_drects[self->state.npatches].h = generic_layer_h(&self->etched_horizon);
+
+        self->state.npatches++;
+    }
+
+    self->state.pr_dstrect = (SDL_Rect) {
+        .x = base_gauge_w(BASE_GAUGE(self))/2 - self->pitch_ruler.texture->w/2 + 1,
+        .y = horizon_y - (self->pitch_ruler.texture->h/2-1),
+        .w = self->pitch_ruler.texture->w,
+        .h = self->pitch_ruler.texture->h
+    };
+#endif
 }
 
 static void attitude_indicator_render(AttitudeIndicator *self, Uint32 dt, RenderContext *ctx)
 {
 #if USE_SDL_GPU
-    if(!self->hide_ball){
+    if(self->mode == AI_MODE_2D){
         base_gauge_blit_rotated_texture(BASE_GAUGE(self), ctx,
             self->etched_ball.texture,
             NULL,
-            self->roll,
+            -self->roll,
             &self->state.rcenter,
             NULL,
             &self->state.dst_clip);
+    }else{
+        for(int i = 0; i < self->state.npatches; i++){
+            base_gauge_blit_rotated_texture(BASE_GAUGE(self), ctx,
+                self->etched_horizon.texture,
+                &self->state.hz_srects[i],
+                -self->roll,
+                NULL, &self->state.hz_drects[i],
+                NULL
+            );
+        }
+
+        base_gauge_blit_rotated_texture(BASE_GAUGE(self), ctx,
+         self->pitch_ruler.texture,
+         NULL, self->roll,
+         NULL,
+         &self->state.pr_dstrect,
+         NULL);
     }
 #else
     base_gauge_blit(BASE_GAUGE(self), ctx,

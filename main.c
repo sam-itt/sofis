@@ -64,7 +64,7 @@ bool handle_keyboard(SDL_KeyboardEvent *event, Uint32 elapsed, TapeRecord *recor
         case SDLK_SPACE:
             if(event->state == SDL_PRESSED)
                 g_show3d = !g_show3d;
-            hud->attitude->hide_ball = (g_show3d) ? true : false;
+            hud->attitude->mode = (g_show3d) ? AI_MODE_3D : AI_MODE_2D;
             break;
         case SDLK_RETURN:
             if(event->state == SDL_PRESSED)
@@ -245,7 +245,7 @@ int main(int argc, char **argv)
 
 #if ENABLE_3D
     TerrainViewer *viewer;
-    viewer = terrain_viewer_new();
+    viewer = terrain_viewer_new(-0.2);
 #endif
 
     done = false;
@@ -301,7 +301,7 @@ int main(int argc, char **argv)
     Uint32 nrender_calls = 0;
 
     g_show3d = true;
-    hud->attitude->hide_ball = (g_show3d) ? true : false;
+    hud->attitude->mode = (g_show3d) ? AI_MODE_3D : AI_MODE_2D;
 
     startms = SDL_GetTicks();
     do{

@@ -133,6 +133,7 @@ void basic_hud_set_values(BasicHud *self, int nvalues, va_list ap)
             break;
           case HEADING:
             compass_gauge_set_value(self->compass, val, true);
+            attitude_indicator_set_heading(self->attitude, val);
             break;
           case HUD_VALUE_MAX: /*Fall through*/
           default:

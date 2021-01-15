@@ -17,12 +17,24 @@ typedef enum{
     N_AI_ANIMATIONS
 }AIttitudeIndicatorAnimation;
 
+typedef enum{
+    AI_MODE_2D = 0,
+    AI_MODE_3D
+}AttitudeIndicatorDisplayMode;
+
 typedef struct{
     SDL_Point rcenter;
     SDL_Rect dst_clip;
     SDL_Rect win;
 #if !USE_SDL_GPU
     SDL_Surface *rbuffer; /*rotation buffer*/
+#endif
+#if ENABLE_3D
+    SDL_Rect hz_srects[3];
+    SDL_Rect hz_drects[3];
+    int npatches;
+
+    SDL_Rect pr_dstrect;
 #endif
 }AttitudeIndicatorState;
 
@@ -32,11 +44,12 @@ typedef struct{
 
     float roll; /*pitch?*/
     float pitch;
+    float heading;
 
 	RollSlipGauge *rollslip;
 
 	int size; /*number of 10s markings*/
-    bool hide_ball;
+    AttitudeIndicatorDisplayMode mode;
 
     SDL_Rect ball_window; /*Visible portion*/
     SDL_Rect ball_all; /*Visible portion plus extended area*/
@@ -55,6 +68,10 @@ typedef struct{
 #endif
 
     GenericLayer etched_ball;
+#if USE_SDL_GPU && ENABLE_3D
+    GenericLayer pitch_ruler;
+    GenericLayer etched_horizon;
+#endif
 
     AttitudeIndicatorState state;
 }AttitudeIndicator;
@@ -67,6 +84,7 @@ void attitude_indicator_free(AttitudeIndicator *self);
 
 bool attitude_indicator_set_roll(AttitudeIndicator *self, float value, bool animated);
 bool attitude_indicator_set_pitch(AttitudeIndicator *self, float value, bool animated);
+bool attitude_indicator_set_heading(AttitudeIndicator *self, float value);
 
 AttitudeIndicator *attitude_indicator_init(AttitudeIndicator *self, int width, int height);
 
