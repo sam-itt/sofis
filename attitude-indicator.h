@@ -30,10 +30,7 @@ typedef struct{
     SDL_Surface *rbuffer; /*rotation buffer*/
 #endif
 #if ENABLE_3D
-    SDL_Rect hz_srects[3];
-    SDL_Rect hz_drects[3];
-    int npatches;
-
+    SDL_Rect hz_drect;
     SDL_Rect pr_dstrect;
 #endif
 }AttitudeIndicatorState;
@@ -70,6 +67,7 @@ typedef struct{
     GenericLayer etched_ball;
 #if USE_SDL_GPU && ENABLE_3D
     GenericLayer pitch_ruler;
+    SDL_Surface *horizon_src;
     GenericLayer etched_horizon;
 #endif
 

@@ -109,9 +109,11 @@ AttitudeIndicator *attitude_indicator_init(AttitudeIndicator *self, int width, i
         &(SDL_Color){0,255,0}
     );
     /*TODO: Generate*/
-    generic_layer_init_from_file(&self->etched_horizon, "horizon-grads-scaled.png");
+    self->horizon_src = IMG_Load("horizon-grads-scaled.png");
+    if(!self->horizon_src)
+        return NULL;
+    generic_layer_init(&self->etched_horizon, base_gauge_w(BASE_GAUGE(self)), self->horizon_src->h);
     generic_layer_build_texture(&self->pitch_ruler);
-    generic_layer_build_texture(&self->etched_horizon);
 #endif
 
 #if !USE_SDL_GPU
@@ -164,6 +166,9 @@ void attitude_indicator_dispose(AttitudeIndicator *self)
 	SDL_DestroyRenderer(self->renderer);
 #endif
     generic_layer_dispose(&self->etched_ball);
+    generic_layer_dispose(&self->etched_horizon);
+    if(self->horizon_src)
+        SDL_FreeSurface(self->horizon_src);
 }
 
 void attitude_indicator_free(AttitudeIndicator *self)
@@ -623,8 +628,9 @@ static void attitude_indicator_update_state(AttitudeIndicator *self, Uint32 dt)
     increment = self->pitch * 7; /*7 pixels 1 degree*/
     horizon_y += increment;
 
-    /*TODO: This should go in a common infinite/looping ruler handler*/
-    self->state.npatches = 0;
+    /*TODO: This Whole infinite horizon handling code
+     * should go in a common infinite/looping ruler handler
+     */
     /*Resolve the heading value in a pixel x-coordinate in the image*/
     int value_x = 0;
     if(self->heading >= 0 && self->heading <= 230){
@@ -643,54 +649,76 @@ static void attitude_indicator_update_state(AttitudeIndicator *self, Uint32 dt)
     int xend;
     bool rpatch;
     int xcursor = 0;
+    SDL_Rect hz_srects[3];
+    SDL_Rect hz_drects[3];
+    int npatches = 0;
+
     if(xbegin < 0){ /* we went before the image begining and need to fill the left side*/
-        self->state.hz_srects[self->state.npatches].x = generic_layer_w(&self->etched_horizon)-1 - abs(xbegin);
-        self->state.hz_srects[self->state.npatches].w = abs(xbegin);
-        self->state.hz_srects[self->state.npatches].y = 0;
-        self->state.hz_srects[self->state.npatches].h = generic_layer_h(&self->etched_horizon);
+        hz_srects[npatches].x = self->horizon_src->w-1 - abs(xbegin);
+        hz_srects[npatches].w = abs(xbegin);
+        hz_srects[npatches].y = 0;
+        hz_srects[npatches].h = self->horizon_src->h;
 
-        self->state.hz_drects[self->state.npatches].x = xcursor;
-        self->state.hz_drects[self->state.npatches].w = self->state.hz_srects[self->state.npatches].w;
-        self->state.hz_drects[self->state.npatches].y = horizon_y - generic_layer_h(&self->etched_horizon);
-        self->state.hz_drects[self->state.npatches].h = generic_layer_h(&self->etched_horizon);
+        hz_drects[npatches].x = xcursor;
+        hz_drects[npatches].w = hz_srects[npatches].w;
+        //hz_drects[npatches].y = horizon_y - self->horizon_src->h;
+        hz_drects[npatches].y = 0;
+        hz_drects[npatches].h = self->horizon_src->h;
 
-        xcursor += self->state.hz_drects[self->state.npatches].w;
+        xcursor += hz_drects[npatches].w;
         xbegin = 0;
-        self->state.npatches++;
+        npatches++;
     }
-    self->state.hz_srects[self->state.npatches].x = xbegin;
-    self->state.hz_srects[self->state.npatches].w = base_gauge_w(BASE_GAUGE(self));
-    self->state.hz_srects[self->state.npatches].y = 0;
-    self->state.hz_srects[self->state.npatches].h = generic_layer_h(&self->etched_horizon);
+    hz_srects[npatches].x = xbegin;
+    hz_srects[npatches].w = base_gauge_w(BASE_GAUGE(self));
+    hz_srects[npatches].y = 0;
+    hz_srects[npatches].h = self->horizon_src->h;
 
-    xend = self->state.hz_srects[self->state.npatches].x + self->state.hz_srects[self->state.npatches].w;
-    if(xend > generic_layer_w(&self->etched_horizon)-1){
-        self->state.hz_srects[self->state.npatches].w = generic_layer_w(&self->etched_horizon) - self->state.hz_srects[self->state.npatches].x;
-    }
-
-    self->state.hz_drects[self->state.npatches].x = xcursor;
-    self->state.hz_drects[self->state.npatches].w = self->state.hz_srects[self->state.npatches].w;
-    self->state.hz_drects[self->state.npatches].y = horizon_y - generic_layer_h(&self->etched_horizon);
-    self->state.hz_drects[self->state.npatches].h = generic_layer_h(&self->etched_horizon);
-
-    xcursor += self->state.hz_drects[self->state.npatches].w;
-    self->state.npatches++;
-
-    if(xend > generic_layer_w(&self->etched_horizon)-1){
-        int pixels = xend - generic_layer_w(&self->etched_horizon)-1;
-        self->state.hz_srects[self->state.npatches].x = 0;
-        self->state.hz_srects[self->state.npatches].w = pixels;
-        self->state.hz_srects[self->state.npatches].y = 0;
-        self->state.hz_srects[self->state.npatches].h = generic_layer_h(&self->etched_horizon);
-
-        self->state.hz_drects[self->state.npatches].x = xcursor;
-        self->state.hz_drects[self->state.npatches].w = self->state.hz_srects[self->state.npatches].w;
-        self->state.hz_drects[self->state.npatches].y = horizon_y - generic_layer_h(&self->etched_horizon);
-        self->state.hz_drects[self->state.npatches].h = generic_layer_h(&self->etched_horizon);
-
-        self->state.npatches++;
+    xend = hz_srects[npatches].x + hz_srects[npatches].w;
+    if(xend > self->horizon_src->w-1){
+        hz_srects[npatches].w = self->horizon_src->w - hz_srects[npatches].x;
     }
 
+    hz_drects[npatches].x = xcursor;
+    hz_drects[npatches].w = hz_srects[npatches].w;
+    hz_drects[npatches].y = 0;
+    hz_drects[npatches].h = self->horizon_src->h;
+
+    xcursor += hz_drects[npatches].w;
+    npatches++;
+
+    if(xend > self->horizon_src->w-1){
+        int pixels = xend - self->horizon_src->w-1;
+        hz_srects[npatches].x = 0;
+        hz_srects[npatches].w = pixels;
+        hz_srects[npatches].y = 0;
+        hz_srects[npatches].h = self->horizon_src->h;
+
+        hz_drects[npatches].x = xcursor;
+        hz_drects[npatches].w = hz_srects[npatches].w;
+        hz_drects[npatches].y = 0;
+        hz_drects[npatches].h = self->horizon_src->h;
+
+        npatches++;
+    }
+
+    SDL_FillRect(self->etched_horizon.canvas, NULL, 0x00000000);
+    for(int i = 0; i < npatches; i++){
+        SDL_BlitSurface(
+            self->horizon_src, &hz_srects[i],
+            self->etched_horizon.canvas, &hz_drects[i]
+        );
+    }
+    generic_layer_update_texture(&self->etched_horizon);
+
+    self->state.hz_drect = (SDL_Rect){
+        .x = 0,
+        .y = horizon_y - self->horizon_src->h,
+        .w = base_gauge_w(BASE_GAUGE(self)),
+        .h = self->horizon_src->h
+    };
+
+    /*Pitch ruler*/
     self->state.pr_dstrect = (SDL_Rect) {
         .x = base_gauge_w(BASE_GAUGE(self))/2 - self->pitch_ruler.texture->w/2 + 1,
         .y = horizon_y - (self->pitch_ruler.texture->h/2-1),
@@ -712,15 +740,13 @@ static void attitude_indicator_render(AttitudeIndicator *self, Uint32 dt, Render
             NULL,
             &self->state.dst_clip);
     }else{
-        for(int i = 0; i < self->state.npatches; i++){
-            base_gauge_blit_rotated_texture(BASE_GAUGE(self), ctx,
-                self->etched_horizon.texture,
-                &self->state.hz_srects[i],
-                -self->roll,
-                NULL, &self->state.hz_drects[i],
-                NULL
-            );
-        }
+        base_gauge_blit_rotated_texture(BASE_GAUGE(self), ctx,
+            self->etched_horizon.texture,
+            NULL,
+            -self->roll,
+            NULL, &self->state.hz_drect,
+            NULL
+        );
 
         base_gauge_blit_rotated_texture(BASE_GAUGE(self), ctx,
          self->pitch_ruler.texture,
