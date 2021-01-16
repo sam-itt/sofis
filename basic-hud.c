@@ -10,6 +10,7 @@
 #include "basic-hud.h"
 #include "misc.h"
 #include "compass-gauge.h"
+#include "roll-slip-gauge.h"
 #include "sfv-gauge.h"
 #include "tape-gauge.h"
 
@@ -131,6 +132,9 @@ void basic_hud_set_values(BasicHud *self, int nvalues, va_list ap)
           case ROLL:
             attitude_indicator_set_roll(self->attitude, val, true);
             break;
+          case SLIP:
+            roll_slip_gauge_set_slip(self->attitude->rollslip, val, true);
+            break;
           case HEADING:
             compass_gauge_set_value(self->compass, val, true);
             attitude_indicator_set_heading(self->attitude, val);
@@ -162,6 +166,9 @@ float basic_hud_get(BasicHud *self, HudValue hv)
         break;
       case HEADING:
         return sfv_gauge_get_value(SFV_GAUGE(self->compass));
+        break;
+      case SLIP:
+        return self->attitude->rollslip->slip;
         break;
       case HUD_VALUE_MAX: /*Fall through*/
       default:

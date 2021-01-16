@@ -28,6 +28,7 @@ typedef struct{
     float roll;
     float pitch;
     float heading;
+    float slip_rad;
     float airspeed; //kts
     float vertical_speed; //vertical speed //feets per second
 
@@ -262,7 +263,7 @@ int main(int argc, char **argv)
     FlightgearPacket packet;
 #elif defined(USE_FGTAPE)
     FGTape *tape;
-    FGTapeSignal signals[15];
+    FGTapeSignal signals[16];
     TapeRecord record;
     int found;
 
@@ -276,6 +277,7 @@ int main(int argc, char **argv)
         "/orientation[0]/roll-deg[0]",
         "/orientation[0]/pitch-deg[0]",
         "/orientation[0]/heading-deg[0]",
+        "/orientation[0]/side-slip-rad[0]",
         "/velocities[0]/airspeed-kt[0]",
 	    "/velocities[0]/vertical-speed-fps[0]",
         "/engines[0]/engine[0]/rpm[0]",
@@ -287,7 +289,7 @@ int main(int argc, char **argv)
         "/consumables[0]/fuel[0]/tank[0]/level-gal_us[0]",
         NULL
     );
-    printf("TapeRecord: found %d out of %d signals\n",found, 15);
+    printf("TapeRecord: found %d out of %d signals\n",found, 16);
 
     int start_pos = 120; /*Starting position in the tape*/
 //    start_pos = 0;
@@ -324,7 +326,7 @@ int main(int argc, char **argv)
 #elif defined(USE_FGTAPE)
         if(dtms - last_dtms >= (1000/25)){ //One update per 1/25 second
             if(g_playing){
-                fg_tape_get_data_at(tape, dtms / 1000.0, 15, signals, &record);
+                fg_tape_get_data_at(tape, dtms / 1000.0, 16, signals, &record);
             }
             last_dtms = dtms;
             basic_hud_set(hud,  6,
@@ -333,7 +335,8 @@ int main(int argc, char **argv)
                 VERTICAL_SPEED, record.vertical_speed * 60, /*Convert fps to fpm*/
                 PITCH, (double)record.pitch,
                 ROLL, (double)record.roll,
-                HEADING, (double)record.heading
+                HEADING, (double)record.heading,
+                SLIP, (double)record.slip_rad* 180.0/M_PI
             );
             side_panel_set_rpm(panel, record.rpm);
             side_panel_set_fuel_flow(panel, record.fuel_flow);

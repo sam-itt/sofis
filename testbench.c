@@ -68,6 +68,7 @@ float ias = 10.0;
 //float pitch = 2.19;
 float pitch = 0.0;
 float roll = 0.0;
+float slip_deg = 0.0;
 float fishval = 0.0;
 float eleval = 0.0;
 char txtbuf[256];
@@ -79,6 +80,7 @@ float heading = 0.0;
 #define ALT_INC 150
 #define PITCH_INC 1;
 #define ROLL_INC 1;
+#define SLIP_INC 5.0;
 #define GVAL_INC 10.0;
 #define HEADING_INC 5.0;
 #define FISHVAL_INC 1.0;
@@ -289,6 +291,18 @@ bool handle_keyboard(SDL_KeyboardEvent *event, Uint32 elapsed)
                     /*eleval -= ELEVAL_INC;*/
                     /*elevator_gauge_set_value(elevator, eleval, true);*/
                 /*}*/
+            }
+            break;
+        case SDLK_i:
+            if(event->state == SDL_PRESSED){
+                slip_deg -= SLIP_INC;
+                roll_slip_gauge_set_slip(rsg, slip_deg, true);
+            }
+            break;
+        case SDLK_o:
+            if(event->state == SDL_PRESSED){
+                slip_deg += SLIP_INC;
+                roll_slip_gauge_set_slip(rsg, slip_deg, true);
             }
             break;
         case SDLK_SPACE:
@@ -599,7 +613,7 @@ int main(int argc, char **argv)
         /*base_gauge_render(BASE_GAUGE(asi), elapsed, &(RenderContext){rtarget, &vrect, NULL});*/
 //
 
-        /*base_gauge_render(BASE_GAUGE(rsg), elapsed, &(RenderContext){rtarget, &dst, NULL});*/
+        base_gauge_render(BASE_GAUGE(rsg), elapsed, &(RenderContext){rtarget, &dst, NULL});
         /*base_gauge_render(BASE_GAUGE(ai), elapsed, &(RenderContext){rtarget, &whole, NULL});*/
 
         /*base_gauge_render(BASE_GAUGE(hud), elapsed, &(RenderContext){rtarget, &whole, NULL});*/
@@ -610,7 +624,7 @@ int main(int argc, char **argv)
         /*base_gauge_render(BASE_GAUGE(compass), elapsed, &(RenderContext){rtarget, &center_rect, NULL});*/
         /*base_gauge_render(BASE_GAUGE(tape_gauge), elapsed, &(RenderContext){rtarget, &vrect, NULL});*/
         /*base_gauge_render(BASE_GAUGE(tape_gauge2), elapsed, &(RenderContext){rtarget, &vrect, NULL});*/
-        base_gauge_render(BASE_GAUGE(map), elapsed, &(RenderContext){rtarget, &center_rect, NULL});
+        /*base_gauge_render(BASE_GAUGE(map), elapsed, &(RenderContext){rtarget, &center_rect, NULL});*/
 #if USE_SDL_GPU
 		GPU_Flip(gpu_screen);
 #else
