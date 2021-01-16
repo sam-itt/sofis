@@ -32,6 +32,9 @@ typedef struct{
 #if ENABLE_3D
     SDL_Rect hz_drect;
     SDL_Rect pr_dstrect;
+
+    SDL_Point rcenter_3d;
+    SDL_Point hz_rcenter;
 #endif
 }AttitudeIndicatorState;
 

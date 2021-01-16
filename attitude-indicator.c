@@ -725,6 +725,13 @@ static void attitude_indicator_update_state(AttitudeIndicator *self, Uint32 dt)
         .w = self->pitch_ruler.texture->w,
         .h = self->pitch_ruler.texture->h
     };
+
+    self->state.rcenter_3d.x = self->pitch_ruler.texture->w/2;
+    self->state.rcenter_3d.y = self->pitch_ruler.texture->h/2 - increment;
+
+    self->state.hz_rcenter.x = self->etched_horizon.texture->w/2;
+    self->state.hz_rcenter.y = self->etched_horizon.texture->h/2 - increment;
+
 #endif
 }
 
@@ -744,14 +751,16 @@ static void attitude_indicator_render(AttitudeIndicator *self, Uint32 dt, Render
             self->etched_horizon.texture,
             NULL,
             -self->roll,
-            NULL, &self->state.hz_drect,
+            &self->state.hz_rcenter,
+            &self->state.hz_drect,
             NULL
         );
 
         base_gauge_blit_rotated_texture(BASE_GAUGE(self), ctx,
          self->pitch_ruler.texture,
-         NULL, self->roll,
          NULL,
+         -self->roll,
+         &self->state.rcenter_3d,
          &self->state.pr_dstrect,
          NULL);
     }
