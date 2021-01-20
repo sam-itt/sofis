@@ -166,9 +166,11 @@ void attitude_indicator_dispose(AttitudeIndicator *self)
 	SDL_DestroyRenderer(self->renderer);
 #endif
     generic_layer_dispose(&self->etched_ball);
+#if ENABLE_3D
     generic_layer_dispose(&self->etched_horizon);
     if(self->horizon_src)
         SDL_FreeSurface(self->horizon_src);
+#endif
 }
 
 void attitude_indicator_free(AttitudeIndicator *self)
@@ -747,6 +749,7 @@ static void attitude_indicator_render(AttitudeIndicator *self, Uint32 dt, Render
             NULL,
             &self->state.dst_clip);
     }else{
+#if ENABLE_3D
         base_gauge_blit_rotated_texture(BASE_GAUGE(self), ctx,
             self->etched_horizon.texture,
             NULL,
@@ -763,6 +766,7 @@ static void attitude_indicator_render(AttitudeIndicator *self, Uint32 dt, Render
          &self->state.rcenter_3d,
          &self->state.pr_dstrect,
          NULL);
+#endif
     }
 #else
     base_gauge_blit(BASE_GAUGE(self), ctx,

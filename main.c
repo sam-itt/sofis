@@ -301,8 +301,9 @@ int main(int argc, char **argv)
     Uint32 render_start, render_end;
     Uint32 total_render_time = 0;
     Uint32 nrender_calls = 0;
-
+#if ENABLE_3D
     g_show3d = true;
+#endif
     hud->attitude->mode = (g_show3d) ? AI_MODE_3D : AI_MODE_2D;
 
     startms = SDL_GetTicks();
