@@ -18,7 +18,7 @@ CFLAGS=-g3 -O0 `pkg-config glib-2.0 sdl2 SDL2_image --cflags` \
 	   -I$(FG_ROAM)/src \
 	   -DUSE_SGPU_TEXTURE=1 \
 	   -DUSE_SDL_GPU=1 \
-	   -DSHADER_ROOT=\"/home/samuel/dev/efis-hud/fg-roam/src\" \
+	   -DSHADER_ROOT=\"/home/samuel/dev/efis-hud/fg-roam/src/shaders/gl\" \
 	   -DTERRAIN_ROOT=\"/home/samuel/dev/Terrain\" \
 	   -DSKY_ROOT=\"/home/samuel/dev/efis-hud/fg-roam/src\" \
 	   -DTEX_ROOT=\"/home/samuel/dev/textures\" \
