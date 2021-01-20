@@ -18,13 +18,16 @@ CFLAGS=-g3 -O0 `pkg-config glib-2.0 sdl2 SDL2_image --cflags` \
 	   -I$(FG_ROAM)/src \
 	   -DUSE_SGPU_TEXTURE=1 \
 	   -DUSE_SDL_GPU=1 \
+	   -DENABLE_DEBUG_TRIANGLE=0 \
+	   -DENABLE_DEBUG_CUBE=0 \
 	   -DSHADER_ROOT=\"/home/samuel/dev/efis-hud/fg-roam/src/shaders/gl\" \
 	   -DTERRAIN_ROOT=\"/home/samuel/dev/Terrain\" \
 	   -DSKY_ROOT=\"/home/samuel/dev/efis-hud/fg-roam/src\" \
 	   -DTEX_ROOT=\"/home/samuel/dev/textures\" \
 	   -DENABLE_PERF_COUNTERS=1 \
+	   -DUSE_GLES=0 \
 	   -DENABLE_3D=$(ENABLE_3D)
-LDFLAGS=-lz -lm `pkg-config glib-2.0 sdl2 SDL2_image --libs` -Wl,--as-needed -lSDL2_gpu -lGL -lGLU
+LDFLAGS=-lz -lm `pkg-config glib-2.0 sdl2 SDL2_image --libs` -Wl,--as-needed -lSDL2_gpu -lGL
 EXEC=test-sdl
 SRC= $(filter-out $(SRCDIR)/main.c $(SRCDIR)/testbench.c, $(wildcard $(SRCDIR)/*.c))
 SRC+= $(wildcard $(SRCDIR)/sdl-pcf/src/*.c)
@@ -51,7 +54,7 @@ testbench: $(OBJ) $(TEST_OBJ)
 .PHONY: clean mrproper
 
 clean:
-	rm -rf *.o sdl-pcf/src/*.o
+	rm -rf *.o sdl-pcf/src/*.o fg-roam/src/*.o fg-io/fg-tape/*.o
 
 mrproper: clean
 	rm -rf $(EXEC)
