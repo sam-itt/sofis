@@ -4,6 +4,7 @@
 
 #include <SDL2/SDL.h>
 
+#include "SDL_opengl.h"
 #include "basic-hud.h"
 #include "side-panel.h"
 #include "map-gauge.h"
@@ -372,6 +373,7 @@ int main(int argc, char **argv)
 #if ENABLE_3D
         if(g_show3d){
             GPU_FlushBlitBuffer(); /*begin 3*/
+            glDisable(GL_BLEND);
             terrain_viewer_frame(viewer);
             GPU_ResetRendererState(); /*end 3d*/
         }
