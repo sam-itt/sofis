@@ -14,33 +14,16 @@
 #if ENABLE_3D
 #include "terrain-viewer.h"
 #endif
-//#define USE_FGCONN 0
-#define USE_FGTAPE 1
 
-#if defined(USE_FGCONN)
-#include "flightgear-connector.h"
-#elif defined(USE_FGTAPE)
-#include "fg-tape.h"
+#define ENABLE_FGCONN 1
+#define ENABLE_FGTAPE 1
 
-typedef struct{
-    double latitude;
-    double longitude;
-    double altitude;
-    float roll;
-    float pitch;
-    float heading;
-    float slip_rad;
-    float airspeed; //kts
-    float vertical_speed; //vertical speed //feets per second
-
-    float rpm;
-    float fuel_flow;
-    float oil_temp;
-    float oil_press;
-    float cht;
-    float fuel_px;
-    float fuel_qty;
-}TapeRecord;
+#include "data-source.h"
+#if ENABLE_FGCONN
+#include "fg-data-source.h"
+#endif
+#if ENABLE_FGTAPE
+#include "fg-tape-data-source.h"
 #endif
 
 #define SCREEN_WIDTH 640
@@ -48,14 +31,21 @@ typedef struct{
 
 #define N_COLORS 4
 
+typedef enum{
+    MODE_FGREMOTE,
+    MODE_FGTAPE,
+    N_MODES
+}RunningMode;
+
 BasicHud *hud = NULL;
 SidePanel *panel = NULL;
 MapGauge *map = NULL;
 bool g_show3d = false;
-bool g_playing = true;
+DataSource *g_ds;
+RunningMode g_mode;
 
 /*Return true to quit the app*/
-bool handle_keyboard(SDL_KeyboardEvent *event, Uint32 elapsed, TapeRecord *record)
+bool handle_keyboard(SDL_KeyboardEvent *event, Uint32 elapsed)
 {
     switch(event->keysym.sym){
         /*App control*/
@@ -69,19 +59,19 @@ bool handle_keyboard(SDL_KeyboardEvent *event, Uint32 elapsed, TapeRecord *recor
             hud->attitude->mode = (g_show3d) ? AI_MODE_3D : AI_MODE_2D;
             break;
         case SDLK_RETURN:
-            if(event->state == SDL_PRESSED)
-                g_playing = !g_playing;
+            if(event->state == SDL_PRESSED){
+                if(g_mode == MODE_FGTAPE)
+                    ((FGTapeDataSource*)(g_ds))->playing = !((FGTapeDataSource*)(g_ds))->playing;
+            }
             break;
         case SDLK_p:
             if(event->state == SDL_PRESSED){
                 printf("Pitch: %f\nHeading: %f\n",
-                    record->pitch,
-                    record->heading
+                    g_ds->pitch,
+                    g_ds->heading
                 );
             }
-
             break;
-
 
         /*MapGauge controls*/
         case SDLK_UP:
@@ -123,46 +113,46 @@ bool handle_keyboard(SDL_KeyboardEvent *event, Uint32 elapsed, TapeRecord *recor
         /*Manual camera/position control*/
         case SDLK_z:
             if(event->state == SDL_PRESSED)
-                record->pitch += 1.0;
+                g_ds->pitch += 1.0;
             break;
         case SDLK_s:
             if(event->state == SDL_PRESSED)
-                record->pitch -= 1.0;
+                g_ds->pitch -= 1.0;
             break;
         case SDLK_q:
             if(event->state == SDL_PRESSED)
-                record->roll -= 1.0;
+                g_ds->roll -= 1.0;
             break;
         case SDLK_d:
             if(event->state == SDL_PRESSED)
-                record->roll += 1.0;
+                g_ds->roll += 1.0;
             break;
         case SDLK_a:
             if(event->state == SDL_PRESSED){
-                record->heading -= 1.0;
-                record->heading = fmodf(record->heading, 360.0);
+                g_ds->heading -= 1.0;
+                g_ds->heading = fmodf(g_ds->heading, 360.0);
             }
             break;
         case SDLK_e:
             if(event->state == SDL_PRESSED){
-                record->heading += 1.0;
-                record->heading = fmodf(record->heading, 360.0);
+                g_ds->heading += 1.0;
+                g_ds->heading = fmodf(g_ds->heading, 360.0);
             }
             break;
         case SDLK_PAGEUP:
             if(event->state == SDL_PRESSED)
-                record->altitude += 10;
+                g_ds->altitude += 10;
             break;
         case SDLK_PAGEDOWN:
             if(event->state == SDL_PRESSED)
-                record->altitude -= 10;
+                g_ds->altitude -= 10;
             break;
     }
     return false;
 }
 
 /*Return true to quit the app*/
-bool handle_events(Uint32 elapsed, TapeRecord *record)
+bool handle_events(Uint32 elapsed)
 {
     SDL_Event event;
 
@@ -177,13 +167,26 @@ bool handle_events(Uint32 elapsed, TapeRecord *record)
             break;
             case SDL_KEYUP:
             case SDL_KEYDOWN:
-                return handle_keyboard(&(event.key), elapsed, record);
+                return handle_keyboard(&(event.key), elapsed);
                 break;
         }
     }
     return false;
 }
 
+const char *pretty_mode(RunningMode mode)
+{
+    switch(mode){
+        case MODE_FGREMOTE:
+            return "FGDataSource";
+            break;
+        case MODE_FGTAPE:
+            return "FGTapeDataSource";
+        default:
+            return "Unknown!";
+    }
+
+}
 
 int main(int argc, char **argv)
 {
@@ -192,6 +195,29 @@ int main(int argc, char **argv)
     int i;
     float oldv[5] = {0,0,0,0,0};
     RenderTarget rtarget;
+
+    g_mode = MODE_FGTAPE;
+    if(argc > 1){
+        if(!strcmp(argv[1], "--fgtape"))
+            g_mode = MODE_FGTAPE;
+        else if(!strcmp(argv[1], "--fgremote"))
+            g_mode = MODE_FGREMOTE;
+    }
+
+    switch(g_mode){
+        case MODE_FGREMOTE:
+            g_ds = (DataSource *)fg_data_source_new(6798);
+            break;
+        case MODE_FGTAPE: //Fallthtough
+        default:
+            g_ds = (DataSource *)fg_tape_data_source_new("fg-io/fg-tape/dr400.fgtape", 120);
+            break;
+    }
+
+    if(!g_ds){
+        printf("Couldn't create DataSource (%s), bailing out\n", pretty_mode(g_mode));
+        exit(EXIT_FAILURE);
+    }
 
 #if USE_SDL_GPU
     GPU_Target* gpu_screen = NULL;
@@ -257,46 +283,6 @@ int main(int argc, char **argv)
     Uint32 acc = 0;
     i = 3;
 
-#if defined(USE_FGCONN)
-    FlightgearConnector *fglink;
-    fglink = flightgear_connector_new(6789);
-    flightgear_connector_set_nonblocking(fglink);
-    FlightgearPacket packet;
-#elif defined(USE_FGTAPE)
-    FGTape *tape;
-    FGTapeSignal signals[16];
-    TapeRecord record;
-    int found;
-
-    tape = fg_tape_new_from_file("fg-io/fg-tape/dr400.fgtape");
-//    fg_tape_dump(tape);
-//    exit(0);
-    found = fg_tape_get_signals(tape, signals,
-        "/position[0]/latitude-deg[0]",
-        "/position[0]/longitude-deg[0]",
-        "/position[0]/altitude-ft[0]",
-        "/orientation[0]/roll-deg[0]",
-        "/orientation[0]/pitch-deg[0]",
-        "/orientation[0]/heading-deg[0]",
-        "/orientation[0]/side-slip-rad[0]",
-        "/velocities[0]/airspeed-kt[0]",
-	    "/velocities[0]/vertical-speed-fps[0]",
-        "/engines[0]/engine[0]/rpm[0]",
-        "/engines[0]/engine[0]/fuel-flow-gph[0]",
-        "/engines[0]/engine[0]/oil-temperature-degf[0]",
-        "/engines[0]/engine[0]/oil-pressure-psi[0]",
-        "/engines[0]/engine[0]/cht-degf[0]",
-        "/engines[0]/engine[0]/fuel-px-psi[0]",
-        "/consumables[0]/fuel[0]/tank[0]/level-gal_us[0]",
-        NULL
-    );
-    printf("TapeRecord: found %d out of %d signals\n",found, 16);
-
-    int start_pos = 120; /*Starting position in the tape*/
-//    start_pos = 0;
-
-#endif
-
     Uint32 startms, dtms, last_dtms;
     Uint32 nframes = 0;
     Uint32 render_start, render_end;
@@ -311,50 +297,37 @@ int main(int argc, char **argv)
     do{
         ticks = SDL_GetTicks();
         elapsed = ticks - last_ticks;
-        dtms = ticks - startms + (start_pos * 1000.0);
+        dtms = ticks - startms;
 
-        done = handle_events(elapsed, &record);
+        done = handle_events(elapsed);
 
-#if defined(USE_FGCONN)
-        if(flightgear_connector_get_packet(fglink, &packet)){
-            basic_hud_set(hud,  5,
-                ALTITUDE, (float)packet.altitude,
-                AIRSPEED, (float)packet.airspeed,
-                VERTICAL_SPEED, packet.vertical_speed,
-                PITCH, packet.pitch,
-                ROLL, packet.roll
-            );
-        }
-#elif defined(USE_FGTAPE)
-        if(dtms - last_dtms >= (1000/25)){ //One update per 1/25 second
-            if(g_playing){
-                fg_tape_get_data_at(tape, dtms / 1000.0, 16, signals, &record);
-            }
+        if(data_source_frame(DATA_SOURCE(g_ds), dtms - last_dtms)){
             last_dtms = dtms;
-            basic_hud_set(hud,  6,
-                ALTITUDE, (double)record.altitude,
-                AIRSPEED, (double)record.airspeed,
-                VERTICAL_SPEED, record.vertical_speed * 60, /*Convert fps to fpm*/
-                PITCH, (double)record.pitch,
-                ROLL, (double)record.roll,
-                HEADING, (double)record.heading,
-                SLIP, (double)record.slip_rad* 180.0/M_PI
+            basic_hud_set(hud,  7,
+                ALTITUDE, (double)DATA_SOURCE(g_ds)->altitude,
+                AIRSPEED, (double)DATA_SOURCE(g_ds)->airspeed,
+                VERTICAL_SPEED, (double)DATA_SOURCE(g_ds)->vertical_speed * 60, /*Convert fps to fpm*/
+                PITCH, (double)DATA_SOURCE(g_ds)->pitch,
+                ROLL, (double)DATA_SOURCE(g_ds)->roll,
+                HEADING, (double)DATA_SOURCE(g_ds)->heading,
+                SLIP, (double)DATA_SOURCE(g_ds)->slip_rad* 180.0/M_PI
             );
-            side_panel_set_rpm(panel, record.rpm);
-            side_panel_set_fuel_flow(panel, record.fuel_flow);
-            side_panel_set_oil_temp(panel, record.oil_temp);
-            side_panel_set_oil_press(panel, record.oil_press);
-            side_panel_set_cht(panel, record.cht);
-            side_panel_set_fuel_px(panel, record.fuel_px);
-            side_panel_set_fuel_qty(panel, record.fuel_qty);
+            side_panel_set_rpm(panel, DATA_SOURCE(g_ds)->rpm);
+            side_panel_set_fuel_flow(panel, DATA_SOURCE(g_ds)->fuel_flow);
+            side_panel_set_oil_temp(panel, DATA_SOURCE(g_ds)->oil_temp);
+            side_panel_set_oil_press(panel, DATA_SOURCE(g_ds)->oil_press);
+            side_panel_set_cht(panel, DATA_SOURCE(g_ds)->cht);
+            side_panel_set_fuel_px(panel, DATA_SOURCE(g_ds)->fuel_px);
+            side_panel_set_fuel_qty(panel, DATA_SOURCE(g_ds)->fuel_qty);
 
-            map_gauge_set_marker_position(map, record.latitude, record.longitude);
-            map_gauge_set_marker_heading(map, record.heading);
+            map_gauge_set_marker_position(map, DATA_SOURCE(g_ds)->latitude, DATA_SOURCE(g_ds)->longitude);
+            map_gauge_set_marker_heading(map, DATA_SOURCE(g_ds)->heading);
+
 #if ENABLE_3D
-            float lon = fmod(record.longitude+180, 360.0) - 180;
+            float lon = fmod(DATA_SOURCE(g_ds)->longitude+180, 360.0) - 180;
             terrain_viewer_update_plane(viewer,
-                record.latitude, record.longitude, record.altitude/3.281 + 2,
-                record.roll, record.pitch, record.heading
+                DATA_SOURCE(g_ds)->latitude, DATA_SOURCE(g_ds)->longitude, DATA_SOURCE(g_ds)->altitude/3.281 + 2,
+                DATA_SOURCE(g_ds)->roll, DATA_SOURCE(g_ds)->pitch, DATA_SOURCE(g_ds)->heading
             );
             if(last_ticks == 0){ //Do an invisible frame to trigger preload
                 GPU_FlushBlitBuffer(); /*begin 3*/
@@ -363,8 +336,6 @@ int main(int argc, char **argv)
             }
 #endif
         }
-#endif
-
 #if USE_SDL_GPU
         GPU_ClearRGB(gpu_screen, 0x11, 0x56, 0xFF);
 #else
@@ -418,11 +389,7 @@ int main(int argc, char **argv)
     basic_hud_free(hud);
     side_panel_free(panel);
     map_gauge_free(map);
-#if defined(USE_FGCONN)
-    flightgear_connector_free(fglink);
-#elif defined(USE_FGTAPE)
-    fg_tape_free(tape);
-#endif
+    data_source_free(DATA_SOURCE(g_ds));
     resource_manager_shutdown();
 #if USE_SDL_GPU
 	GPU_Quit();
@@ -431,6 +398,4 @@ int main(int argc, char **argv)
     SDL_Quit();
 #endif
     return 0;
-
 }
-
