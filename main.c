@@ -17,6 +17,7 @@
 
 #define ENABLE_FGCONN 1
 #define ENABLE_FGTAPE 1
+#define ENABLE_SENSORS 1
 
 #include "data-source.h"
 #if ENABLE_FGCONN
@@ -24,6 +25,9 @@
 #endif
 #if ENABLE_FGTAPE
 #include "fg-tape-data-source.h"
+#endif
+#if ENABLE_SENSORS
+#include "sensors-data-source.h"
 #endif
 
 #define SCREEN_WIDTH 640
@@ -34,6 +38,7 @@
 typedef enum{
     MODE_FGREMOTE,
     MODE_FGTAPE,
+    MODE_SENSORS,
     N_MODES
 }RunningMode;
 
@@ -177,6 +182,8 @@ bool handle_events(Uint32 elapsed)
 const char *pretty_mode(RunningMode mode)
 {
     switch(mode){
+        case MODE_SENSORS:
+            return "SensorsDataSource";
         case MODE_FGREMOTE:
             return "FGDataSource";
             break;
@@ -198,13 +205,18 @@ int main(int argc, char **argv)
 
     g_mode = MODE_FGTAPE;
     if(argc > 1){
-        if(!strcmp(argv[1], "--fgtape"))
+        if(!strcmp(argv[1], "--sensors"))
+            g_mode = MODE_SENSORS;
+        else if(!strcmp(argv[1], "--fgtape"))
             g_mode = MODE_FGTAPE;
         else if(!strcmp(argv[1], "--fgremote"))
             g_mode = MODE_FGREMOTE;
     }
 
     switch(g_mode){
+        case MODE_SENSORS:
+            g_ds = (DataSource *)sensors_data_source_new();
+            break;
         case MODE_FGREMOTE:
             g_ds = (DataSource *)fg_data_source_new(6798);
             break;
