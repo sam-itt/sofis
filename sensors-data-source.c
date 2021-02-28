@@ -1,7 +1,9 @@
+#include <gps.h>
 #include <stdio.h>
 #include <stdlib.h>
 
 #include "sensors-data-source.h"
+#include "sensors/gps-sensor.h"
 
 #define JY61_DEV "/dev/ttyUSB1"
 
@@ -36,11 +38,18 @@ SensorsDataSource *sensors_data_source_init(SensorsDataSource *self)
         exit(EXIT_FAILURE);
     }
 
+    if(!gps_sensor_init(&self->gps, "localhost", DEFAULT_GPSD_PORT)){
+        printf("Couldn't initialize GPS, bailing out\n");
+        exit(EXIT_FAILURE);
+    }
+
     jy61_start(&self->jy61_dev);
+    gps_sensor_start(&self->gps);
 
     DATA_SOURCE(self)->latitude = 45.215470;
     DATA_SOURCE(self)->longitude = 5.844828;
     DATA_SOURCE(self)->altitude = 718.267245;
+
     DATA_SOURCE(self)->heading = 43.698940;
 
     return self;
@@ -55,6 +64,7 @@ static SensorsDataSource *sensors_data_source_dispose(SensorsDataSource *self)
 static bool sensors_data_source_frame(SensorsDataSource *self, uint32_t dt)
 {
     double roll, pitch, yaw;
+    double lat, lon, alt;
     bool rv;
 
     if(dt != 0 && dt < (1000/25)) //One update per 1/25 second
@@ -66,6 +76,11 @@ static bool sensors_data_source_frame(SensorsDataSource *self, uint32_t dt)
     DATA_SOURCE(self)->pitch = pitch;
     /* Heading is not yaw and will be get using a magnetometer
      * */
+
+    gps_sensor_get_fix(&self->gps, &lat, &lon, &alt);
+    DATA_SOURCE(self)->latitude = lat;
+    DATA_SOURCE(self)->longitude = lon;
+    DATA_SOURCE(self)->altitude = alt*3.281; /*Comes in meters(gps), must be in feets*/
 
     return true;
 }

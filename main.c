@@ -306,6 +306,12 @@ int main(int argc, char **argv)
     hud->attitude->mode = (g_show3d) ? AI_MODE_3D : AI_MODE_2D;
 
     startms = SDL_GetTicks();
+    DATA_SOURCE(g_ds)->latitude = NAN;
+    do{
+        printf("Waiting for fix...\n");
+        data_source_frame(DATA_SOURCE(g_ds), 0);
+    }while(isnan(DATA_SOURCE(g_ds)->latitude));
+
     do{
         ticks = SDL_GetTicks();
         elapsed = ticks - last_ticks;

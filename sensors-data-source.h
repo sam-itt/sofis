@@ -3,11 +3,13 @@
 
 #include "data-source.h"
 #include "sensors/jy61.h"
+#include "sensors/gps-sensor.h"
 
 typedef struct{
     DataSource super;
 
     JY61 jy61_dev;
+    GpsSensor gps;
 }SensorsDataSource;
 
 SensorsDataSource *sensors_data_source_new(void);
