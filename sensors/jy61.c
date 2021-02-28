@@ -203,10 +203,10 @@ static void ParseData(JY61 *self, char chr)
     return;
 }
 
-JY61 *jy61_init(JY61 *self)
+JY61 *jy61_init(JY61 *self, const char *device)
 {
     bzero(self->r_buf, 1024);
-    self->fd = uart_open(fd,"/dev/ttyUSB0");
+    self->fd = uart_open(fd, device);
     if(fd == -1){
         fprintf(stderr,"uart_open error\n");
         return NULL;

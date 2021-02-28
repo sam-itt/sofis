@@ -3,6 +3,8 @@
 
 #include "sensors-data-source.h"
 
+#define JY61_DEV "/dev/ttyUSB1"
+
 static bool sensors_data_source_frame(SensorsDataSource *self, uint32_t dt);
 static SensorsDataSource *sensors_data_source_dispose(SensorsDataSource *self);
 static DataSourceOps sensors_data_source_ops = {
@@ -29,7 +31,7 @@ SensorsDataSource *sensors_data_source_init(SensorsDataSource *self)
     if(!data_source_init(DATA_SOURCE(self), &sensors_data_source_ops))
         return NULL;
 
-    if(!jy61_init(&self->jy61_dev)){
+    if(!jy61_init(&self->jy61_dev, JY61_DEV)){
         printf("Couldn't initialize device, bailing out\n");
         exit(EXIT_FAILURE);
     }
