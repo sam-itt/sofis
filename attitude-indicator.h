@@ -4,6 +4,7 @@
 #include "base-gauge.h"
 #include "generic-layer.h"
 #include "roll-slip-gauge.h"
+#include <stdint.h>
 
 #define MARKER_LEFT 0
 #define MARKER_RIGHT 1
@@ -41,6 +42,7 @@ typedef struct{
 typedef struct{
     BaseGauge super;
 	SDL_Point common_center;
+    uint32_t diagonal;
 
     float roll; /*pitch?*/
     float pitch;

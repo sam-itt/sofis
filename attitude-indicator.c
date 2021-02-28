@@ -112,7 +112,11 @@ AttitudeIndicator *attitude_indicator_init(AttitudeIndicator *self, int width, i
     self->horizon_src = IMG_Load("horizon-grads-scaled.png");
     if(!self->horizon_src)
         return NULL;
-    generic_layer_init(&self->etched_horizon, base_gauge_w(BASE_GAUGE(self)), self->horizon_src->h);
+    self->diagonal = sqrt(
+        base_gauge_w(BASE_GAUGE(self))*base_gauge_w(BASE_GAUGE(self))
+        + base_gauge_h(BASE_GAUGE(self))*base_gauge_h(BASE_GAUGE(self))
+    );
+    generic_layer_init(&self->etched_horizon, self->diagonal, self->horizon_src->h);
     generic_layer_build_texture(&self->pitch_ruler);
 #endif
 
@@ -672,7 +676,7 @@ static void attitude_indicator_update_state(AttitudeIndicator *self, Uint32 dt)
         npatches++;
     }
     hz_srects[npatches].x = xbegin;
-    hz_srects[npatches].w = base_gauge_w(BASE_GAUGE(self));
+    hz_srects[npatches].w = generic_layer_w(&self->etched_horizon); //self->base_gauge_w(BASE_GAUGE(self));
     hz_srects[npatches].y = 0;
     hz_srects[npatches].h = self->horizon_src->h;
 
@@ -716,7 +720,7 @@ static void attitude_indicator_update_state(AttitudeIndicator *self, Uint32 dt)
     self->state.hz_drect = (SDL_Rect){
         .x = 0,
         .y = horizon_y - self->horizon_src->h,
-        .w = base_gauge_w(BASE_GAUGE(self)),
+        .w = generic_layer_w(&self->etched_horizon), //base_gauge_w(BASE_GAUGE(self)),
         .h = self->horizon_src->h
     };
 
