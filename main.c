@@ -310,7 +310,6 @@ int main(int argc, char **argv)
 #endif
     hud->attitude->mode = (g_show3d) ? AI_MODE_3D : AI_MODE_2D;
 
-    startms = SDL_GetTicks();
     DATA_SOURCE(g_ds)->latitude = NAN;
     do{
         printf("Waiting for fix...\n");
@@ -318,6 +317,7 @@ int main(int argc, char **argv)
     }while(isnan(DATA_SOURCE(g_ds)->latitude));
 
     last_dtms = 0;
+    startms = SDL_GetTicks();
     do{
         ticks = SDL_GetTicks();
         elapsed = ticks - last_ticks;
@@ -336,6 +336,7 @@ int main(int argc, char **argv)
                 HEADING, (double)DATA_SOURCE(g_ds)->heading,
                 SLIP, (double)DATA_SOURCE(g_ds)->slip_rad* 180.0/M_PI
             );
+
             side_panel_set_rpm(panel, DATA_SOURCE(g_ds)->rpm);
             side_panel_set_fuel_flow(panel, DATA_SOURCE(g_ds)->fuel_flow);
             side_panel_set_oil_temp(panel, DATA_SOURCE(g_ds)->oil_temp);
@@ -357,6 +358,8 @@ int main(int argc, char **argv)
                 GPU_FlushBlitBuffer(); /*begin 3*/
                 terrain_viewer_frame(viewer);
                 GPU_ResetRendererState(); /*end 3d*/
+		/*Reset startms as initial loading can take up a while*/
+		startms = SDL_GetTicks();
             }
 #endif
         }
