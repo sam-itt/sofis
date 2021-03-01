@@ -235,7 +235,11 @@ int main(int argc, char **argv)
     GPU_Target* gpu_screen = NULL;
 
 	GPU_SetRequiredFeatures(GPU_FEATURE_BASIC_SHADERS);
+#if USE_GLES
+	gpu_screen = GPU_InitRenderer(GPU_RENDERER_GLES_2, SCREEN_WIDTH, SCREEN_HEIGHT, GPU_DEFAULT_INIT_FLAGS);
+#else
 	gpu_screen = GPU_InitRenderer(GPU_RENDERER_OPENGL_2, SCREEN_WIDTH, SCREEN_HEIGHT, GPU_DEFAULT_INIT_FLAGS);
+#endif
 	if(gpu_screen == NULL){
         GPU_LogError("Initialization Error: Could not create a renderer with proper feature support for this demo.\n");
 		return 1;
