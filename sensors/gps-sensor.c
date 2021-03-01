@@ -8,10 +8,17 @@
 static void gps_sensor_set_fix(GpsSensor *self);
 static void gps_sensor_worker(GpsSensor *self);
 
+#if GPSD_API_MAJOR_VERSION >= 10
 static inline bool timespec_equal(struct timespec *t1, struct timespec *t2)
 {
     return t1->tv_sec == t2->tv_sec && t1->tv_nsec == t2->tv_nsec;
 }
+#else
+static inline bool timespec_equal(double *t1, double *t2)
+{
+    return *t1 == *t2;
+}
+#endif
 
 GpsSensor *gps_sensor_new(const char *server, const char *port)
 {
@@ -80,7 +87,11 @@ bool gps_sensor_get_fix(GpsSensor *self, double *latitude, double *longitude, do
 
 static void gps_sensor_set_fix(GpsSensor *self)
 {
+#if GPSD_API_MAJOR_VERSION >= 10
     struct timespec old_time;
+#else
+    double old_time;
+#endif
     static double old_lat, old_lon;
     static bool first = true;
 
@@ -114,7 +125,11 @@ static void gps_sensor_worker(GpsSensor *self)
 
     for(;;){
         if(gps_waiting(&self->gpsdata, self->timeout * 1000000)){
+#if GPSD_API_MAJOR_VERSION >= 10
             rv = gps_read(&self->gpsdata, NULL, 0);
+#else
+            rv = gps_read(&self->gpsdata);
+#endif
             if(rv > 0){
                 /*actually process data*/
                 gps_sensor_set_fix(self);
