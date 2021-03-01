@@ -317,6 +317,7 @@ int main(int argc, char **argv)
         data_source_frame(DATA_SOURCE(g_ds), 0);
     }while(isnan(DATA_SOURCE(g_ds)->latitude));
 
+    last_dtms = 0;
     do{
         ticks = SDL_GetTicks();
         elapsed = ticks - last_ticks;
