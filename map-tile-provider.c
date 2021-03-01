@@ -9,7 +9,9 @@
 #include "map-tile-provider.h"
 #include "misc.h"
 
+#ifndef TILES_ROOT
 #define TILES_ROOT "/home/samuel/ecw2/oaci-tiles"
+#endif
 
 MapTileProvider *map_tile_provider_new(uintf8_t cache_size)
 {

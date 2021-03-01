@@ -24,6 +24,7 @@ CFLAGS=-g3 -O0 `pkg-config glib-2.0 sdl2 SDL2_image libgps --cflags` \
 	   -DTERRAIN_ROOT=\"/home/samuel/dev/Terrain\" \
 	   -DSKY_ROOT=\"/home/samuel/dev/efis-hud/fg-roam/src\" \
 	   -DTEX_ROOT=\"/home/samuel/dev/textures\" \
+	   -DTILES_ROOT=\"/home/samuel/ecw2/oaci-tiles\" \
 	   -DENABLE_PERF_COUNTERS=1 \
 	   -DUSE_GLES=0 \
 	   -DENABLE_3D=$(ENABLE_3D)
