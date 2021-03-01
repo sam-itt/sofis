@@ -6,6 +6,7 @@
 #include "sensors/gps-sensor.h"
 
 #define JY61_DEV "/dev/ttyUSB1"
+#define LSM303_DEV "/dev/i2c-0"
 
 static bool sensors_data_source_frame(SensorsDataSource *self, uint32_t dt);
 static SensorsDataSource *sensors_data_source_dispose(SensorsDataSource *self);
@@ -43,8 +44,14 @@ SensorsDataSource *sensors_data_source_init(SensorsDataSource *self)
         exit(EXIT_FAILURE);
     }
 
+    if(!lsm303_init(&self->mag, LSM303_DEV)){
+        printf("Couldn't initialize Magnetometer, bailing out\n");
+        exit(EXIT_FAILURE);
+    }
+
     jy61_start(&self->jy61_dev);
     gps_sensor_start(&self->gps);
+    lsm303_start_magnetometer(&self->mag);
 
     DATA_SOURCE(self)->latitude = 45.215470;
     DATA_SOURCE(self)->longitude = 5.844828;
@@ -64,6 +71,7 @@ static SensorsDataSource *sensors_data_source_dispose(SensorsDataSource *self)
 static bool sensors_data_source_frame(SensorsDataSource *self, uint32_t dt)
 {
     double roll, pitch, yaw;
+    double heading;
     double lat, lon, alt;
     bool rv;
 
@@ -71,9 +79,11 @@ static bool sensors_data_source_frame(SensorsDataSource *self, uint32_t dt)
         return false;
 
     jy61_get_attitude(&self->jy61_dev, &roll, &pitch, &yaw);
+    lsm303_get_heading(&self->mag, roll, pitch, &heading);
 
     DATA_SOURCE(self)->roll = roll;
     DATA_SOURCE(self)->pitch = pitch;
+    DATA_SOURCE(self)->heading = heading;
     /* Heading is not yaw and will be get using a magnetometer
      * */
 
