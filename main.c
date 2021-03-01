@@ -276,6 +276,7 @@ int main(int argc, char **argv)
     colors[2] = SDL_MapRGB(screenSurface->format, 0x00, 0xFF, 0x00);
     colors[3] = SDL_MapRGB(screenSurface->format, 0x11, 0x56, 0xFF);
 #endif
+    SDL_ShowCursor(SDL_DISABLE);
 
     SDL_Rect whole = {0,0,640,480};
     hud = basic_hud_new();
