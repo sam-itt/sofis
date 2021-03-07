@@ -213,6 +213,7 @@ static bool elevator_gauge_build_elevator(ElevatorGauge *self, Uint32 color)
     SDL_Surface *triangle = IMG_Load(filename);
     if(!triangle)
         return NULL;
+    SDL_SetSurfaceBlendMode(triangle, SDL_BLENDMODE_NONE);
 
     self->elevator = generic_layer_new(triangle->w, self->ruler.ruler_area.h);
     if(!self->elevator)

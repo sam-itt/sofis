@@ -108,10 +108,13 @@ AttitudeIndicator *attitude_indicator_init(AttitudeIndicator *self, int width, i
         resource_manager_get_font(TERMINUS_12),
         &(SDL_Color){0,255,0}
     );
+
     /*TODO: Generate*/
     self->horizon_src = IMG_Load("horizon-grads-scaled.png");
     if(!self->horizon_src)
         return NULL;
+    SDL_SetSurfaceBlendMode(self->horizon_src, SDL_BLENDMODE_NONE);
+
     self->diagonal = sqrt(
         base_gauge_w(BASE_GAUGE(self))*base_gauge_w(BASE_GAUGE(self))
         + base_gauge_h(BASE_GAUGE(self))*base_gauge_h(BASE_GAUGE(self))
