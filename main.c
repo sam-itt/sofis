@@ -4,7 +4,6 @@
 
 #include <SDL2/SDL.h>
 
-#include "SDL_opengl.h"
 #include "basic-hud.h"
 #include "side-panel.h"
 #include "map-gauge.h"

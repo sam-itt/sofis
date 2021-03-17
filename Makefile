@@ -1,13 +1,26 @@
-#TOP_SRCDIR=..
-#SRCDIR=$(TOP_SRCDIR)/src
 RES_HOME=/home/samuel/dev
+ENABLE_3D=1
+USE_GLES=0
+USE_TINY_TEX=1
+
 SRCDIR=.
 FG_IO=$(SRCDIR)/fg-io
 FGCONN=$(FG_IO)/flightgear-connector
 FGTAPE=$(FG_IO)/fg-tape
 FG_ROAM=$(SRCDIR)/fg-roam
 CGLM=$(FG_ROAM)/lib/cglm/include
-ENABLE_3D=1
+
+ifeq ($(USE_GLES),1)
+	SHADER_DIR=gles
+else
+	SHADER_DIR=gl
+endif
+
+ifeq ($(USE_TINY_TEX),1)
+	TEX_DIR=textures-small
+else
+	TEX_DIR=textures
+endif
 
 CC=gcc
 CFLAGS=-g3 -O0 `pkg-config glib-2.0 sdl2 SDL2_image libgps --cflags` \
@@ -21,13 +34,13 @@ CFLAGS=-g3 -O0 `pkg-config glib-2.0 sdl2 SDL2_image libgps --cflags` \
 	   -DUSE_SDL_GPU=1 \
 	   -DENABLE_DEBUG_TRIANGLE=0 \
 	   -DENABLE_DEBUG_CUBE=0 \
-	   -DSHADER_ROOT=\"fg-roam/src/shaders/gl\" \
+	   -DSHADER_ROOT=\"fg-roam/src/shaders/$(SHADER_DIR)\" \
 	   -DSKY_ROOT=\"fg-roam/src\" \
 	   -DTERRAIN_ROOT=\"$(RES_HOME)/Terrain\" \
-	   -DTEX_ROOT=\"$(RES_HOME)/textures\" \
+	   -DTEX_ROOT=\"$(RES_HOME)/$(TEX_DIR)\" \
 	   -DTILES_ROOT=\"$(RES_HOME)/ign-oaci-tiles\" \
 	   -DENABLE_PERF_COUNTERS=1 \
-	   -DUSE_GLES=0 \
+	   -DUSE_GLES=$(USE_GLES) \
 	   -DENABLE_3D=$(ENABLE_3D)
 LDFLAGS=-lz -lm `pkg-config glib-2.0 sdl2 SDL2_image libgps --libs` -Wl,--as-needed -lSDL2_gpu -lGL -lpthread
 EXEC=test-sdl
