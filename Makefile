@@ -1,7 +1,8 @@
 RES_HOME=/home/samuel/dev
 ENABLE_3D=1
 USE_GLES=0
-USE_TINY_TEX=1
+USE_TINY_TEX=0
+NO_PRELOAD=0
 
 SRCDIR=.
 FG_IO=$(SRCDIR)/fg-io
@@ -41,7 +42,8 @@ CFLAGS=-g3 -O0 `pkg-config glib-2.0 sdl2 SDL2_image libgps --cflags` \
 	   -DTILES_ROOT=\"$(RES_HOME)/ign-oaci-tiles\" \
 	   -DENABLE_PERF_COUNTERS=1 \
 	   -DUSE_GLES=$(USE_GLES) \
-	   -DENABLE_3D=$(ENABLE_3D)
+	   -DENABLE_3D=$(ENABLE_3D) \
+	   -DNO_PRELOAD=$(NO_PRELOAD)
 LDFLAGS=-lz -lm `pkg-config glib-2.0 sdl2 SDL2_image libgps --libs` -Wl,--as-needed -lSDL2_gpu -lGL -lpthread
 EXEC=test-sdl
 SRC= $(filter-out $(SRCDIR)/main.c $(SRCDIR)/testbench.c, $(wildcard $(SRCDIR)/*.c))
