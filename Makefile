@@ -18,9 +18,9 @@ else
 endif
 
 ifeq ($(USE_TINY_TEX),1)
-	TEX_DIR=textures-small
+	TEX_DIR=small
 else
-	TEX_DIR=textures
+	TEX_DIR=full
 endif
 
 CC=gcc
@@ -38,7 +38,7 @@ CFLAGS=-g3 -O0 `pkg-config glib-2.0 sdl2 SDL2_image libgps --cflags` \
 	   -DSHADER_ROOT=\"fg-roam/src/shaders/$(SHADER_DIR)\" \
 	   -DSKY_ROOT=\"fg-roam/src\" \
 	   -DTERRAIN_ROOT=\"$(RES_HOME)/Terrain\" \
-	   -DTEX_ROOT=\"$(RES_HOME)/$(TEX_DIR)\" \
+	   -DTEX_ROOT=\"$(RES_HOME)/textures/$(TEX_DIR)\" \
 	   -DTILES_ROOT=\"$(RES_HOME)/ign-oaci-tiles\" \
 	   -DENABLE_PERF_COUNTERS=1 \
 	   -DUSE_GLES=$(USE_GLES) \
