@@ -217,7 +217,7 @@ int main(int argc, char **argv)
             g_ds = (DataSource *)sensors_data_source_new();
             break;
         case MODE_FGREMOTE:
-            g_ds = (DataSource *)fg_data_source_new(6798);
+            g_ds = (DataSource *)fg_data_source_new(6789);
             break;
         case MODE_FGTAPE: //Fallthtough
         default:
@@ -309,11 +309,16 @@ int main(int argc, char **argv)
 #endif
     hud->attitude->mode = (g_show3d) ? AI_MODE_3D : AI_MODE_2D;
 
+
     DATA_SOURCE(g_ds)->latitude = NAN;
+    printf("Waiting for fix.");
     do{
-        printf("Waiting for fix...\n");
         data_source_frame(DATA_SOURCE(g_ds), 0);
+        printf(".");
+        fflush(stdout);
+        sleep(1); /*sleep for 1 sec*/
     }while(isnan(DATA_SOURCE(g_ds)->latitude));
+    printf("\n");
 
     last_dtms = 0;
     startms = SDL_GetTicks();

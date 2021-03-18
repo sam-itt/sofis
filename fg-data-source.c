@@ -65,5 +65,15 @@ static bool fg_data_source_frame(FGDataSource *self, uint32_t dt)
     DATA_SOURCE(self)->pitch = packet.pitch;
     DATA_SOURCE(self)->heading = packet.heading;
 
+    DATA_SOURCE(self)->slip_rad = packet.side_slip;
+
+    DATA_SOURCE(self)->rpm = packet.rpm;
+    DATA_SOURCE(self)->fuel_flow = packet.fuel_flow;
+    DATA_SOURCE(self)->oil_temp = packet.oil_temp;
+    DATA_SOURCE(self)->oil_press = packet.oil_px;
+    DATA_SOURCE(self)->cht = packet.cht;
+    DATA_SOURCE(self)->fuel_px = packet.fuel_px;
+    DATA_SOURCE(self)->fuel_qty = packet.fuel_qty;
+
     return true;
 }
