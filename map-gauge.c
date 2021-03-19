@@ -10,6 +10,11 @@
 #include "misc.h"
 #include "sdl-colors.h"
 
+#ifndef MAPS_HOME
+#define MAPS_HOME "/home/samuel/dev/maps"
+#endif
+
+
 /*Each tile is 256x256 px*/
 #define TILE_SIZE 256
 /*Time after which the viewport re-ties to the marker*/
@@ -95,7 +100,10 @@ MapGauge *map_gauge_init(MapGauge *self, int w, int h)
     cache_tiles = (MAX(twidth, 1) * MAX(twidth, 1)) * 4;
 
     /*Keep in the tile stack 2 viewports worth of tiles*/
-    self->tile_provider = map_tile_provider_new(cache_tiles*2);
+    self->tile_provider = map_tile_provider_new(
+        MAPS_HOME"/ign-oaci", "jpg",
+        cache_tiles*2
+    );
     /*TODO: Scale the plane relative to the gauge's size*/
     generic_layer_init_from_file(&self->marker.layer, "plane32.png");
     generic_layer_build_texture(&self->marker.layer);

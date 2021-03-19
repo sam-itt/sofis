@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <stdbool.h>
+#include <sys/stat.h>
 
 #include "SDL_rect.h"
 
@@ -34,6 +35,12 @@ int number_digits(float n);
 bool interval_intersect(float as, float ae, float bs, float be, float *is, float *ie);
 
 void filter_dedup(char *base, size_t len);
+
+char *nibble_spaces(const char *str, size_t n);
+size_t split_str(const char *str, int (*splitter)(int c), char **parts, size_t nparts);
+
+void mkdir_p(const char *dir, mode_t mode);
+bool create_path(const char *filename);
 
 void SDLExt_RectCenter(SDL_Rect *self, SDL_Rect *reference);
 void SDLExt_RectAlign(SDL_Rect *self, SDL_Rect *reference, uint8_t alignment);

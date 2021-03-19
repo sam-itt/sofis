@@ -1,10 +1,19 @@
+#ifndef _GNU_SOURCE
+#define _GNU_SOURCE
+#endif
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
 #include <stdbool.h>
+#include <unistd.h>
 #include <math.h>
+#include <limits.h>
+#include <sys/stat.h>
+#include <libgen.h>
 
 #include "misc.h"
+
+
 
 /**
  * Separate a base-10 number into its components: units,
@@ -91,7 +100,120 @@ void filter_dedup(char *base, size_t len)
     }
 }
 
+/**
+ * @brief Returns the address of the first non-white space char in @parm str
+ *
+ * @param str The string to work on
+ * @param n go to at most n chars. 0 will be treated as strlen(str)
+ * @return Pointer to the first non-white space char (within str) or NULL if
+ * the whole string was whitespace
+ */
+char *nibble_spaces(const char *str, size_t n)
+{
+    char *iter;
+    const char *max;
 
+    max = (n > 0) ? str+n : str+strlen(str);
+    for(iter = (char*)str; isspace(*iter) && iter < max; iter++);
+
+    return (iter != max-1) ? iter : NULL;
+}
+
+/**
+ * @brief Break a delimited (comma, space, etc.) string into a sequence of substrings.
+ *
+ * This function will fill @param parts with pointers to the begining of each of the
+ * detected parts. For example, a string like "one two three" will be splitted in 3
+ * parts by a call to split_str using isspace(3) as splitter. The first pointer will
+ * point to the begining of the string, the second to the 't' of two and the third
+ * to the 't' of three.
+ *
+ * @param str The string to split
+ * @param splitter the function to use as the splitter. The libc provide many, refer
+ * to man isalpha(3) for a list.
+ * @param parts The array to be filled-in. If NULL, it won't be filled and the function
+ * will return the number of parts detected.
+ * @param nparts The number of pointers that @param parts can hold. Ignored if @param
+ * parts is NULL.
+ * @return The number of splitted/splittable elements.
+ */
+size_t split_str(const char *str, int (*splitter)(int c), char **parts, size_t nparts)
+{
+    char *iter;
+    const char *max;
+    size_t rv;
+
+    rv = 0;
+    iter = (char*)str;
+    max = str+strlen(str);
+    do{
+        while(splitter(*iter) && iter < max) iter++;
+        if(parts && rv < nparts)
+            parts[rv] = iter;
+        rv++;
+        while(!splitter(*iter) && iter < max) iter++;
+    }while(iter < max);
+    return rv-1; //Last increment is 'optimistic'
+}
+
+
+/**
+ * @brief Creates directory @param dir, creating parents as needed.
+ *
+ * Same behavior as the shell command mkdir -p
+ *
+ *
+ * @param dir The directory (path/hierarchy) to create
+ * @param mode The creation mode, bitfield of permissions.
+ * Refer to stat(2).
+ *
+ * credits: http://nion.modprobe.de/blog/archives/357-Recursive-directory-creation.html
+ */
+void mkdir_p(const char *dir, mode_t mode)
+{
+    char tmp[PATH_MAX];
+    char *p = NULL;
+    size_t len;
+
+    snprintf(tmp, sizeof(tmp),"%s",dir);
+    len = strlen(tmp);
+    if(tmp[len - 1] == '/')
+        tmp[len - 1] = 0;
+    for(p = tmp + 1; *p; p++){
+        if(*p == '/') {
+            *p = 0;
+            mkdir(tmp, mode);
+            *p = '/';
+        }
+    }
+    mkdir(tmp, mode);
+}
+
+/**
+ * @brief Create all directories leading to @param filename
+ *
+ * @param filename Path to a file.
+ */
+bool create_path(const char *filename)
+{
+    char *tmp;
+    char *dname;
+    size_t len;
+
+    /*dirname can modify its argument, so we need to make a copy*/
+    len = strlen(filename);
+    if(len < 1024)
+        tmp = strdupa(filename);
+    else
+        tmp = strdup(filename);
+    dname = dirname(tmp);
+
+    if(access(dname, F_OK) != 0)
+        mkdir_p(dname, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
+    if(len >= 1024) free(tmp);
+
+    return access(dname, F_OK) == 0;
+}
 
 /**
  * Centers self on/in the reference rectangle. Self width
