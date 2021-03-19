@@ -100,8 +100,12 @@ MapGauge *map_gauge_init(MapGauge *self, int w, int h)
     cache_tiles = (MAX(twidth, 1) * MAX(twidth, 1)) * 4;
 
     /*Keep in the tile stack 2 viewports worth of tiles*/
-    self->tile_provider = map_tile_provider_new(
+    self->tile_providers[self->ntile_providers++] = map_tile_provider_new(
         MAPS_HOME"/ign-oaci", "jpg",
+        cache_tiles*2
+    );
+    self->tile_providers[self->ntile_providers++] = map_tile_provider_new(
+        MAPS_HOME"/osm", "png",
         cache_tiles*2
     );
     /*TODO: Scale the plane relative to the gauge's size*/
@@ -126,8 +130,8 @@ MapGauge *map_gauge_init(MapGauge *self, int w, int h)
  */
 MapGauge *map_gauge_dispose(MapGauge *self)
 {
-    if(self->tile_provider)
-        map_tile_provider_free(self->tile_provider);
+    for(int i = 0; i < self->ntile_providers; i++)
+        map_tile_provider_free(self->tile_providers[i]);
     base_gauge_dispose(BASE_GAUGE(self));
     return NULL;
 }
@@ -428,7 +432,14 @@ static void map_gauge_update_state(MapGauge *self, Uint32 dt)
     SDL_Rect viewport = map_gauge_viewport(self);
     for(int tiley = tl_tile_y; tiley <= br_tile_y; tiley++){
         for(int tilex = tl_tile_x; tilex <= br_tile_x; tilex++){
-            layer = map_tile_provider_get_tile(self->tile_provider, self->level, tilex, tiley);
+            for(int i = 0; i < self->ntile_providers; i++){
+                layer = map_tile_provider_get_tile(self->tile_providers[i],
+                    self->level,
+                    tilex, tiley
+                );
+                if(layer)
+                    break;
+            }
             if(!layer)
                 printf("Couldn't get tile layer for tile x:%d y:%d zoom:%d\n",tilex,tiley, self->level);
             if(!layer) continue;

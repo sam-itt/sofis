@@ -6,12 +6,13 @@
 #include "map-tile-provider.h"
 #include "misc.h"
 
-/*With uint32_t for coords we
+/*With uint32_t for tile coords we
  * can go to the 16th level*/
 #define MAP_GAUGE_MAX_LEVEL 16
 
 typedef struct{
-    GenericLayer *layer; /*TODO: Array of pointers to layers, as much as providers*/
+    /*TODO: Array of pointers to layers, as much as providers/overlays*/
+    GenericLayer *layer;
     SDL_Rect src;
     SDL_Rect dst;
 }MapPatch;
@@ -54,7 +55,9 @@ typedef struct{
     bool roaming; /*The view is roaming around and not tied to the marker*/
     Uint32 last_manipulation;
 
-    MapTileProvider *tile_provider;
+    MapTileProvider *tile_providers[2]; /*static for now*/
+    size_t ntile_providers;
+
     MapGaugeState state;
 }MapGauge;
 
