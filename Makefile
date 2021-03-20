@@ -43,7 +43,10 @@ CFLAGS=-g3 -O0 `pkg-config glib-2.0 sdl2 SDL2_image libgps --cflags` \
 	   -DENABLE_PERF_COUNTERS=1 \
 	   -DUSE_GLES=$(USE_GLES) \
 	   -DENABLE_3D=$(ENABLE_3D) \
-	   -DNO_PRELOAD=$(NO_PRELOAD)
+	   -DNO_PRELOAD=$(NO_PRELOAD) \
+	   -DHAVE_MKDIR_P \
+	   -DHAVE_CREATE_PATH \
+	   -DHAVE_HTTP_DOWNLOAD_FILE
 LDFLAGS=-lz -lm `pkg-config glib-2.0 sdl2 SDL2_image libgps --libs` -Wl,--as-needed -lSDL2_gpu -lGL -lpthread -lcurl
 EXEC=test-sdl
 SRC= $(filter-out $(SRCDIR)/main.c $(SRCDIR)/testbench.c, $(wildcard $(SRCDIR)/*.c))
