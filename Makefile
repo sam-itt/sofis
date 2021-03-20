@@ -1,8 +1,11 @@
 RES_HOME=/home/samuel/dev
 ENABLE_3D=1
 USE_GLES=0
-USE_TINY_TEX=0
+TINY_TEXTURES=0
 NO_PRELOAD=0
+
+# Where to find resources/{fg-scenery,skybox} and shaders/
+FGR_HOME=\"./fg-roam/src\"
 
 SRCDIR=.
 FG_IO=$(SRCDIR)/fg-io
@@ -10,18 +13,6 @@ FGCONN=$(FG_IO)/flightgear-connector
 FGTAPE=$(FG_IO)/fg-tape
 FG_ROAM=$(SRCDIR)/fg-roam
 CGLM=$(FG_ROAM)/lib/cglm/include
-
-ifeq ($(USE_GLES),1)
-	SHADER_DIR=gles
-else
-	SHADER_DIR=gl
-endif
-
-ifeq ($(USE_TINY_TEX),1)
-	TEX_DIR=small
-else
-	TEX_DIR=full
-endif
 
 CC=gcc
 CFLAGS=-g3 -O0 `pkg-config glib-2.0 sdl2 SDL2_image libgps --cflags` \
@@ -35,15 +26,13 @@ CFLAGS=-g3 -O0 `pkg-config glib-2.0 sdl2 SDL2_image libgps --cflags` \
 	   -DUSE_SDL_GPU=1 \
 	   -DENABLE_DEBUG_TRIANGLE=0 \
 	   -DENABLE_DEBUG_CUBE=0 \
-	   -DSHADER_ROOT=\"fg-roam/src/shaders/$(SHADER_DIR)\" \
-	   -DSKY_ROOT=\"fg-roam/src\" \
-	   -DTERRAIN_ROOT=\"$(RES_HOME)/Terrain\" \
-	   -DTEX_ROOT=\"$(RES_HOME)/textures/$(TEX_DIR)\" \
+	   -DFGR_HOME=$(FGR_HOME) \
 	   -DMAPS_HOME=\"$(RES_HOME)/maps\" \
 	   -DENABLE_PERF_COUNTERS=1 \
 	   -DUSE_GLES=$(USE_GLES) \
 	   -DENABLE_3D=$(ENABLE_3D) \
 	   -DNO_PRELOAD=$(NO_PRELOAD) \
+	   -DUSE_TINY_TEXTURES=$(TINY_TEXTURES) \
 	   -DHAVE_MKDIR_P \
 	   -DHAVE_CREATE_PATH \
 	   -DHAVE_HTTP_DOWNLOAD_FILE
