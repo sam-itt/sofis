@@ -43,7 +43,7 @@ SidePanel *side_panel_init(SidePanel *self, int width, int height)
 {
 
     width = 95;
-    height = 480;
+    height = 480-1; /*SDL_gpu has a strange coordinates handling*/
 
     base_gauge_init(
         BASE_GAUGE(self),
