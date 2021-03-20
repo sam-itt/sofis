@@ -224,7 +224,6 @@ static void ladder_gauge_update_state(LadderGauge *self, Uint32 dt)
 
 static void ladder_gauge_render(LadderGauge *self, Uint32 dt, RenderContext *ctx)
 {
-    base_gauge_draw_outline(BASE_GAUGE(self), ctx, &SDL_WHITE, NULL);
     for(int i = 0; i < self->state.npatches; i++){
         base_gauge_blit_layer(BASE_GAUGE(self), ctx,
             self->state.patches[i].layer,
@@ -236,4 +235,5 @@ static void ladder_gauge_render(LadderGauge *self, Uint32 dt, RenderContext *ctx
         ctx, self->rubis,
         &SDL_RED, self->state.pskip
     );
+    base_gauge_draw_outline(BASE_GAUGE(self), ctx, &SDL_WHITE, NULL);
 }
