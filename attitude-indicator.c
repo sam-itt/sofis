@@ -14,6 +14,7 @@
 #include "resource-manager.h"
 #include "roll-slip-gauge.h"
 #include "sdl-colors.h"
+#include "res-dirs.h"
 
 #define sign(x) (((x) > 0) - ((x) < 0))
 
@@ -55,9 +56,9 @@ AttitudeIndicator *attitude_indicator_init(AttitudeIndicator *self, int width, i
 	self->size = 2; /*In tens of degrees, here 20deg (+/-)*/
 
     /*TODO: Failure*/
-    generic_layer_init_from_file(&self->markers[MARKER_LEFT], "left-marker.png");
-    generic_layer_init_from_file(&self->markers[MARKER_RIGHT], "right-marker.png");
-    generic_layer_init_from_file(&self->markers[MARKER_CENTER], "center-marker.png");
+    generic_layer_init_from_file(&self->markers[MARKER_LEFT], IMG_DIR"/left-marker.png");
+    generic_layer_init_from_file(&self->markers[MARKER_RIGHT], IMG_DIR"/right-marker.png");
+    generic_layer_init_from_file(&self->markers[MARKER_CENTER], IMG_DIR"/center-marker.png");
     for(int i = 0; i < 3; i++)
         generic_layer_build_texture(&self->markers[i]);
 
@@ -110,7 +111,7 @@ AttitudeIndicator *attitude_indicator_init(AttitudeIndicator *self, int width, i
     );
 
     /*TODO: Generate*/
-    self->horizon_src = IMG_Load("horizon-grads-scaled.png");
+    self->horizon_src = IMG_Load(IMG_DIR"/horizon-grads-scaled.png");
     if(!self->horizon_src)
         return NULL;
     SDL_SetSurfaceBlendMode(self->horizon_src, SDL_BLENDMODE_NONE);

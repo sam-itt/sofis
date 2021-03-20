@@ -6,6 +6,7 @@
 
 #include "roll-slip-gauge.h"
 #include "misc.h"
+#include "res-dirs.h"
 
 #define sign(x) (((x) > 0) - ((x) < 0))
 
@@ -34,15 +35,15 @@ RollSlipGauge *roll_slip_gauge_init(RollSlipGauge *self)
 {
     base_gauge_init(BASE_GAUGE(self), &roll_slip_gauge_ops, 183, 183);
 
-    generic_layer_init_from_file(&self->arc, "roll-arc.png");
+    generic_layer_init_from_file(&self->arc, IMG_DIR"/roll-arc.png");
     if(!self->arc.canvas) return NULL;
     generic_layer_build_texture(&self->arc);
 
-    generic_layer_init_from_file(&self->marker, "roll-marker.png");
+    generic_layer_init_from_file(&self->marker, IMG_DIR"/roll-marker.png");
     if(!self->marker.canvas) return NULL;
     generic_layer_build_texture(&self->marker);
 
-    generic_layer_init_from_file(&self->slip_marker, "slip-marker.png");
+    generic_layer_init_from_file(&self->slip_marker, IMG_DIR"/slip-marker.png");
     if(!self->slip_marker.canvas) return NULL;
     generic_layer_build_texture(&self->slip_marker);
 

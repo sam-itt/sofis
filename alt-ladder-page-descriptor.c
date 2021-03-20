@@ -7,6 +7,7 @@
 #include "generic-layer.h"
 #include "resource-manager.h"
 #include "sdl-colors.h"
+#include "res-dirs.h"
 
 #define PAGE_SIZE 700 /*number of values per page*/
 
@@ -18,7 +19,7 @@ AltLadderPageDescriptor *alt_ladder_page_descriptor_new(void)
 
     self = calloc(1, sizeof(AltLadderPageDescriptor));
     if(self){
-        tmp = fb_page_descriptor_init((FBPageDescriptor *)self, "alt-ladder.png",BOTTUM_UP, PAGE_SIZE, 100, 20);
+        tmp = fb_page_descriptor_init((FBPageDescriptor *)self, IMG_DIR"/alt-ladder.png",BOTTUM_UP, PAGE_SIZE, 100, 20);
         if(!tmp){
             free(self);
             return NULL;

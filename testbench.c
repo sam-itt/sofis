@@ -30,6 +30,7 @@
 #include "map-gauge.h"
 
 #include "sdl-colors.h"
+#include "res-dirs.h"
 
 #define SCREEN_WIDTH 640
 #define SCREEN_HEIGHT 480
@@ -439,8 +440,8 @@ int main(int argc, char **argv)
     alt_indicator_set_value(alt_ind, alt, true);
 
 /*    stair = vertical_stair_new(*/
-        /*"vs-bg.png",*/
-        /*"vs-cursor.png",*/
+        /*IMG_DIR"/vs-bg.png",*/
+        /*IMG_DIR"/vs-cursor.png",*/
         /*resource_manager_get_static_font(TERMINUS_16, &SDL_WHITE, 2, PCF_DIGITS, "+-")*/
     /*);*/
     /*vertical_stair_set_value(stair, vs, true);*/

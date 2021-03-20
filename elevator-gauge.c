@@ -10,6 +10,7 @@
 
 #include "elevator-gauge.h"
 #include "misc.h"
+#include "res-dirs.h"
 
 static void elevator_gauge_render(ElevatorGauge *self, Uint32 dt, RenderContext *ctx);
 static void elevator_gauge_update_state(ElevatorGauge *self, Uint32 dt);
@@ -208,7 +209,7 @@ static bool elevator_gauge_build_elevator(ElevatorGauge *self, Uint32 color)
         return false;
     }
 
-    filename = (self->elevator_location == Left) ? "lh-cursor10.png" : "rh-cursor10.png";
+    filename = (self->elevator_location == Left) ? IMG_DIR"/lh-cursor10.png" : IMG_DIR"/rh-cursor10.png";
 
     SDL_Surface *triangle = IMG_Load(filename);
     if(!triangle)

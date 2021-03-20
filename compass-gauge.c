@@ -7,6 +7,7 @@
 #include "sdl-colors.h"
 #include "misc.h"
 #include "text-gauge.h"
+#include "res-dirs.h"
 
 static void compass_gauge_render(CompassGauge *self, Uint32 dt, RenderContext *ctx);
 static void compass_gauge_update_state(CompassGauge *self, Uint32 dt);
@@ -33,12 +34,12 @@ CompassGauge *compass_gauge_init(CompassGauge *self)
 {
     bool rv;
 
-    rv = generic_layer_init_from_file(&self->outer, "compass-outer.png");
+    rv = generic_layer_init_from_file(&self->outer, IMG_DIR"/compass-outer.png");
     if(!rv){
         printf("Couldn't load compass outer ring\n");
         return NULL;
     }
-    rv = generic_layer_init_from_file(&self->inner, "compass-inner.png");
+    rv = generic_layer_init_from_file(&self->inner, IMG_DIR"/compass-inner.png");
     if(!rv){
         printf("Couldn't load compass inner ring\n");
         return NULL;

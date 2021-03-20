@@ -7,6 +7,7 @@
 #include "sdl-colors.h"
 #include "SDL_pcf.h"
 #include "vertical-stair.h"
+#include "res-dirs.h"
 
 static BaseGaugeOps alt_group_ops = {
    .render = (RenderFunc)NULL,
@@ -30,7 +31,7 @@ AltGroup *alt_group_new(void)
 AltGroup *alt_group_init(AltGroup *self)
 {
     self->altimeter = alt_indicator_new();
-    self->vsi = vertical_stair_new("vs-bg.png","vs-cursor.png",
+    self->vsi = vertical_stair_new(IMG_DIR"/vs-bg.png",IMG_DIR"/vs-cursor.png",
         resource_manager_get_static_font(TERMINUS_16, &SDL_WHITE, 2, PCF_DIGITS, "+-")
     );
 

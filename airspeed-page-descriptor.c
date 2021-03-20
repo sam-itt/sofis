@@ -10,6 +10,7 @@
 #include "sdl-colors.h"
 #include "misc.h"
 #include "vertical-strip.h"
+#include "res-dirs.h"
 
 #define PAGE_SIZE 70
 
@@ -32,7 +33,7 @@ AirspeedPageDescriptor *airspeed_page_descriptor_new(speed_t v_so, speed_t v_s1,
     self->v_no = v_no;
     self->v_ne = v_ne;
 
-    fb_page_descriptor_init((FBPageDescriptor *)self, "speed-ladder.png", BOTTUM_UP, PAGE_SIZE, 10, 5);
+    fb_page_descriptor_init((FBPageDescriptor *)self, IMG_DIR"/speed-ladder.png", BOTTUM_UP, PAGE_SIZE, 10, 5);
     self->super.super.init_page = airspeed_ladder_page_init;
     self->super.super.fei = 234;
 

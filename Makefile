@@ -1,4 +1,3 @@
-RES_HOME=/home/samuel/dev
 ENABLE_3D=1
 USE_GLES=0
 TINY_TEXTURES=0
@@ -6,6 +5,7 @@ NO_PRELOAD=0
 
 # Where to find resources/{fg-scenery,skybox} and shaders/
 FGR_HOME=\"./fg-roam/src\"
+SFS_HOME=\".\"
 
 SRCDIR=.
 FG_IO=$(SRCDIR)/fg-io
@@ -27,7 +27,7 @@ CFLAGS=-g3 -O0 `pkg-config glib-2.0 sdl2 SDL2_image libgps --cflags` \
 	   -DENABLE_DEBUG_TRIANGLE=0 \
 	   -DENABLE_DEBUG_CUBE=0 \
 	   -DFGR_HOME=$(FGR_HOME) \
-	   -DMAPS_HOME=\"$(RES_HOME)/maps\" \
+	   -DSFS_HOME=$(SFS_HOME) \
 	   -DENABLE_PERF_COUNTERS=1 \
 	   -DUSE_GLES=$(USE_GLES) \
 	   -DENABLE_3D=$(ENABLE_3D) \

@@ -7,6 +7,7 @@
 
 #include "resource-manager.h"
 #include "misc.h"
+#include <res-dirs.h>
 
 static ResourceManager *_instance = NULL;
 static void resource_manager_push_static_font(PCF_StaticFont *font, FontResource creator);
@@ -73,17 +74,17 @@ static const char *resource_manager_get_font_filename(FontResource font)
 {
     switch (font) {
         case TERMINUS_12:
-            return "fonts/ter-x12n.pcf.gz";
+            return FONT_DIR"/ter-x12n.pcf.gz";
         case TERMINUS_14:
-            return "fonts/ter-x14n.pcf.gz";
+            return FONT_DIR"/ter-x14n.pcf.gz";
         case TERMINUS_16:
-            return "fonts/ter-x16n.pcf.gz";
+            return FONT_DIR"/ter-x16n.pcf.gz";
         case TERMINUS_18:
-            return "fonts/ter-x18n.pcf.gz";
+            return FONT_DIR"/ter-x18n.pcf.gz";
         case TERMINUS_24:
-            return "fonts/ter-x24n.pcf.gz";
+            return FONT_DIR"/ter-x24n.pcf.gz";
         case TERMINUS_32:
-            return "fonts/ter-x32n.pcf.gz";
+            return FONT_DIR"/ter-x32n.pcf.gz";
         case FONT_MAX:
         default:
             return NULL;

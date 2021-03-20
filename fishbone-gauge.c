@@ -15,6 +15,7 @@
 #include "sdl-colors.h"
 #include "SDL_pcf.h"
 #include "misc.h"
+#include "res-dirs.h"
 
 #define view_set_pixel(surface, x, y, color) (Uint32 *)((surface)->pixels)[(y)*(surface)->width+(x)] = (color)
 
@@ -127,7 +128,7 @@ FishboneGauge *fishbone_gauge_init(FishboneGauge *self,
      * to match the font size. Have the ability to enclose
      * a letter within the triangle.
      */
-    self->cursor = generic_layer_new_from_file("fishbone-cursor.png");
+    self->cursor = generic_layer_new_from_file(IMG_DIR"/fishbone-cursor.png");
     if(!self->cursor)
         return NULL;
     generic_layer_build_texture(self->cursor);
