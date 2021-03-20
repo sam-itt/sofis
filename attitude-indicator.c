@@ -103,7 +103,7 @@ AttitudeIndicator *attitude_indicator_init(AttitudeIndicator *self, int width, i
      * properly compute those values
      * */
 
-    self->pitch_ruler.canvas = attitude_indicator_draw_ruler(self,
+    self->pitch_ruler = attitude_indicator_draw_ruler(self,
         self->size, 17,
         resource_manager_get_font(TERMINUS_12),
         &(SDL_Color){0,255,0}
@@ -119,8 +119,7 @@ AttitudeIndicator *attitude_indicator_init(AttitudeIndicator *self, int width, i
         base_gauge_w(BASE_GAUGE(self))*base_gauge_w(BASE_GAUGE(self))
         + base_gauge_h(BASE_GAUGE(self))*base_gauge_h(BASE_GAUGE(self))
     );
-    generic_layer_init(&self->etched_horizon, self->diagonal, self->horizon_src->h);
-    generic_layer_build_texture(&self->pitch_ruler);
+    generic_layer_init(&self->phh_overlay, self->diagonal, self->pitch_ruler->h);
 #endif
 
 #if !USE_SDL_GPU
@@ -174,9 +173,11 @@ void attitude_indicator_dispose(AttitudeIndicator *self)
 #endif
     generic_layer_dispose(&self->etched_ball);
 #if ENABLE_3D
-    generic_layer_dispose(&self->etched_horizon);
     if(self->horizon_src)
         SDL_FreeSurface(self->horizon_src);
+    if(self->pitch_ruler)
+        SDL_FreeSurface(self->pitch_ruler);
+    generic_layer_dispose(&self->phh_overlay);
 #endif
 }
 
@@ -638,7 +639,8 @@ static void attitude_indicator_update_state(AttitudeIndicator *self, Uint32 dt)
     horizon_y += increment;
 
     /*TODO: This Whole infinite horizon handling code
-     * should go in a common infinite/looping ruler handler
+     * should go in a common looping ruler handler
+     * that can handle both this and DigitBarrel
      */
     /*Resolve the heading value in a pixel x-coordinate in the image*/
     int value_x = 0;
@@ -671,7 +673,8 @@ static void attitude_indicator_update_state(AttitudeIndicator *self, Uint32 dt)
         hz_drects[npatches].x = xcursor;
         hz_drects[npatches].w = hz_srects[npatches].w;
         //hz_drects[npatches].y = horizon_y - self->horizon_src->h;
-        hz_drects[npatches].y = 0;
+        hz_drects[npatches].y =  generic_layer_h(&self->phh_overlay)/2-1
+                               - hz_srects[npatches].h;
         hz_drects[npatches].h = self->horizon_src->h;
 
         xcursor += hz_drects[npatches].w;
@@ -679,7 +682,7 @@ static void attitude_indicator_update_state(AttitudeIndicator *self, Uint32 dt)
         npatches++;
     }
     hz_srects[npatches].x = xbegin;
-    hz_srects[npatches].w = generic_layer_w(&self->etched_horizon); //self->base_gauge_w(BASE_GAUGE(self));
+    hz_srects[npatches].w = generic_layer_w(&self->phh_overlay);
     hz_srects[npatches].y = 0;
     hz_srects[npatches].h = self->horizon_src->h;
 
@@ -690,7 +693,8 @@ static void attitude_indicator_update_state(AttitudeIndicator *self, Uint32 dt)
 
     hz_drects[npatches].x = xcursor;
     hz_drects[npatches].w = hz_srects[npatches].w;
-    hz_drects[npatches].y = 0;
+    hz_drects[npatches].y =  generic_layer_h(&self->phh_overlay)/2-1
+                           - hz_srects[npatches].h;
     hz_drects[npatches].h = self->horizon_src->h;
 
     xcursor += hz_drects[npatches].w;
@@ -705,43 +709,79 @@ static void attitude_indicator_update_state(AttitudeIndicator *self, Uint32 dt)
 
         hz_drects[npatches].x = xcursor;
         hz_drects[npatches].w = hz_srects[npatches].w;
-        hz_drects[npatches].y = 0;
+        hz_drects[npatches].y =  generic_layer_h(&self->phh_overlay)/2-1
+                               - hz_srects[npatches].h;
         hz_drects[npatches].h = self->horizon_src->h;
 
         npatches++;
     }
 
-    SDL_FillRect(self->etched_horizon.canvas, NULL, 0x00000000);
-    for(int i = 0; i < npatches; i++){
-        SDL_BlitSurface(
-            self->horizon_src, &hz_srects[i],
-            self->etched_horizon.canvas, &hz_drects[i]
-        );
+    if(!self->phh_inited){
+        /*First time, draw the full overlay*/
+        SDL_FillRect(self->phh_overlay.canvas, NULL, 0x00000000);
+        for(int i = 0; i < npatches; i++){
+            SDL_BlitSurface(
+                self->horizon_src, &hz_srects[i],
+                self->phh_overlay.canvas, &hz_drects[i]
+            );
+        }
+
+        SDL_Rect pitch_loc = {
+            .x =  generic_layer_w(&self->phh_overlay)/2 - 1
+                - self->pitch_ruler->w/2 + 1,
+            .y = 0,
+            .w = self->pitch_ruler->w,
+            .h = self->pitch_ruler->h
+        };
+        SDL_BlitSurface(self->pitch_ruler, NULL,
+                        self->phh_overlay.canvas, &pitch_loc);
+        self->phh_inited = true;
+    }else{
+        /* Then only redraw the changed parts.
+         * Around 800x(!) faster measured on 1k/2k frames*/
+        SDL_Rect hhz_line = {
+            .x = 0,
+            .y = generic_layer_h(&self->phh_overlay)/2-1
+                 - self->horizon_src->h,
+            .w = generic_layer_w(&self->phh_overlay),
+            .h = self->horizon_src->h
+        };
+        for(int i = 0; i < npatches; i++){
+            SDL_BlitSurface(
+                self->horizon_src, &hz_srects[i],
+                self->phh_overlay.canvas, &hz_drects[i]
+            );
+        }
+
+        SDL_Rect pitch_src = {
+            .x = 0,
+            .y = self->pitch_ruler->h/2 - self->horizon_src->h,
+            .w = self->pitch_ruler->w,
+            .h = self->horizon_src->h
+        };
+        SDL_Rect pitch_loc = {
+            .x =  generic_layer_w(&self->phh_overlay)/2 - 1
+                - self->pitch_ruler->w/2 + 1,
+            .y = generic_layer_h(&self->phh_overlay)/2-1
+                 - self->horizon_src->h,
+            .w = self->pitch_ruler->w,
+            .h = self->horizon_src->h
+        };
+        SDL_BlitSurface(self->pitch_ruler, &pitch_src,
+                        self->phh_overlay.canvas, &pitch_loc);
     }
-    generic_layer_update_texture(&self->etched_horizon);
+    generic_layer_update_texture(&self->phh_overlay);
 
-    self->state.hz_drect = (SDL_Rect){
-        .x = 0,
-        .y = horizon_y - self->horizon_src->h,
-        .w = generic_layer_w(&self->etched_horizon), //base_gauge_w(BASE_GAUGE(self)),
-        .h = self->horizon_src->h
+    self->state.phh_drect = (SDL_Rect){
+        .x = base_gauge_w(BASE_GAUGE(self))/2 - self->phh_overlay.texture->w/2 + 1,
+        .y = horizon_y - (self->phh_overlay.texture->h/2-1),
+        .w = self->phh_overlay.texture->w,
+        .h = self->phh_overlay.texture->h
     };
 
-    /*Pitch ruler*/
-    self->state.pr_dstrect = (SDL_Rect) {
-        .x = base_gauge_w(BASE_GAUGE(self))/2 - self->pitch_ruler.texture->w/2 + 1,
-        .y = horizon_y - (self->pitch_ruler.texture->h/2-1),
-        .w = self->pitch_ruler.texture->w,
-        .h = self->pitch_ruler.texture->h
-    };
-
-    self->state.rcenter_3d.x = self->pitch_ruler.texture->w/2;
-    self->state.rcenter_3d.y = self->pitch_ruler.texture->h/2 - increment;
-
-    self->state.hz_rcenter.x = self->etched_horizon.texture->w/2;
-    self->state.hz_rcenter.y = self->etched_horizon.texture->h/2 - increment;
-
-#endif
+    self->state.phh_rcenter.x = self->phh_overlay.texture->w/2;
+    self->state.phh_rcenter.y = self->phh_overlay.texture->h/2 - increment;
+#endif //ENABLE_3D
 }
 
 static void attitude_indicator_render(AttitudeIndicator *self, Uint32 dt, RenderContext *ctx)
@@ -758,21 +798,14 @@ static void attitude_indicator_render(AttitudeIndicator *self, Uint32 dt, Render
     }else{
 #if ENABLE_3D
         base_gauge_blit_rotated_texture(BASE_GAUGE(self), ctx,
-            self->etched_horizon.texture,
+            self->phh_overlay.texture,
             NULL,
             -self->roll,
-            &self->state.hz_rcenter,
-            &self->state.hz_drect,
+            &self->state.phh_rcenter,
+            &self->state.phh_drect,
             NULL
         );
 
-        base_gauge_blit_rotated_texture(BASE_GAUGE(self), ctx,
-         self->pitch_ruler.texture,
-         NULL,
-         -self->roll,
-         &self->state.rcenter_3d,
-         &self->state.pr_dstrect,
-         NULL);
 #endif
     }
 #else
