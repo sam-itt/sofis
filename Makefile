@@ -1,8 +1,4 @@
-ENABLE_3D=1
-USE_GLES=0
-TINY_TEXTURES=0
-NO_PRELOAD=0
-HAVE_IGN_OACI_MAP=0
+include switches.local
 
 # Where to find resources/{fg-scenery,skybox} and shaders/
 FGR_HOME=\"./fg-roam/src\"
