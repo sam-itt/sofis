@@ -2,6 +2,7 @@ ENABLE_3D=1
 USE_GLES=0
 TINY_TEXTURES=0
 NO_PRELOAD=0
+HAVE_IGN_OACI_MAP=0
 
 # Where to find resources/{fg-scenery,skybox} and shaders/
 FGR_HOME=\"./fg-roam/src\"
@@ -35,7 +36,8 @@ CFLAGS=-g3 -O0 `pkg-config glib-2.0 sdl2 SDL2_image libgps --cflags` \
 	   -DUSE_TINY_TEXTURES=$(TINY_TEXTURES) \
 	   -DHAVE_MKDIR_P \
 	   -DHAVE_CREATE_PATH \
-	   -DHAVE_HTTP_DOWNLOAD_FILE
+	   -DHAVE_HTTP_DOWNLOAD_FILE \
+	   -DHAVE_IGN_OACI_MAP=$(HAVE_IGN_OACI_MAP)
 LDFLAGS=-lz -lm `pkg-config glib-2.0 sdl2 SDL2_image libgps --libs` -Wl,--as-needed -lSDL2_gpu -lGL -lpthread -lcurl
 EXEC=test-sdl
 SRC= $(filter-out $(SRCDIR)/main.c $(SRCDIR)/testbench.c, $(wildcard $(SRCDIR)/*.c))

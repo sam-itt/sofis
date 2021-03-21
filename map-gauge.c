@@ -96,10 +96,17 @@ MapGauge *map_gauge_init(MapGauge *self, int w, int h)
     cache_tiles = (MAX(twidth, 1) * MAX(twidth, 1)) * 4;
 
     /*Keep in the tile stack 2 viewports worth of tiles*/
+#if HAVE_IGN_OACI_MAP
     self->tile_providers[self->ntile_providers++] = map_tile_provider_new(
         MAPS_HOME"/ign-oaci", "jpg",
         cache_tiles*2
     );
+#else
+    self->tile_providers[self->ntile_providers++] = map_tile_provider_new(
+        MAPS_HOME"/osm-aip", "png",
+        cache_tiles*2
+    );
+#endif
     self->tile_providers[self->ntile_providers++] = map_tile_provider_new(
         MAPS_HOME"/osm", "png",
         cache_tiles*2
