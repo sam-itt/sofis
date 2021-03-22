@@ -222,6 +222,7 @@ static bool elevator_gauge_build_elevator(ElevatorGauge *self, Uint32 color)
 
     /*Blit triangle at top left of elevator*/
     SDL_BlitSurface(triangle, NULL, self->elevator->canvas, NULL);
+    SDL_FreeSurface(triangle);
     /*Creates the 'tail'*/
     startx = (self->elevator_location == Left)
              ? 0

@@ -63,10 +63,6 @@ AttitudeIndicator *attitude_indicator_init(AttitudeIndicator *self, int width, i
         generic_layer_build_texture(&self->markers[i]);
 
 	self->rollslip = roll_slip_gauge_new();
-    base_gauge_add_child(BASE_GAUGE(self), BASE_GAUGE(self->rollslip),
-        self->locations[ROLL_SLIP].x,
-        self->locations[ROLL_SLIP].y
-    );
 
 	self->locations[MARKER_LEFT] = (SDL_Rect){
 	/*The left marker has its arrow pointing right and the arrow X is at marker->w-1*/
@@ -146,7 +142,6 @@ static bool attitude_indicator_init_animations(AttitudeIndicator *self)
     if(!animation)
         return false;
     rv = base_gauge_add_animation(BASE_GAUGE(self), animation);
-    base_animation_unref(animation);/*base_gauge takes ownership*/
     if(!rv)
         return false;
 
@@ -154,7 +149,6 @@ static bool attitude_indicator_init_animations(AttitudeIndicator *self)
     if(!animation)
         return false;
     rv = base_gauge_add_animation(BASE_GAUGE(self), animation);
-    base_animation_unref(animation);/*base_gauge takes ownership*/
 
     return rv;
 }

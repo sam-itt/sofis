@@ -133,8 +133,15 @@ MapGauge *map_gauge_init(MapGauge *self, int w, int h)
  */
 MapGauge *map_gauge_dispose(MapGauge *self)
 {
+    for(int i = 0; i < self->state.npatches; i++)
+        generic_layer_unref(self->state.patches[i].layer);
+    if(self->state.patches)
+        free(self->state.patches);
+
+    generic_layer_dispose(&self->marker.layer);
     for(int i = 0; i < self->ntile_providers; i++)
         map_tile_provider_free(self->tile_providers[i]);
+
     base_gauge_dispose(BASE_GAUGE(self));
     return NULL;
 }

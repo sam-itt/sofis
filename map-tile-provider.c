@@ -352,6 +352,7 @@ static bool map_tile_provider_read_config(MapTileProvider *self)
         }
     }
     free(line);
+    fclose(fp);
 
     return true;
 }

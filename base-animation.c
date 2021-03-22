@@ -21,6 +21,7 @@ BaseAnimation *base_animation_new(ValueType type, size_t ntargets, ...)
             return NULL;
         }
     }
+//    printf("BaseAnimation %p: allocated\n", self);
     return self;
 }
 
@@ -59,12 +60,24 @@ BaseAnimation *base_animation_vainit(BaseAnimation *self, ValueType type, size_t
     return self;
 }
 
+BaseAnimation *base_animation_dispose(BaseAnimation *self)
+{
+    if(self->targets)
+        free(self->targets);
+    return self;
+}
+
 void base_animation_unref(BaseAnimation *self)
 {
-    if(self->refcount == 0)
-        free(self);
-    else
-        self->refcount--;
+    if(--self->refcount == 0){
+//        printf("BaseAnimation %p: freeing\n", self);
+        free(base_animation_dispose(self));
+    }else{
+        /*printf("BaseAnimation %p: not freed, refcount is %d (was %d)\n",*/
+            /*self, self->refcount,*/
+            /*self->refcount+1*/
+        /*);*/
+    }
 }
 
 void base_animation_ref(BaseAnimation *self)

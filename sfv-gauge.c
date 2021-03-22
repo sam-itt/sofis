@@ -37,7 +37,6 @@ bool sfv_gauge_set_value(SfvGauge *self, float value, bool animated)
         if(BASE_GAUGE(self)->nanimations == 0){
             animation = base_animation_new(TYPE_FLOAT, 1, &self->value);
             base_gauge_add_animation(BASE_GAUGE(self), animation);
-            base_animation_unref(animation);/*base_gauge takes ownership*/
         }else{
             animation = BASE_GAUGE(self)->animations[0];
         }

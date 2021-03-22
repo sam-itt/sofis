@@ -99,7 +99,6 @@ bool tape_gauge_set_value(TapeGauge *self, float value, bool animated)
                 &SFV_GAUGE(self->odo)->value
             );
             base_gauge_add_animation(BASE_GAUGE(self), animation);
-            base_animation_unref(animation);/*base_gauge takes ownership*/
         }else{
             animation = BASE_GAUGE(self)->animations[0];
         }
