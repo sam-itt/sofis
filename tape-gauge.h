@@ -23,8 +23,6 @@ TapeGauge *tape_gauge_new(LadderPageDescriptor *descriptor,
 TapeGauge *tape_gauge_vainit(TapeGauge *self, LadderPageDescriptor *descriptor,
                              Alignment align, int xoffset,
                              int nbarrels, va_list ap);
-void tape_gauge_dispose(TapeGauge *self);
-void tape_gauge_free(TapeGauge *self);
 
 bool tape_gauge_set_value(TapeGauge *self, float value, bool animated);
 float tape_gauge_get_value(TapeGauge *self);

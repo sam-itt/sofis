@@ -20,12 +20,15 @@ typedef struct{
     SDL_Rect *portion; /*Portion of the gauge to render*/
 }RenderContext;
 
-typedef void (*RenderFunc)(void *self, Uint32 dt, RenderContext *ctx);
-typedef void (*StateUpdateFunc)(void *self, Uint32 dt);
+typedef void  (*RenderFunc)(void *self, Uint32 dt, RenderContext *ctx);
+typedef void  (*StateUpdateFunc)(void *self, Uint32 dt);
+typedef void* (*DisposeFunc)(void *self);
 
 typedef struct{
     RenderFunc render;
     StateUpdateFunc update_state;
+
+    DisposeFunc dispose;
 }BaseGaugeOps;
 
 typedef struct _BaseGauge{
@@ -56,7 +59,21 @@ typedef struct _BaseGauge{
 #define base_gauge_center_x(self) ((base_gauge_w((self))-1)/2)
 
 BaseGauge *base_gauge_init(BaseGauge *self, BaseGaugeOps *ops, int w, int h);
-void base_gauge_dispose(BaseGauge *self);
+void *base_gauge_dispose(BaseGauge *self);
+
+/**
+ * @brief Frees the memory used to store @self and
+ * any resources it helds. (internally calls @see
+ * base_gauge_dispose)
+ *
+ * @param self a BaseGauge
+ * @return always NULL (convenience)
+ */
+static inline void *base_gauge_free(BaseGauge *self)
+{
+    free(base_gauge_dispose(self));
+    return NULL;
+}
 
 bool base_gauge_add_child(BaseGauge *self, BaseGauge *child, int x, int y);
 bool base_gauge_add_animation(BaseGauge *self, BaseAnimation *animation);

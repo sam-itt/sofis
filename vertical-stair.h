@@ -32,8 +32,6 @@ typedef struct{
 
 VerticalStair *vertical_stair_new(const char *bg_img, const char *cursor_img, PCF_StaticFont *font);
 VerticalStair *vertical_stair_init(VerticalStair *self, const char *bg_img, const char *cursor_img, PCF_StaticFont *font);
-void vertical_stair_dispose(VerticalStair *self);
-void vertical_stair_free(VerticalStair *self);
 
 bool vertical_stair_set_value(VerticalStair *self, float value, bool animated);
 #endif /* VERTICAL_STAIR_H */

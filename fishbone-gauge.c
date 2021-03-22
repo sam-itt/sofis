@@ -21,9 +21,11 @@
 
 static void fishbone_gauge_render(FishboneGauge *self, Uint32 dt, RenderContext *ctx);
 static void fishbone_gauge_update_state(FishboneGauge *self, Uint32 dt);
+static void *fishbone_gauge_dispose(FishboneGauge *self);
 static BaseGaugeOps fishbone_gauge_ops = {
    .render = (RenderFunc)fishbone_gauge_render,
-   .update_state = (StateUpdateFunc)fishbone_gauge_update_state
+   .update_state = (StateUpdateFunc)fishbone_gauge_update_state,
+   .dispose = (DisposeFunc)fishbone_gauge_dispose
 };
 
 
@@ -50,8 +52,7 @@ FishboneGauge *fishbone_gauge_new(bool marked,
             bar_max_w, bar_max_h,
             nzones, zones);
         if(!rv){
-            free(self);
-            return NULL;
+            return base_gauge_dispose(BASE_GAUGE(self));
         }
     }
     return self;
@@ -169,26 +170,15 @@ FishboneGauge *fishbone_gauge_init(FishboneGauge *self,
  *
  * @param self a FishboneGauge
  */
-void fishbone_gauge_dispose(FishboneGauge *self)
+static void *fishbone_gauge_dispose(FishboneGauge *self)
 {
     generic_ruler_dispose(&self->ruler);
     if(self->cursor)
         generic_layer_free(self->cursor);
     if(self->zones)
         free(self->zones);
-    base_gauge_dispose(BASE_GAUGE(self));
-}
 
-/**
- * @brief Release any resource held by and free
- * the memory used by @p self.
- *
- * @param self a FishboneGauge
- */
-void fishbone_gauge_free(FishboneGauge *self)
-{
-    fishbone_gauge_dispose(self);
-    free(self);
+    return self;
 }
 
 bool fishbone_gauge_set_value(FishboneGauge *self, float value, bool animated)

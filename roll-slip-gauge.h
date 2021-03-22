@@ -33,8 +33,6 @@ typedef struct{
 
 RollSlipGauge *roll_slip_gauge_new(void);
 RollSlipGauge *roll_slip_gauge_init(RollSlipGauge *self);
-RollSlipGauge *roll_slip_gauge_dispose(RollSlipGauge *self);
-RollSlipGauge *roll_slip_gauge_free(RollSlipGauge *self);
 
 bool roll_slip_gauge_set_value(RollSlipGauge *self, float value, bool animated);
 bool roll_slip_gauge_set_slip(RollSlipGauge *self, float value, bool animated);

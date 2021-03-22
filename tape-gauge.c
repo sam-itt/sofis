@@ -10,7 +10,8 @@
 static void tape_gauge_update_state(TapeGauge *self, Uint32 dt);
 static BaseGaugeOps tape_gauge_ops = {
    .render = (RenderFunc)NULL,
-   .update_state = (StateUpdateFunc)tape_gauge_update_state
+   .update_state = (StateUpdateFunc)tape_gauge_update_state,
+   .dispose = (DisposeFunc)NULL
 };
 
 TapeGauge *tape_gauge_new(LadderPageDescriptor *descriptor,
@@ -25,10 +26,8 @@ TapeGauge *tape_gauge_new(LadderPageDescriptor *descriptor,
         va_start(args, nbarrels);
         rv = tape_gauge_vainit(self, descriptor, align, xoffset, nbarrels, args);
         va_end(args);
-        if(!rv){
-            tape_gauge_free(self);
-            return NULL;
-        }
+        if(!rv)
+            return base_gauge_free(BASE_GAUGE(self));
     }
     return self;
 
@@ -49,7 +48,7 @@ TapeGauge *tape_gauge_vainit(TapeGauge *self, LadderPageDescriptor *descriptor,
 
     self->odo = odo_gauge_vanew_multiple(-1, nbarrels, ap);
     if(!self->odo)
-        return NULL;
+        return NULL;/*self->ladder is a child, base_gauge_free will free it*/
 
     base_gauge_init(BASE_GAUGE(self),
         &tape_gauge_ops,
@@ -72,20 +71,6 @@ TapeGauge *tape_gauge_vainit(TapeGauge *self, LadderPageDescriptor *descriptor,
     );
 
     return self;
-}
-
-void tape_gauge_dispose(TapeGauge *self)
-{
-    if(self->odo)
-        odo_gauge_free(self->odo);
-    if(self->ladder)
-        ladder_gauge_free(self->ladder);
-}
-
-void tape_gauge_free(TapeGauge *self)
-{
-    tape_gauge_dispose(self);
-    free(self);
 }
 
 bool tape_gauge_set_value(TapeGauge *self, float value, bool animated)

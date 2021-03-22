@@ -672,24 +672,24 @@ int main(int argc, char **argv)
         last_ticks = ticks;
     }while(!done);
 
-/*    odo_gauge_free(gauge);*/
-    /*odo_gauge_free(wheel);*/
-    /*odo_gauge_free(odo);*/
-    /*ladder_gauge_free(ladder);*/
+/*    base_gauge_free(BASE_GAUGE(gauge));*/
+    /*base_gauge_free(BASE_GAUGE(wheel));*/
+    /*base_gauge_free(BASE_GAUGE(odo));*/
+    /*base_gauge_free(BASE_GAUGE(ladder));*/
     /*alt_group_free(group);*/
-    airspeed_indicator_free(asi);
-    alt_indicator_free(alt_ind);
-    /*vertical_stair_free(stair);*/
-    roll_slip_gauge_free(rsg);
-    /*attitude_indicator_free(ai);*/
-    /*basic_hud_free(hud);*/
-    /*text_gauge_free(txt);*/
-    /*fishbone_gauge_free(fish);*/
-    /*elevator_gauge_free(elevator);*/
-    /*side_panel_free(panel);*/
-    /*compass_gauge_free(compass);*/
-    /*tape_gauge_free(tape_gauge);*/
-    /*tape_gauge_free(tape_gauge2);*/
+    base_gauge_free(BASE_GAUGE(asi));
+    base_gauge_free(BASE_GAUGE(alt_ind));
+    /*base_gauge_free(BASE_GAUGE(stair));*/
+    base_gauge_free(BASE_GAUGE(rsg));
+    /*base_gauge_free(BASE_GAUGE(ai));*/
+    /*base_gauge_free(BASE_GAUGE(hud));*/
+    /*base_gauge_free(BASE_GAUGE(txt));*/
+    /*base_gauge_free(BASE_GAUGE(fish));*/
+    /*base_gauge_free(BASE_GAUGE(elevator));*/
+    /*base_gauge_free(BASE_GAUGE(panel));*/
+    /*base_gauge_free(BASE_GAUGE(compass));*/
+    /*base_gauge_free(BASE_GAUGE(tape_gauge));*/
+    /*base_gauge_free(BASE_GAUGE(tape_gauge2));*/
     resource_manager_shutdown();
 #if USE_SDL_GPU
 	GPU_Quit();

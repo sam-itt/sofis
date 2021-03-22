@@ -67,9 +67,6 @@ typedef struct{
 SidePanel *side_panel_new(int width, int height);
 SidePanel *side_panel_init(SidePanel *self, int width, int height);
 
-void side_panel_dispose(SidePanel *self);
-void side_panel_free(SidePanel *self);
-
 void side_panel_set_rpm(SidePanel *self, float value);
 void side_panel_set_fuel_flow(SidePanel *self, float value);
 void side_panel_set_oil_temp(SidePanel *self, float value);

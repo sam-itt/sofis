@@ -16,7 +16,8 @@
 
 static BaseGaugeOps basic_hud_ops = {
    .render = (RenderFunc)NULL,
-   .update_state = (StateUpdateFunc)NULL
+   .update_state = (StateUpdateFunc)NULL,
+   .dispose = (DisposeFunc)NULL
 };
 
 
@@ -27,8 +28,7 @@ BasicHud *basic_hud_new(void)
     self = calloc(1, sizeof(BasicHud));
     if(self){
         if(!basic_hud_init(self)){
-            free(self);
-            return NULL;
+            return base_gauge_free(BASE_GAUGE(self));
         }
     }
     return self;
@@ -82,20 +82,6 @@ BasicHud *basic_hud_init(BasicHud *self)
 
 
     return self;
-}
-
-void basic_hud_dispose(BasicHud *self)
-{
-    alt_group_free(self->altgroup);
-    airspeed_indicator_free(self->airspeed);
-    attitude_indicator_free(self->attitude);
-    compass_gauge_free(self->compass);
-}
-
-void basic_hud_free(BasicHud *self)
-{
-    basic_hud_dispose(self);
-    free(self);
 }
 
 void basic_hud_set(BasicHud *self, int nvalues, ...)

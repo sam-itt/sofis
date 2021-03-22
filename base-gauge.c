@@ -22,10 +22,30 @@ BaseGauge *base_gauge_init(BaseGauge *self, BaseGaugeOps *ops, int w, int h)
     return self;
 }
 
-void base_gauge_dispose(BaseGauge *self)
+/**
+ * @brief Release all resources held by @param self
+ *
+ * This function will free any children and animations that @ßelf holds.
+ *
+ * Subclasses of BaseGauge *can* provide a hook through base_gauge_ops
+ * .dispose *if* they need to free specific resources (SDL_Surfaces,
+ * char*, ...).
+ *
+ * If a Subclass only holds references to other BaseGauge-derived types
+ * *and* that these have been added as childs with @see base_gauge_add_child
+ * they'll be automatically freed and you just need to pass NULL as the
+ * dispose op.
+ *
+ * If you derive a type that have already provided a hook, you are supposed
+ * to chain-up using self->super.ops->dispose in your own dispose hook.
+ *
+ * @param self a BaseGauge
+ * @return always self (convenience)
+ */
+void *base_gauge_dispose(BaseGauge *self)
 {
     for(int i = 0; i < self->nchildren; i++)
-        base_gauge_dispose(self->children[i]);
+        base_gauge_free(self->children[i]);
 
     for(int i = 0; i < self->nanimations; i++){
         base_animation_unref(self->animations[i]);
@@ -35,6 +55,10 @@ void base_gauge_dispose(BaseGauge *self)
         free(self->children);
     if(self->animations)
         free(self->animations);
+
+    if(self->ops->dispose)
+        self->ops->dispose(self);
+    return self;
 }
 
 /**

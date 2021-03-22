@@ -15,9 +15,11 @@
 
 static void text_gauge_update_state(TextGauge *self, Uint32 dt);
 static void text_gauge_render(TextGauge *self, Uint32 dt, RenderContext *ctx);
+static void *text_gauge_dispose(TextGauge *self);
 static BaseGaugeOps text_gauge_ops = {
    .render = (RenderFunc)text_gauge_render,
-   .update_state = (StateUpdateFunc)text_gauge_update_state
+   .update_state = (StateUpdateFunc)text_gauge_update_state,
+   .dispose = (DisposeFunc)text_gauge_dispose
 };
 
 
@@ -28,8 +30,7 @@ TextGauge *text_gauge_new(const char *value, bool outlined, int w, int h)
     self = calloc(1, sizeof(TextGauge));
     if(self){
         if(!text_gauge_init(self, value, outlined, w, h)){
-            free(self);
-            return NULL;
+            return base_gauge_dispose(BASE_GAUGE(self));
         }
     }
     return self;
@@ -48,10 +49,8 @@ TextGauge *text_gauge_init(TextGauge *self, const char *value, bool outlined, in
     return self;
 }
 
-void text_gauge_free(TextGauge *self)
+static void *text_gauge_dispose(TextGauge *self)
 {
-    base_gauge_dispose(BASE_GAUGE(self));
-
     if(self->value)
         free(self->value);
     if(self->font.is_static)
@@ -64,7 +63,8 @@ void text_gauge_free(TextGauge *self)
     if(self->buffer)
         generic_layer_free(self->buffer);
 #endif
-    free(self);
+
+    return self;
 }
 
 static void text_gauge_dispose_font(TextGauge *self)

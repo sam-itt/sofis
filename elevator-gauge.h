@@ -44,9 +44,5 @@ ElevatorGauge *elevator_gauge_init(ElevatorGauge *self,
                                    int bar_max_w, int bar_max_h,
                                    int nzone, ColorZone *zones);
 
-
-void elevator_gauge_dispose(ElevatorGauge *self);
-void elevator_gauge_free(ElevatorGauge *self);
-
 bool elevator_gauge_set_value(ElevatorGauge *self, float value, bool animated);
 #endif /* ELEVATOR_GAUGE_H */

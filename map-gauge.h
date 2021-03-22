@@ -64,10 +64,6 @@ typedef struct{
 MapGauge *map_gauge_new(int w, int h);
 MapGauge *map_gauge_init(MapGauge *self, int w, int h);
 
-
-MapGauge *map_gauge_dispose(MapGauge *self);
-MapGauge *map_gauge_free(MapGauge *self);
-
 bool map_gauge_set_level(MapGauge *self, uintf8_t level);
 bool map_gauge_set_marker_position(MapGauge *self, double latitude, double longitude);
 bool map_gauge_set_marker_heading(MapGauge *self, float heading);

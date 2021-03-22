@@ -11,23 +11,24 @@
 
 static void compass_gauge_render(CompassGauge *self, Uint32 dt, RenderContext *ctx);
 static void compass_gauge_update_state(CompassGauge *self, Uint32 dt);
+static void *compass_gauge_dispose(CompassGauge *self);
 static BaseGaugeOps compass_gauge_ops = {
    .render = (RenderFunc)compass_gauge_render,
-   .update_state = (StateUpdateFunc)compass_gauge_update_state
+   .update_state = (StateUpdateFunc)compass_gauge_update_state,
+   .dispose = (DisposeFunc)compass_gauge_dispose
 };
 
 
 CompassGauge *compass_gauge_new(void)
 {
-    CompassGauge *rv;
-    rv = calloc(1, sizeof(CompassGauge));
-    if(rv){
-        if(!compass_gauge_init(rv)){
-            free(rv);
-            return NULL;
+    CompassGauge *self;
+    self = calloc(1, sizeof(CompassGauge));
+    if(self){
+        if(!compass_gauge_init(self)){
+            return base_gauge_dispose(BASE_GAUGE(self));
         }
     }
-    return(rv);
+    return(self);
 }
 
 CompassGauge *compass_gauge_init(CompassGauge *self)
@@ -103,18 +104,12 @@ CompassGauge *compass_gauge_init(CompassGauge *self)
     return self;
 }
 
-void compass_gauge_dispose(CompassGauge *self)
+static void *compass_gauge_dispose(CompassGauge *self)
 {
     generic_layer_dispose(&self->outer);
     generic_layer_dispose(&self->inner);
-    text_gauge_free(self->caption);
-    base_gauge_dispose(BASE_GAUGE(self));
-}
 
-void compass_gauge_free(CompassGauge *self)
-{
-    compass_gauge_dispose(self);
-    free(self);
+    return self;
 }
 
 bool compass_gauge_set_value(CompassGauge *self, float value, bool animated)

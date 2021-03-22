@@ -7,19 +7,21 @@
 #include <SDL2/SDL_image.h>
 #include <SDL_gpu.h>
 
-
 #include "elevator-gauge.h"
 #include "misc.h"
 #include "res-dirs.h"
 
 static void elevator_gauge_render(ElevatorGauge *self, Uint32 dt, RenderContext *ctx);
 static void elevator_gauge_update_state(ElevatorGauge *self, Uint32 dt);
+static void *elevator_gauge_dispose(ElevatorGauge *self);
 static BaseGaugeOps elevator_gauge_ops = {
    .render = (RenderFunc)elevator_gauge_render,
-   .update_state = (StateUpdateFunc)elevator_gauge_update_state
+   .update_state = (StateUpdateFunc)elevator_gauge_update_state,
+   .dispose = (DisposeFunc)elevator_gauge_dispose
 };
 
 static bool elevator_gauge_build_elevator(ElevatorGauge *self, Uint32 color);
+
 /**
  * @brief Creates a new ElevatorGauge. Calling code is responsible
  * for the freeing.
@@ -44,8 +46,7 @@ ElevatorGauge *elevator_gauge_new(bool marked, Location elevator_location,
             bar_max_w, bar_max_h,
             nzones, zones);
         if(!rv){
-            free(self);
-            return NULL;
+            return base_gauge_dispose(BASE_GAUGE(self));
         }
     }
     return self;
@@ -160,26 +161,15 @@ ElevatorGauge *elevator_gauge_init(ElevatorGauge *self,
  *
  * @param self a ElevatorGauge
  */
-void elevator_gauge_dispose(ElevatorGauge *self)
+static void *elevator_gauge_dispose(ElevatorGauge *self)
 {
     generic_ruler_dispose(&self->ruler);
     if(self->elevator)
         generic_layer_free(self->elevator);
     if(self->zones)
         free(self->zones);
-    base_gauge_dispose(BASE_GAUGE(self));
-}
 
-/**
- * @brief Release any resource held by and free
- * the memory used by @p self.
- *
- * @param self a ElevatorGauge
- */
-void elevator_gauge_free(ElevatorGauge *self)
-{
-    elevator_gauge_dispose(self);
-    free(self);
+    return self;
 }
 
 bool elevator_gauge_set_value(ElevatorGauge *self, float value, bool animated)

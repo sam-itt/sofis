@@ -52,8 +52,5 @@ FishboneGauge *fishbone_gauge_init(FishboneGauge *self,
                                    int bar_max_w, int bar_max_h,
                                    int nzone, ColorZone *zones);
 
-void fishbone_gauge_dispose(FishboneGauge *self);
-void fishbone_gauge_free(FishboneGauge *self);
-
 bool fishbone_gauge_set_value(FishboneGauge *self, float value, bool animated);
 #endif /* FISHBONE_GAUGE_H */

@@ -11,7 +11,8 @@
 
 static BaseGaugeOps alt_group_ops = {
    .render = (RenderFunc)NULL,
-   .update_state = (StateUpdateFunc)NULL
+   .update_state = (StateUpdateFunc)NULL,
+   .dispose = (DisposeFunc)NULL
 };
 
 
@@ -21,8 +22,7 @@ AltGroup *alt_group_new(void)
     self = calloc(1, sizeof(AltGroup));
     if(self){
         if(!alt_group_init(self)){
-            free(self);
-            return NULL;
+            return base_gauge_dispose(BASE_GAUGE(self));
         }
     }
     return self;
@@ -58,13 +58,6 @@ bail:
     if(self->vsi) free(self->vsi);
     if(self->altimeter) free(self->altimeter);
     return NULL;
-}
-
-void alt_group_free(AltGroup *self)
-{
-    alt_indicator_free(self->altimeter);
-    vertical_stair_free(self->vsi);
-    free(self);
 }
 
 void alt_group_set_altitude(AltGroup *self, float value)

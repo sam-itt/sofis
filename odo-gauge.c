@@ -12,9 +12,11 @@
 
 static void odo_gauge_render(OdoGauge *self, Uint32 dt, RenderContext *ctx);
 static void odo_gauge_update_state(OdoGauge *self, Uint32 dt);
+static void *odo_gauge_dispose(OdoGauge *self);
 static BaseGaugeOps odo_gauge_ops = {
    .render = (RenderFunc)odo_gauge_render,
-   .update_state = (StateUpdateFunc)odo_gauge_update_state
+   .update_state = (StateUpdateFunc)odo_gauge_update_state,
+   .dispose = (DisposeFunc)odo_gauge_dispose
 };
 
 
@@ -35,8 +37,7 @@ OdoGauge *odo_gauge_new(DigitBarrel *barrel, int height, int rubis)
     self = calloc(1, sizeof(OdoGauge));
     if(self){
         if(!odo_gauge_init(self, rubis, 1, height, barrel)){
-            free(self);
-            return NULL;
+            return base_gauge_dispose(BASE_GAUGE(self));
         }
     }
     return self;
@@ -136,8 +137,7 @@ OdoGauge *odo_gauge_vainit(OdoGauge *self, int rubis, int nbarrels, va_list ap)
     return self;
 }
 
-
-void odo_gauge_free(OdoGauge *self)
+static void *odo_gauge_dispose(OdoGauge *self)
 {
     for(int i = 0; i < self->nbarrels; i++){
         digit_barrel_free(self->barrels[i]);
@@ -148,8 +148,7 @@ void odo_gauge_free(OdoGauge *self)
         free(self->state.barrel_states);
     if(self->state.fill_rects)
         free(self->state.fill_rects);
-    base_gauge_dispose(BASE_GAUGE(self));
-    free(self);
+    return self;
 }
 
 bool odo_gauge_set_value(OdoGauge *self, float value, bool animated)

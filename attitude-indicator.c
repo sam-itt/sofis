@@ -20,9 +20,11 @@
 
 static void attitude_indicator_render(AttitudeIndicator *self, Uint32 dt, RenderContext *ctx);
 static void attitude_indicator_update_state(AttitudeIndicator *self, Uint32 dt);
+static void *attitude_indicator_dispose(AttitudeIndicator *self);
 static BaseGaugeOps attitude_indicator_ops = {
    .render = (RenderFunc)attitude_indicator_render,
-   .update_state = (StateUpdateFunc)attitude_indicator_update_state
+   .update_state = (StateUpdateFunc)attitude_indicator_update_state,
+   .dispose = (DisposeFunc)attitude_indicator_dispose
 };
 
 static SDL_Surface *attitude_indicator_get_etched_ball(AttitudeIndicator *self);
@@ -35,8 +37,7 @@ AttitudeIndicator *attitude_indicator_new(int width, int height)
     self = calloc(1, sizeof(AttitudeIndicator));
     if(self){
         if(!attitude_indicator_init(self, width, height)){
-            free(self);
-            return NULL;
+            return base_gauge_dispose(BASE_GAUGE(self));
         }
     }
     return self;
@@ -153,11 +154,8 @@ static bool attitude_indicator_init_animations(AttitudeIndicator *self)
     return rv;
 }
 
-void attitude_indicator_dispose(AttitudeIndicator *self)
+static void *attitude_indicator_dispose(AttitudeIndicator *self)
 {
-	base_gauge_dispose(BASE_GAUGE(self));
-
-	roll_slip_gauge_free(self->rollslip);
 	for(int i = 0; i < 3; i++){
         generic_layer_dispose(&self->markers[i]);
 	}
@@ -174,12 +172,7 @@ void attitude_indicator_dispose(AttitudeIndicator *self)
         SDL_FreeSurface(self->pitch_ruler);
     generic_layer_dispose(&self->phh_overlay);
 #endif
-}
-
-void attitude_indicator_free(AttitudeIndicator *self)
-{
-	attitude_indicator_dispose(self);
-	free(self);
+    return self;
 }
 
 bool attitude_indicator_set_roll(AttitudeIndicator *self, float value, bool animated)

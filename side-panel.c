@@ -15,8 +15,9 @@
 static void side_panel_render(SidePanel *self, Uint32 dt, RenderContext *ctx);
 static void side_panel_update_state(SidePanel *self, Uint32 dt);
 static BaseGaugeOps side_panel_ops = {
-   .render = (RenderFunc)side_panel_render,
-   .update_state = (StateUpdateFunc)side_panel_update_state
+    .render = (RenderFunc)side_panel_render,
+    .update_state = (StateUpdateFunc)side_panel_update_state,
+    .dispose = (DisposeFunc)NULL
 };
 
 SidePanel *side_panel_new(int width, int height)
@@ -26,8 +27,7 @@ SidePanel *side_panel_new(int width, int height)
     rv = calloc(1, sizeof(SidePanel));
     if(rv){
         if(!side_panel_init(rv, width, height)){
-            free(rv);
-            return NULL;
+            return base_gauge_free(BASE_GAUGE(rv));
         }
     }
     return rv;
@@ -439,56 +439,6 @@ SidePanel *side_panel_init(SidePanel *self, int width, int height)
         self->locations[FUEL_QTY].y
     );
     return self;
-}
-
-void side_panel_dispose(SidePanel *self)
-{
-    if(self->egt)
-        elevator_gauge_free(self->egt);
-    if(self->egt_txt)
-        text_gauge_free(self->egt_txt);
-
-    if(self->rpm)
-        elevator_gauge_free(self->rpm);
-    if(self->rpm)
-        text_gauge_free(self->rpm_txt);
-
-    if(self->fuel_flow_txt)
-        text_gauge_free(self->fuel_flow_txt);
-    if(self->fuel_flow_value)
-        text_gauge_free(self->fuel_flow_value);
-
-    if(self->oil_temp_txt)
-        text_gauge_free(self->oil_temp_txt);
-    if(self->oil_temp)
-        fishbone_gauge_free(self->oil_temp);
-
-    if(self->oil_press_txt)
-        text_gauge_free(self->oil_press_txt);
-    if(self->oil_press)
-        fishbone_gauge_free(self->oil_press);
-
-
-    if(self->cht_txt)
-        text_gauge_free(self->cht_txt);
-    if(self->cht)
-        fishbone_gauge_free(self->cht);
-
-    if(self->fuel_px_txt)
-        text_gauge_free(self->fuel_px_txt);
-    if(self->fuel_px)
-        fishbone_gauge_free(self->fuel_px);
-
-    if(self->fuel_qty_txt)
-        text_gauge_free(self->fuel_qty_txt);
-    if(self->fuel_qty)
-        fishbone_gauge_free(self->fuel_qty);
-}
-
-void side_panel_free(SidePanel *self)
-{
-    side_panel_dispose(self);
-    free(self);
 }
 
 void side_panel_set_rpm(SidePanel *self, float value)

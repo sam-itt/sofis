@@ -4,6 +4,7 @@
 
 #include <SDL2/SDL.h>
 
+#include "base-gauge.h"
 #include "basic-hud.h"
 #include "side-panel.h"
 #include "map-gauge.h"
@@ -417,9 +418,9 @@ int main(int argc, char **argv)
     }while(!done);
 
     printf("Average rendering time (%d samples): %f ticks\n", nrender_calls, total_render_time*1.0/nrender_calls);
-    basic_hud_free(hud);
-    side_panel_free(panel);
-    map_gauge_free(map);
+    base_gauge_free(BASE_GAUGE(hud));
+    base_gauge_free(BASE_GAUGE(panel));
+    base_gauge_free(BASE_GAUGE(map));
     data_source_free(DATA_SOURCE(g_ds));
     resource_manager_shutdown();
 #if ENABLE_3D

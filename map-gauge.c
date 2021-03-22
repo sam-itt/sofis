@@ -39,22 +39,24 @@
 
 static void map_gauge_render(MapGauge *self, Uint32 dt, RenderContext *ctx);
 static void map_gauge_update_state(MapGauge *self, Uint32 dt);
+static MapGauge *map_gauge_dispose(MapGauge *self);
 static BaseGaugeOps map_gauge_ops = {
    .render = (RenderFunc)map_gauge_render,
-   .update_state = (StateUpdateFunc)map_gauge_update_state
+   .update_state = (StateUpdateFunc)map_gauge_update_state,
+   .dispose = (DisposeFunc)map_gauge_dispose
 };
 
 /**
  * @brief Creates a new MapGauge of given dimensions.
  *
  * Caller is responsible for freeing the gauge by calling
- * map_gauge_free.
+ * base_gauge_free.
  *
  * @param w Width (in pixels) of the gauge
  * @param h Height (in pixels) of the gauge
  * @return a newly-allocated MapGauge on success, NULL on failure.
  *
- * @see map_gauge_free
+ * @see base_gauge_free
  */
 MapGauge *map_gauge_new(int w, int h)
 {
@@ -63,7 +65,7 @@ MapGauge *map_gauge_new(int w, int h)
     rv = calloc(1, sizeof(MapGauge));
     if(rv){
         if(!map_gauge_init(rv,w,h))
-            return map_gauge_free(rv);
+            return base_gauge_free(BASE_GAUGE(rv));
     }
     return rv;
 }
@@ -131,7 +133,7 @@ MapGauge *map_gauge_init(MapGauge *self, int w, int h)
  * @param self a MapGauge
  * @return NULL
  */
-MapGauge *map_gauge_dispose(MapGauge *self)
+static MapGauge *map_gauge_dispose(MapGauge *self)
 {
     for(int i = 0; i < self->state.npatches; i++)
         generic_layer_unref(self->state.patches[i].layer);
@@ -142,24 +144,7 @@ MapGauge *map_gauge_dispose(MapGauge *self)
     for(int i = 0; i < self->ntile_providers; i++)
         map_tile_provider_free(self->tile_providers[i]);
 
-    base_gauge_dispose(BASE_GAUGE(self));
-    return NULL;
-}
-
-/**
- * @brief Release any resources internally held by the MapGauge and frees
- * the MapGauge itself
- *
- * This function always returns NULL (convenience behavior).
- *
- * @param self a MapGauge
- * @return NULL
- */
-MapGauge *map_gauge_free(MapGauge *self)
-{
-    map_gauge_dispose(self);
-    free(self);
-    return NULL;
+    return self;
 }
 
 /**

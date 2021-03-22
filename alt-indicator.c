@@ -11,7 +11,8 @@
 
 static BaseGaugeOps alt_indicator_ops = {
    .render = (RenderFunc)NULL,
-   .update_state = (StateUpdateFunc)NULL
+   .update_state = (StateUpdateFunc)NULL,
+   .dispose = (DisposeFunc)NULL
 };
 
 
@@ -21,8 +22,7 @@ AltIndicator *alt_indicator_new(void)
     self = calloc(1, sizeof(AltIndicator));
     if(self){
         if(!alt_indicator_init(self)){
-            free(self);
-            return NULL;
+            return base_gauge_dispose(BASE_GAUGE(self));
         }
     }
     return self;
@@ -83,18 +83,9 @@ AltIndicator *alt_indicator_init(AltIndicator *self)
     return self;
 }
 
-void alt_indicator_free(AltIndicator *self)
-{
-    tape_gauge_free(self->tape);
-    text_gauge_free(self->talt_txt);
-    text_gauge_free(self->qnh_txt);
-    base_gauge_dispose(BASE_GAUGE(self));
-    free(self);
-}
-
 bool alt_indicator_set_value(AltIndicator *self, float value, bool animated)
 {
-    tape_gauge_set_value(self->tape, value, animated);
+    return tape_gauge_set_value(self->tape, value, animated);
 }
 
 /*HPa*/

@@ -13,9 +13,11 @@
 
 static void vertical_stair_render(VerticalStair *self, Uint32 dt, RenderContext *ctx);
 static void vertical_stair_update_state(VerticalStair *self, Uint32 dt);
+static void *vertical_stair_dispose(VerticalStair *self);
 static BaseGaugeOps vertical_stair_ops = {
    .render = (RenderFunc)vertical_stair_render,
-   .update_state = (StateUpdateFunc)vertical_stair_update_state
+   .update_state = (StateUpdateFunc)vertical_stair_update_state,
+   .dispose = (DisposeFunc)vertical_stair_dispose
 };
 
 
@@ -26,8 +28,7 @@ VerticalStair *vertical_stair_new(const char *bg_img, const char *cursor_img, PC
     self = calloc(1, sizeof(VerticalStair));
     if(self){
         if(!vertical_stair_init(self, bg_img, cursor_img, font)){
-            free(self);
-            return NULL;
+            return base_gauge_dispose(BASE_GAUGE(self));
         }
     }
     return self;
@@ -61,19 +62,13 @@ VerticalStair *vertical_stair_init(VerticalStair *self, const char *bg_img, cons
     return self;
 }
 
-void vertical_stair_dispose(VerticalStair *self)
+static void *vertical_stair_dispose(VerticalStair *self)
 {
-    base_gauge_dispose(BASE_GAUGE(self));
     vertical_strip_dispose(&self->scale);
     generic_layer_dispose(&self->cursor);
     if(self->font)
         PCF_FreeStaticFont(self->font);
-}
-
-void vertical_stair_free(VerticalStair *self)
-{
-    vertical_stair_dispose(self);
-    free(self);
+    return self;
 }
 
 bool vertical_stair_set_value(VerticalStair *self, float value, bool animated)

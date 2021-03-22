@@ -10,7 +10,8 @@
 
 static BaseGaugeOps airspeed_indicator_ops = {
    .render = (RenderFunc)NULL,
-   .update_state = (StateUpdateFunc)NULL
+   .update_state = (StateUpdateFunc)NULL,
+   .dispose = (DisposeFunc)NULL
 };
 
 
@@ -21,8 +22,7 @@ AirspeedIndicator *airspeed_indicator_new(speed_t v_so, speed_t v_s1, speed_t v_
     self = calloc(1, sizeof(AirspeedIndicator));
     if(self){
         if(!airspeed_indicator_init(self, v_so, v_s1, v_fe, v_no, v_ne)){
-            free(self);
-            return NULL;
+            return base_gauge_dispose(BASE_GAUGE(self));
         }
     }
     return self;
@@ -63,19 +63,6 @@ AirspeedIndicator *airspeed_indicator_init(AirspeedIndicator *self, speed_t v_so
 
     airspeed_indicator_set_value(self, 0.0);
     return self;
-}
-
-void airspeed_indicator_dispose(AirspeedIndicator *self)
-{
-    tape_gauge_free(self->tape);
-    text_gauge_free(self->txt);
-    base_gauge_dispose(BASE_GAUGE(self));
-}
-
-void airspeed_indicator_free(AirspeedIndicator *self)
-{
-    airspeed_indicator_dispose(self);
-    free(self);
 }
 
 bool airspeed_indicator_set_value(AirspeedIndicator *self, float value)

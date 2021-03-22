@@ -33,8 +33,5 @@ typedef struct{
 CompassGauge *compass_gauge_new(void);
 CompassGauge *compass_gauge_init(CompassGauge *self);
 
-void compass_gauge_dispose(CompassGauge *self);
-void compass_gauge_free(CompassGauge *self);
-
 bool compass_gauge_set_value(CompassGauge *self, float value, bool animated);
 #endif /* COMPASS_GAUGE_H */

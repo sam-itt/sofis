@@ -12,9 +12,11 @@
 
 static void roll_slip_gauge_render(RollSlipGauge *self, Uint32 dt, RenderContext *ctx);
 static void roll_slip_gauge_update_state(RollSlipGauge *self, Uint32 dt);
+static RollSlipGauge *roll_slip_gauge_dispose(RollSlipGauge *self);
 static BaseGaugeOps roll_slip_gauge_ops = {
    .render = (RenderFunc)roll_slip_gauge_render,
-   .update_state = (StateUpdateFunc)roll_slip_gauge_update_state
+   .update_state = (StateUpdateFunc)roll_slip_gauge_update_state,
+   .dispose = (DisposeFunc)roll_slip_gauge_dispose
 };
 
 
@@ -25,7 +27,7 @@ RollSlipGauge *roll_slip_gauge_new(void)
 	self = calloc(1, sizeof(RollSlipGauge));
 	if(self){
 		if(!roll_slip_gauge_init(self)){
-            return roll_slip_gauge_free(self);
+            return base_gauge_free(BASE_GAUGE(self));
 		}
 	}
 	return self;
@@ -74,9 +76,8 @@ RollSlipGauge *roll_slip_gauge_init(RollSlipGauge *self)
 	return self;
 }
 
-RollSlipGauge *roll_slip_gauge_dispose(RollSlipGauge *self)
+static RollSlipGauge *roll_slip_gauge_dispose(RollSlipGauge *self)
 {
-    base_gauge_dispose(BASE_GAUGE(self));
     generic_layer_dispose(&self->arc);
     generic_layer_dispose(&self->marker);
     generic_layer_dispose(&self->slip_marker);
@@ -85,14 +86,8 @@ RollSlipGauge *roll_slip_gauge_dispose(RollSlipGauge *self)
         SDL_FreeSurface(self->state.rbuffer);
     SDL_DestroyRenderer(self->renderer); /*Will also free self->arrow*/
 #endif
-    return self;
-}
 
-RollSlipGauge *roll_slip_gauge_free(RollSlipGauge *self)
-{
-	roll_slip_gauge_dispose(self);
-	free(self);
-    return NULL;
+    return self;
 }
 
 bool roll_slip_gauge_set_value(RollSlipGauge *self, float value, bool animated)

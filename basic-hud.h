@@ -41,8 +41,6 @@ typedef struct{
 
 BasicHud *basic_hud_new(void);
 BasicHud *basic_hud_init(BasicHud *self);
-void basic_hud_dispose(BasicHud *self);
-void basic_hud_free(BasicHud *self);
 
 float basic_hud_get(BasicHud *self, HudValue hv);
 void basic_hud_set(BasicHud *self, int nvalues, ...);

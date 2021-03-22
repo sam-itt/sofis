@@ -81,8 +81,6 @@ typedef struct{
 
 AttitudeIndicator *attitude_indicator_new(int width, int height);
 AttitudeIndicator *attitude_indicator_init(AttitudeIndicator *self, int width, int height);
-void attitude_indicator_dispose(AttitudeIndicator *self);
-void attitude_indicator_free(AttitudeIndicator *self);
 
 bool attitude_indicator_set_roll(AttitudeIndicator *self, float value, bool animated);
 bool attitude_indicator_set_pitch(AttitudeIndicator *self, float value, bool animated);

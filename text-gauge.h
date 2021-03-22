@@ -36,7 +36,6 @@ typedef struct{
 
 TextGauge *text_gauge_new(const char *value, bool outlined, int w, int h);
 TextGauge *text_gauge_init(TextGauge *self, const char *value, bool outlined, int w, int h);
-void text_gauge_free(TextGauge *self);
 
 bool text_gauge_set_value(TextGauge *self, const char *value);
 void text_gauge_set_color(TextGauge *self, SDL_Color color, Uint8 which);

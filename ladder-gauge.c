@@ -8,9 +8,11 @@
 
 static void ladder_gauge_update_state(LadderGauge *self, Uint32 dt);
 static void ladder_gauge_render(LadderGauge *self, Uint32 dt, RenderContext *ctx);
+static void *ladder_gauge_dispose(LadderGauge *self);
 static BaseGaugeOps ladder_gauge_ops = {
    .render = (RenderFunc)ladder_gauge_render,
-   .update_state = (StateUpdateFunc)ladder_gauge_update_state
+   .update_state = (StateUpdateFunc)ladder_gauge_update_state,
+   .dispose = (DisposeFunc)ladder_gauge_dispose
 };
 
 
@@ -21,8 +23,7 @@ LadderGauge *ladder_gauge_new(LadderPageDescriptor *descriptor, int rubis)
     self = calloc(1, sizeof(LadderGauge));
     if(self){
         if(!ladder_gauge_init(self, descriptor,rubis)){
-            free(self);
-            return NULL;
+            return base_gauge_dispose(BASE_GAUGE(self));
         }
     }
     return self;
@@ -40,7 +41,7 @@ LadderGauge *ladder_gauge_init(LadderGauge *self, LadderPageDescriptor *descript
     return self;
 }
 
-void ladder_gauge_free(LadderGauge *self)
+static void *ladder_gauge_dispose(LadderGauge *self)
 {
     for(int i = 0; i < N_PAGES; i++){
         if(self->pages[i]){
@@ -48,9 +49,10 @@ void ladder_gauge_free(LadderGauge *self)
             self->pages[i] = NULL;
         }
     }
-    base_gauge_dispose(BASE_GAUGE(self));
-    free(self->descriptor); /*No need for virtual dispose ATM*/
-    free(self);
+    if(self->descriptor)
+        free(self->descriptor); /*No need for virtual dispose ATM*/
+
+    return self;
 }
 
 bool ladder_gauge_set_value(LadderGauge *self, float value, bool animated)
