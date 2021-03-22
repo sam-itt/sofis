@@ -422,6 +422,10 @@ int main(int argc, char **argv)
     map_gauge_free(map);
     data_source_free(DATA_SOURCE(g_ds));
     resource_manager_shutdown();
+#if ENABLE_3D
+    terrain_viewer_free(viewer);
+    texture_store_shutdown();
+#endif
 #if USE_SDL_GPU
 	GPU_Quit();
 #else
