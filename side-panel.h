@@ -1,3 +1,10 @@
+/*
+ * SPDX-FileCopyrightText: 2021 Samuel Cuella <samuel.cuella@gmail.com>
+ *
+ * This file is part of SoFIS - an open source EFIS
+ *
+ * SPDX-License-Identifier: GPL-2.0-only
+ */
 #ifndef SIDE_PANEL_H
 #define SIDE_PANEL_H
 

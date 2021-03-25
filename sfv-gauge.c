@@ -1,3 +1,11 @@
+/*
+ * SPDX-FileCopyrightText: 2021 Samuel Cuella <samuel.cuella@gmail.com>
+ *
+ * This file is part of SoFIS - an open source EFIS
+ *
+ * SPDX-License-Identifier: GPL-2.0-only
+ */
+#include "sfv-gauge.h"
 
 /* A base class for all gauges that have a single float value
  * Factor out setting the value with regard to animations and
@@ -12,7 +20,6 @@
  * descents of BaseGauge.
  * */
 
-#include "sfv-gauge.h"
 
 /**
  * @brief Sets the value either direcly or triggering a standard
