@@ -83,9 +83,10 @@ MapTileProvider *map_tile_provider_new(const char *home, const char *format,
 MapTileProvider *map_tile_provider_init(MapTileProvider *self, const char *home,
                                         const char *format, uintf8_t cache_size)
 {
-    self->acache = cache_size;
-    self->tile_cache = calloc(self->acache, sizeof(MapTileDescriptor));
-    if(!self->tile_cache) return NULL;
+    void *rv;
+    rv = map_tile_cache_init(&self->tile_cache, cache_size);
+    if(!rv)
+        return NULL;
 
     self->home = strdup(home);
     if(!self->home) return NULL;
@@ -102,10 +103,8 @@ MapTileProvider *map_tile_provider_init(MapTileProvider *self, const char *home,
 
 MapTileProvider *map_tile_provider_dispose(MapTileProvider *self)
 {
-    for(int i = 0; i < self->ncached; i++)
-        generic_layer_unref(self->tile_cache[i].layer);
-    if(self->tile_cache)
-        free(self->tile_cache);
+    map_tile_cache_dispose(&self->tile_cache);
+
     if(self->home)
         free(self->home);
     if(self->format)
@@ -114,7 +113,7 @@ MapTileProvider *map_tile_provider_dispose(MapTileProvider *self)
         free(self->url.base);
     if(self->areas)
         free(self->areas);
-    return NULL;
+    return self;
 }
 
 MapTileProvider *map_tile_provider_free(MapTileProvider *self)
@@ -122,24 +121,6 @@ MapTileProvider *map_tile_provider_free(MapTileProvider *self)
     map_tile_provider_dispose(self);
     free(self);
     return NULL;
-}
-
-bool map_tile_provider_set_cache_size(MapTileProvider *self, uintf8_t cache_size)
-{
-    size_t old_size;
-    void *tmp;
-
-
-    old_size = self->acache;
-    self->acache = cache_size;
-    tmp = realloc(self->tile_cache, self->acache * sizeof(MapTileDescriptor));
-    if(!tmp){
-        self->acache= old_size;
-        return false;
-    }
-    self->tile_cache = tmp;
-    /*clear cache ?*/
-    return true;
 }
 
 GenericLayer *map_tile_provider_get_tile(MapTileProvider *self, uintf8_t level, uint32_t x, uint32_t y)
@@ -150,12 +131,10 @@ GenericLayer *map_tile_provider_get_tile(MapTileProvider *self, uintf8_t level, 
     if(self->nareas && !map_tile_provider_has_tile(self, level, x, y))
         return NULL;
 
-    for(int i = 0; i < self->ncached; i++){
-        if(map_tile_descriptor_match(&self->tile_cache[i],level, x, y))
-            return self->tile_cache[i].layer;
-    }
+    rv = map_tile_cache_get(&self->tile_cache, level, x, y);
+    if(rv)
+        return rv;
 
-    rv = NULL;
     asprintf(&filename, "%s/%d/%d/%d.%s", self->home, level, x, y, self->format);
     if(access(filename, F_OK) != 0){
         /*  This is downloading feature is not intended to make it
@@ -177,28 +156,9 @@ GenericLayer *map_tile_provider_get_tile(MapTileProvider *self, uintf8_t level, 
     rv = generic_layer_new_from_file(filename);
     if(!rv) goto out;
     generic_layer_build_texture(rv);
-    generic_layer_ref(rv);
-    if(self->ncached == self->acache){
-        //Move all elements down, TODO: do better than that.
-        /*last element will be overriden*/
-        generic_layer_unref(self->tile_cache[self->ncached-1].layer);
-        for(int i = self->ncached-1; i > 0; i--){
-            self->tile_cache[i] = self->tile_cache[i-1];
-        }
-        self->tile_cache[0] = (MapTileDescriptor){
-            .layer = rv,
-            .level = level,
-            .x = x,
-            .y = y
-        };
-    }else{
-        self->tile_cache[self->ncached++] = (MapTileDescriptor){
-            .layer = rv,
-            .level = level,
-            .x = x,
-            .y = y
-        };
-    }
+
+    map_tile_cache_add(&self->tile_cache, rv, level, x, y);
+
 out:
     free(filename);
     return rv;
