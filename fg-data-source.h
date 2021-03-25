@@ -15,9 +15,11 @@ typedef struct{
     DataSource super;
 
     FlightgearConnector *fglink;
+    int port;
 }FGDataSource;
 
 FGDataSource *fg_data_source_new(int port);
 FGDataSource *fg_data_source_init(FGDataSource *self, int port);
 
+void fg_data_source_banner(FGDataSource *self);
 #endif /* FG_DATA_SOURCE_H */

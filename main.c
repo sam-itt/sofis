@@ -317,7 +317,8 @@ int main(int argc, char **argv)
 #endif
     hud->attitude->mode = (g_show3d) ? AI_MODE_3D : AI_MODE_2D;
 
-
+    if(g_mode == MODE_FGREMOTE)
+        fg_data_source_banner((FGDataSource*)g_ds);
     DATA_SOURCE(g_ds)->latitude = NAN;
     printf("Waiting for fix.");
     do{

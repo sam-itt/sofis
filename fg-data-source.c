@@ -7,6 +7,11 @@
  */
 #include <stdio.h>
 #include <stdlib.h>
+#include <sys/types.h>
+#include <ifaddrs.h>
+#include <netinet/in.h>
+#include <string.h>
+#include <arpa/inet.h>
 
 #include "data-source.h"
 #include "fg-data-source.h"
@@ -42,7 +47,47 @@ FGDataSource *fg_data_source_init(FGDataSource *self, int port)
         return NULL;
     flightgear_connector_set_nonblocking(self->fglink);
 
+    self->port = port;
     return self;
+}
+
+void fg_data_source_banner(FGDataSource *self)
+{
+    struct ifaddrs * ifAddrStruct=NULL;
+    struct ifaddrs * ifa=NULL;
+    void * tmpAddrPtr=NULL;
+
+    getifaddrs(&ifAddrStruct);
+
+
+    printf("Waiting for first packet from FlightGear\n");
+    printf("Be sure to:\n");
+    printf("1. have basic_proto.xml in $FG_ROOT/Protocol\n");
+    printf("2. Run FlightGear(fgfs) with --generic=socket,out,5,%sLOCAL_IP%s,%d,udp,basic_proto\n",
+        "\x1B[1;31m",
+        "\x1B[0m",
+        self->port
+    );
+    printf("Be sure to replace %sLOCAL_IP%s with the IP of the local machine, one of:\n",
+        "\x1B[1;31m",
+        "\x1B[0m"
+    );
+
+    getifaddrs(&ifAddrStruct);
+    for (ifa = ifAddrStruct; ifa != NULL; ifa = ifa->ifa_next) {
+        if (!ifa->ifa_addr) {
+            continue;
+        }
+        if (ifa->ifa_addr->sa_family == AF_INET) { // check it is IP4
+            // is a valid IP4 Address
+            tmpAddrPtr=&((struct sockaddr_in *)ifa->ifa_addr)->sin_addr;
+            char addressBuffer[INET_ADDRSTRLEN];
+            inet_ntop(AF_INET, tmpAddrPtr, addressBuffer, INET_ADDRSTRLEN);
+            if(!strcmp(ifa->ifa_name, "lo")) continue;
+            printf("\t%s IP Address %s\n", ifa->ifa_name, addressBuffer);
+        }
+    }
+    if (ifAddrStruct!=NULL) freeifaddrs(ifAddrStruct);
 }
 
 static FGDataSource *fg_data_source_dispose(FGDataSource *self)
