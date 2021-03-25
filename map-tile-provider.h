@@ -30,19 +30,23 @@ typedef struct{
     char *format; /*tile file extension*/
     MapProviderUrlTemplate url;
 
+    intf8_t priority;
+
     MapTileProviderArea *areas;
     size_t nareas;
 }MapTileProvider;
 
 
-MapTileProvider *map_tile_provider_new(const char *home, const char *format);
+MapTileProvider *map_tile_provider_new(const char *home, const char *format, intf8_t priority);
 
 MapTileProvider *map_tile_provider_init(MapTileProvider *self, const char *home,
-                                        const char *format);
+                                        const char *format, intf8_t priority);
 
 MapTileProvider *map_tile_provider_dispose(MapTileProvider *self);
 MapTileProvider *map_tile_provider_free(MapTileProvider *self);
 
 GenericLayer *map_tile_provider_get_tile(MapTileProvider *self, uintf8_t level, uint32_t x, uint32_t y);
 
+int map_tile_provider_compare(MapTileProvider *self, MapTileProvider *other);
+int map_tile_provider_compare_ptr(MapTileProvider **self, MapTileProvider **other);
 #endif /* MAP_TILE_PROVIDER_H */

@@ -1,5 +1,11 @@
 # Ignore everything in this directory
 /*
-# Except these files
 !.gitignore
-!osm/map.conf
+
+!/osm/
+/osm/*
+!/osm/map.conf
+
+!/openaip/
+/openaip/*
+!/openaip/map.conf

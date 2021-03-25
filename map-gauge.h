@@ -60,6 +60,10 @@ typedef struct{
     MapTileProvider *tile_providers[2]; /*static for now*/
     size_t ntile_providers;
 
+    MapTileProvider *overlays[1]; /*static for now*/
+    size_t noverlays;
+
+
     MapGaugeState state;
 }MapGauge;
 

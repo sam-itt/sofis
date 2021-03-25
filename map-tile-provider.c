@@ -3,6 +3,7 @@
 #endif
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdint.h>
 #include <unistd.h>
 
 #include "map-tile-provider.h"
@@ -72,20 +73,21 @@ uint8_t rect_contains(Rect *self, int x, int y)
 }
 #endif
 
-MapTileProvider *map_tile_provider_new(const char *home, const char *format)
+MapTileProvider *map_tile_provider_new(const char *home, const char *format,
+                                       intf8_t priority)
 {
     MapTileProvider *self;
 
     self = calloc(1, sizeof(MapTileProvider));
     if(self){
-        if(!map_tile_provider_init(self, home, format))
+        if(!map_tile_provider_init(self, home, format, priority))
             return map_tile_provider_free(self);
     }
     return self;
 }
 
 MapTileProvider *map_tile_provider_init(MapTileProvider *self, const char *home,
-                                        const char *format)
+                                        const char *format, intf8_t priority)
 {
     self->home = strdup(home);
     if(!self->home) return NULL;
@@ -97,6 +99,7 @@ MapTileProvider *map_tile_provider_init(MapTileProvider *self, const char *home,
      * usable: no config file, etc.*/
     map_tile_provider_read_config(self);
 
+    self->priority = priority;
     return self;
 }
 
@@ -161,6 +164,21 @@ out:
     free(filename);
     return rv;
 }
+
+int map_tile_provider_compare(MapTileProvider *self, MapTileProvider *other)
+{
+    if(self->priority < other->priority)
+        return -1;
+    if(self->priority > other->priority)
+        return 1;
+    return 0;
+}
+
+int map_tile_provider_compare_ptr(MapTileProvider **self, MapTileProvider **other)
+{
+    return map_tile_provider_compare(*self, *other);
+}
+
 
 static bool map_tile_provider_has_tile(MapTileProvider *self, uintf8_t level, uint32_t x, uint32_t y)
 {

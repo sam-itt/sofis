@@ -26,6 +26,7 @@
 #define MAX(a, b)  (((a) > (b)) ? (a) : (b))
 
 
+typedef int_fast8_t intf8_t;
 typedef uint_fast8_t uintf8_t;
 typedef uint_fast16_t uintf16_t;
 

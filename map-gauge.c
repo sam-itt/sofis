@@ -102,16 +102,27 @@ MapGauge *map_gauge_init(MapGauge *self, int w, int h)
 
 #if HAVE_IGN_OACI_MAP
     self->tile_providers[self->ntile_providers++] = map_tile_provider_new(
-        MAPS_HOME"/ign-oaci", "jpg"
-    );
-#else
-    self->tile_providers[self->ntile_providers++] = map_tile_provider_new(
-        MAPS_HOME"/osm-aip", "png"
+        MAPS_HOME"/ign-oaci", "jpg",-1
     );
 #endif
     self->tile_providers[self->ntile_providers++] = map_tile_provider_new(
-        MAPS_HOME"/osm", "png"
+        MAPS_HOME"/osm", "png", 0
     );
+
+    self->overlays[self->noverlays++] = map_tile_provider_new(
+        MAPS_HOME"/openaip", "png", 0
+    );
+
+    qsort(self->tile_providers,
+        self->ntile_providers,
+        sizeof(MapTileProvider*), (__compar_fn_t)map_tile_provider_compare_ptr
+    );
+    qsort(self->overlays,
+        self->noverlays,
+        sizeof(MapTileProvider*), (__compar_fn_t)map_tile_provider_compare_ptr
+    );
+
+
     /*TODO: Scale the plane relative to the gauge's size*/
     generic_layer_init_from_file(&self->marker.layer, IMG_DIR"/plane32.png");
     generic_layer_build_texture(&self->marker.layer);
@@ -142,6 +153,9 @@ static MapGauge *map_gauge_dispose(MapGauge *self)
     generic_layer_dispose(&self->marker.layer);
     for(int i = 0; i < self->ntile_providers; i++)
         map_tile_provider_free(self->tile_providers[i]);
+
+    for(int i = 0; i < self->noverlays; i++)
+        map_tile_provider_free(self->overlays[i]);
 
     map_tile_cache_dispose(&self->tile_cache);
     return self;
@@ -392,17 +406,39 @@ static GenericLayer *map_gauge_get_tile(MapGauge *self, uintf8_t level, uint32_t
     if(rv)
         return rv;
 
-    /*Cache miss, get tile from first responding provider and cache it*/
+    /* Cache miss, get tile from providers and cache it
+     *
+     * Providers are sorted by priority. The first provider
+     * to respond will have its tile used. If the a provider
+     * priority is negative, no overlay will be applied
+     * */
     for(int i = 0; i < self->ntile_providers; i++){
         rv = map_tile_provider_get_tile(self->tile_providers[i],
             level, x, y
         );
         if(rv){
-            generic_layer_build_texture(rv);
-            map_tile_cache_add(&self->tile_cache, rv, level, x, y);
+            if(self->tile_providers[i]->priority < 0 )
+                goto end;
             break;
         }
     }
+    if(!rv) return NULL;//No-one has the tile, bail out
+    /* If the selected provider wasn't a negative priority
+     * provider, apply all overlays on the tile
+     * */
+    GenericLayer *tmp;
+    for(int i = 0; i < self->noverlays; i++){
+        tmp = map_tile_provider_get_tile(self->overlays[i], level, x, y);
+        if(!tmp) continue;
+        SDL_BlitSurface(
+            tmp->canvas, NULL,
+            rv->canvas,NULL
+        );
+        generic_layer_free(tmp);
+    }
+end:
+    generic_layer_build_texture(rv);
+    map_tile_cache_add(&self->tile_cache, rv, level, x, y);
     return rv;
 }
 
