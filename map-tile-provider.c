@@ -32,6 +32,11 @@ static const char *map_provider_url_template_set(MapProviderUrlTemplate *self,
 {
     char tmp;
 
+    if(self->is_tms){
+        uint32_t tms_maxy = (1 << level) - 1;
+        y = tms_maxy - y;
+    }
+
     /* snprintf behavior regarding size and the null byte is
      * implementation-defined. On Linux it will always null-terminate
      * the string, therefore we print the full size and we save/restore
@@ -216,13 +221,13 @@ static bool map_config_read_area(const char *line, MapTileProviderArea *area)
  *
  * @return true on success, false otherwise
  */
-static bool map_config_read_url_template(const char *line, MapProviderUrlTemplate *url)
+static bool map_config_read_url_template(uintf8_t keyword_len, const char *line, MapProviderUrlTemplate *url)
 {
     char *tmp;
     size_t read;
     int len;
 
-    tmp = nibble_spaces(line+4, read);
+    tmp = nibble_spaces(line+keyword_len, read);
     if(!tmp) return false;
     url->base = strdup(tmp);
     len = strlen(url->base);
@@ -300,9 +305,15 @@ static bool map_tile_provider_read_config(MapTileProvider *self)
             if(!rv) continue; /*TODO: (currently) does nothing*/
         }else if(!strncmp(iter, "src:",4)){
             bool rv;
-            rv = map_config_read_url_template(iter, &self->url);
+            rv = map_config_read_url_template(4, iter, &self->url);
             if(!rv) continue; /*TODO: (currently) does nothing*/
+        }else if(!strncmp(iter, "src-tms:",8)){
+            bool rv;
+            rv = map_config_read_url_template(8, iter, &self->url);
+            if(!rv) continue;
+            self->url.is_tms = true;
         }
+
     }
     free(line);
     fclose(fp);

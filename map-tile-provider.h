@@ -15,6 +15,9 @@ typedef struct{
 }MapTileProviderArea;
 
 typedef struct{
+    /* In TMS mode, the Y axis (tiles coordinates within the world map)
+     * is reversed*/
+    bool is_tms;
     char *base;
 
     char *lvl;
