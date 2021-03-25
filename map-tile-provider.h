@@ -2,7 +2,6 @@
 #define MAP_TILE_PROVIDER_H
 #include <stdint.h>
 
-#include "map-tile-cache.h"
 #include "generic-layer.h"
 #include "misc.h"
 
@@ -24,8 +23,6 @@ typedef struct{
 }MapProviderUrlTemplate;
 
 typedef struct{
-    MapTileCache tile_cache;
-
     char *home;
     char *format; /*tile file extension*/
     MapProviderUrlTemplate url;
@@ -35,10 +32,10 @@ typedef struct{
 }MapTileProvider;
 
 
-MapTileProvider *map_tile_provider_new(const char *home, const char *format,
-                                       uintf8_t cache_size);
+MapTileProvider *map_tile_provider_new(const char *home, const char *format);
+
 MapTileProvider *map_tile_provider_init(MapTileProvider *self, const char *home,
-                                        const char *format, uintf8_t cache_size);
+                                        const char *format);
 
 MapTileProvider *map_tile_provider_dispose(MapTileProvider *self);
 MapTileProvider *map_tile_provider_free(MapTileProvider *self);

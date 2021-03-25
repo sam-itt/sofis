@@ -67,27 +67,21 @@ uint8_t rect_contains(Rect *self, int x, int y)
 }
 #endif
 
-MapTileProvider *map_tile_provider_new(const char *home, const char *format,
-                                       uintf8_t cache_size)
+MapTileProvider *map_tile_provider_new(const char *home, const char *format)
 {
     MapTileProvider *self;
 
     self = calloc(1, sizeof(MapTileProvider));
     if(self){
-        if(!map_tile_provider_init(self, home, format, cache_size))
+        if(!map_tile_provider_init(self, home, format))
             return map_tile_provider_free(self);
     }
     return self;
 }
 
 MapTileProvider *map_tile_provider_init(MapTileProvider *self, const char *home,
-                                        const char *format, uintf8_t cache_size)
+                                        const char *format)
 {
-    void *rv;
-    rv = map_tile_cache_init(&self->tile_cache, cache_size);
-    if(!rv)
-        return NULL;
-
     self->home = strdup(home);
     if(!self->home) return NULL;
 
@@ -103,8 +97,6 @@ MapTileProvider *map_tile_provider_init(MapTileProvider *self, const char *home,
 
 MapTileProvider *map_tile_provider_dispose(MapTileProvider *self)
 {
-    map_tile_cache_dispose(&self->tile_cache);
-
     if(self->home)
         free(self->home);
     if(self->format)
@@ -123,6 +115,17 @@ MapTileProvider *map_tile_provider_free(MapTileProvider *self)
     return NULL;
 }
 
+/**
+ * @brief Loads up a GenericLayer from a set of coordinates.
+ *
+ * Client code is responsible for freeing the layer @see generic_layer_free
+ *
+ * @param self a MapTileProvider
+ * @param level Zoom level
+ * @param x x-coordinate of the tile in the map
+ * @param y y-coordinate of the tile in the map
+ * @return A GenericLayer pointer or NULL on failure
+ */
 GenericLayer *map_tile_provider_get_tile(MapTileProvider *self, uintf8_t level, uint32_t x, uint32_t y)
 {
     char *filename;
@@ -130,10 +133,6 @@ GenericLayer *map_tile_provider_get_tile(MapTileProvider *self, uintf8_t level, 
 
     if(self->nareas && !map_tile_provider_has_tile(self, level, x, y))
         return NULL;
-
-    rv = map_tile_cache_get(&self->tile_cache, level, x, y);
-    if(rv)
-        return rv;
 
     asprintf(&filename, "%s/%d/%d/%d.%s", self->home, level, x, y, self->format);
     if(access(filename, F_OK) != 0){
@@ -152,13 +151,7 @@ GenericLayer *map_tile_provider_get_tile(MapTileProvider *self, uintf8_t level, 
         }
     }
 
-
     rv = generic_layer_new_from_file(filename);
-    if(!rv) goto out;
-    generic_layer_build_texture(rv);
-
-    map_tile_cache_add(&self->tile_cache, rv, level, x, y);
-
 out:
     free(filename);
     return rv;

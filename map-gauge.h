@@ -3,6 +3,7 @@
 
 #include "base-gauge.h"
 #include "generic-layer.h"
+#include "map-tile-cache.h"
 #include "map-tile-provider.h"
 #include "misc.h"
 
@@ -43,6 +44,7 @@ typedef struct{
 typedef struct{
     BaseGauge super;
 
+    MapTileCache tile_cache;
     /*current zoom level*/
     uintf8_t level;
     /*Top-left coordinates of the viewport*/
