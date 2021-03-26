@@ -5,3 +5,4 @@ local-data
 .clangd/
 compile_commands.json
 testbench
+switches.local

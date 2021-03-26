@@ -1,4 +1,5 @@
-include switches.local
+include switches.defaults
+sinclude switches.local
 
 # Where to find resources/{fg-scenery,skybox} and shaders/
 FGR_HOME=\"./fg-roam/src\"
@@ -25,6 +26,7 @@ CFLAGS=-g3 -O0 `pkg-config glib-2.0 sdl2 SDL2_image libgps --cflags` \
 	   -DENABLE_DEBUG_CUBE=0 \
 	   -DFGR_HOME=$(FGR_HOME) \
 	   -DSFS_HOME=$(SFS_HOME) \
+	   -DJY61_DEV=$(JY61_DEV) \
 	   -DENABLE_PERF_COUNTERS=1 \
 	   -DUSE_GLES=$(USE_GLES) \
 	   -DENABLE_3D=$(ENABLE_3D) \
@@ -34,7 +36,7 @@ CFLAGS=-g3 -O0 `pkg-config glib-2.0 sdl2 SDL2_image libgps --cflags` \
 	   -DHAVE_CREATE_PATH \
 	   -DHAVE_HTTP_DOWNLOAD_FILE \
 	   -DHAVE_IGN_OACI_MAP=$(HAVE_IGN_OACI_MAP)
-LDFLAGS=-lz -lm `pkg-config glib-2.0 sdl2 SDL2_image libgps --libs` -Wl,--as-needed -lSDL2_gpu -lGL -lpthread -lcurl
+LDFLAGS=-lz -lm `pkg-config glib-2.0 sdl2 SDL2_image libgps --libs` -Wl,--as-needed -lSDL2_gpu -l$(GL_LIB) -lpthread -lcurl
 EXEC=sofis
 SRC= $(filter-out $(SRCDIR)/main.c $(SRCDIR)/testbench.c, $(wildcard $(SRCDIR)/*.c))
 SRC+= $(wildcard $(SRCDIR)/sdl-pcf/src/*.c)
