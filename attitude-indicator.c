@@ -113,6 +113,7 @@ AttitudeIndicator *attitude_indicator_init(AttitudeIndicator *self, int width, i
         resource_manager_get_font(TERMINUS_12),
         &(SDL_Color){0,255,0}
     );
+    SDL_SetSurfaceBlendMode(self->pitch_ruler, SDL_BLENDMODE_NONE);
 
     /*TODO: Generate*/
     self->horizon_src = IMG_Load(IMG_DIR"/horizon-grads-scaled.png");
