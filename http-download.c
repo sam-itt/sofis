@@ -48,7 +48,7 @@ bool http_download_file(char *url, char *output)
     /* always cleanup */
     curl_easy_cleanup(curl);
     fclose(fp);
-    if(res == CURLE_HTTP_RETURNED_ERROR){
+    if(res != CURLE_OK){
         unlink(output);
         printf("[ %sFAILED%s ]\n",
             "\033[0;31m", /*red*/
