@@ -8,8 +8,10 @@ SoFIS is written in C, from scratch, with minimal dependencies.
 
 Still in the early stages of development it can already show your situation and
 attitude. It currently supports reading pre-recording flight data, getting
-real time data from FlightGear over the network and from finaly from a couple
-of sensors. Running a pre-recorded (circuit) flight from LFLG (Grenoble, France):
+real time data from FlightGear over the network, from a [Stratux][7] unit, and
+finaly from a couple of sensors.
+
+Running a pre-recorded (circuit) flight from LFLG (Grenoble, France):
 
 ![lflg circuit][1]
 
@@ -114,6 +116,19 @@ big 3d tiles. In my tests running the [ksfo-loop][4] on a remote computer and
 SoFIS in fgremote mode lead to arround *10 minutes of wall-clock* loading time
 (downloading+loading the btg). If SoFIS says "Loading btg:" it's not stuck, it
 iiis loading.
+
+## Getting data from Stratux
+
+Stratux support is is very basic and uses only the GPS and AHRS values reported
+by the device. SoFIS currently currently uses the json protocol. GDL 90 support
+will come later.
+
+You need to first connect the device you'll be running SoFIS to Startux over
+wifi, and the you can launch SoFIS as follows:
+
+```sh
+$ ./sofis --stratux
+```
 
 ## Getting data from sensors
 
@@ -221,3 +236,4 @@ get in touch first by opening a new github issue.
 [4]: https://wiki.flightgear.org/Suggested_Prerecorded_Flights
 [5]: https://gpsd.io/
 [6]: https://github.com/sam-itt/gentoo-pie/releases/download/0.0.1/sdcard-gentoo.img.xz
+[7]: http://stratux.me/
