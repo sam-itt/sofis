@@ -144,7 +144,7 @@ MapTileProvider *map_tile_provider_free(MapTileProvider *self)
 GenericLayer *map_tile_provider_get_tile(MapTileProvider *self, uintf8_t level, uint32_t x, uint32_t y)
 {
     char *filename;
-    GenericLayer *rv;
+    GenericLayer *rv = NULL;
 
     if(self->nareas && !map_tile_provider_has_tile(self, level, x, y))
         return NULL;
