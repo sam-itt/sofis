@@ -314,7 +314,7 @@ static bool map_tile_provider_read_config(MapTileProvider *self)
         if(!strncmp(iter, "area:",5)) self->nareas++;
     }
     /*Then allocate and fill*/
-    printf("Found %d level areas\n", self->nareas);
+    printf("Found %zu level areas\n", self->nareas);
     if(self->nareas)
         self->areas = calloc(self->nareas, sizeof(MapTileProviderArea));
 
