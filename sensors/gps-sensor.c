@@ -11,11 +11,12 @@
 #include <errno.h>
 
 #include "gps-sensor.h"
+#define GPSD_API_SWITCH 9
 
 static void gps_sensor_set_fix(GpsSensor *self);
 static void gps_sensor_worker(GpsSensor *self);
 
-#if GPSD_API_MAJOR_VERSION >= 10
+#if GPSD_API_MAJOR_VERSION >= GPSD_API_SWITCH
 static inline bool timespec_equal(struct timespec *t1, struct timespec *t2)
 {
     return t1->tv_sec == t2->tv_sec && t1->tv_nsec == t2->tv_nsec;
@@ -94,7 +95,7 @@ bool gps_sensor_get_fix(GpsSensor *self, double *latitude, double *longitude, do
 
 static void gps_sensor_set_fix(GpsSensor *self)
 {
-#if GPSD_API_MAJOR_VERSION >= 10
+#if GPSD_API_MAJOR_VERSION >= GPSD_API_SWITCH
     struct timespec old_time;
 #else
     double old_time;
@@ -132,7 +133,7 @@ static void gps_sensor_worker(GpsSensor *self)
 
     for(;;){
         if(gps_waiting(&self->gpsdata, self->timeout * 1000000)){
-#if GPSD_API_MAJOR_VERSION >= 10
+#if GPSD_API_MAJOR_VERSION >= GPSD_API_SWITCH
             rv = gps_read(&self->gpsdata, NULL, 0);
 #else
             rv = gps_read(&self->gpsdata);

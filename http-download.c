@@ -35,8 +35,7 @@ bool http_download_file(char *url, char *output)
     }
     curl_easy_setopt(curl, CURLOPT_URL, url);
     curl_easy_setopt(curl,
-        CURLOPT_USERAGENT, "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_6) "
-        "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/69.0.3497.100 Safari/537.36"
+        CURLOPT_USERAGENT, "curl/7.68.0"
     );
     curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, fwrite);
     curl_easy_setopt(curl, CURLOPT_WRITEDATA, fp);
