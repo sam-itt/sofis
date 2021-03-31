@@ -145,6 +145,10 @@ void generic_ruler_dispose(GenericRuler *self)
  * @return true on success, false otherwise
  *
  */
+#if __GNUC__ >= 8
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wformat-truncation"
+#endif
 bool generic_ruler_get_size_request(GenericRuler *self, int8_t precision, PCF_Font *font, Location markings_location, int *w, int *h)
 {
     int pixel_increment = roundf(self->hatch_step * self->ppv);
@@ -249,6 +253,9 @@ bool generic_ruler_get_size_request(GenericRuler *self, int8_t precision, PCF_Fo
     printf("\n");
     return true;
 }
+#if __GNUC__ >= 8
+#pragma GCC diagnostic pop
+#endif
 
 int generic_ruler_get_pixel_increment_for(GenericRuler *self, float value)
 {
