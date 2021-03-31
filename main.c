@@ -25,6 +25,7 @@
 #define ENABLE_FGCONN 1
 #define ENABLE_FGTAPE 1
 #define ENABLE_SENSORS 1
+#define ENABLE_STRATUX 1
 
 #include "data-source.h"
 #if ENABLE_FGCONN
@@ -36,6 +37,9 @@
 #if ENABLE_SENSORS
 #include "sensors-data-source.h"
 #endif
+#if ENABLE_STRATUX
+#include "stratux-data-source.h"
+#endif
 
 #define SCREEN_WIDTH 640
 #define SCREEN_HEIGHT 480
@@ -46,6 +50,7 @@ typedef enum{
     MODE_FGREMOTE,
     MODE_FGTAPE,
     MODE_SENSORS,
+    MODE_STRATUX,
     N_MODES
 }RunningMode;
 
@@ -218,6 +223,9 @@ int main(int argc, char **argv)
             g_mode = MODE_FGTAPE;
         else if(!strcmp(argv[1], "--fgremote"))
             g_mode = MODE_FGREMOTE;
+        else if(!strcmp(argv[1], "--stratux"))
+            g_mode = MODE_STRATUX;
+
     }
 
     switch(g_mode){
@@ -226,6 +234,9 @@ int main(int argc, char **argv)
             break;
         case MODE_FGREMOTE:
             g_ds = (DataSource *)fg_data_source_new(6789);
+            break;
+        case MODE_STRATUX:
+            g_ds = (DataSource *)stratux_data_source_new();
             break;
         case MODE_FGTAPE: //Fallthtough
         default:
