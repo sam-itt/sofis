@@ -12,8 +12,9 @@
 #include "sensors-data-source.h"
 #include "sensors/gps-sensor.h"
 
-#define JY61_DEV "/dev/ttyUSB1"
-#define LSM303_DEV "/dev/i2c-0"
+#ifndef BNO080_DEV
+#define BNO080_DEV "/dev/i2c-1"
+#endif
 
 static bool sensors_data_source_frame(SensorsDataSource *self, uint32_t dt);
 static SensorsDataSource *sensors_data_source_dispose(SensorsDataSource *self);
@@ -41,24 +42,19 @@ SensorsDataSource *sensors_data_source_init(SensorsDataSource *self)
     if(!data_source_init(DATA_SOURCE(self), &sensors_data_source_ops))
         return NULL;
 
-    if(!jy61_init(&self->jy61_dev, JY61_DEV)){
-        printf("Couldn't initialize device, bailing out\n");
+    if(!bno080_init(&self->imu, 0x4b, BNO080_DEV)){
+        printf("Couldn't initialize BNO0808 device, bailing out\n");
         exit(EXIT_FAILURE);
     }
+    bno080_enable_feature(&self->imu, ROTATION_VECTOR);
+
 
     if(!gps_sensor_init(&self->gps, "localhost", DEFAULT_GPSD_PORT)){
         printf("Couldn't initialize GPS, bailing out\n");
         exit(EXIT_FAILURE);
     }
 
-    if(!lsm303_init(&self->mag, LSM303_DEV)){
-        printf("Couldn't initialize Magnetometer, bailing out\n");
-        exit(EXIT_FAILURE);
-    }
-
-    jy61_start(&self->jy61_dev);
     gps_sensor_start(&self->gps);
-    lsm303_start_magnetometer(&self->mag);
 
     DATA_SOURCE(self)->latitude = 45.215470;
     DATA_SOURCE(self)->longitude = 5.844828;
@@ -71,7 +67,7 @@ SensorsDataSource *sensors_data_source_init(SensorsDataSource *self)
 
 static SensorsDataSource *sensors_data_source_dispose(SensorsDataSource *self)
 {
-    jy61_dispose(&self->jy61_dev);
+    bno080_dispose(&self->imu);
     return self;
 }
 
@@ -85,15 +81,11 @@ static bool sensors_data_source_frame(SensorsDataSource *self, uint32_t dt)
     if(dt != 0 && dt < (1000/25)) //One update per 1/25 second
         return false;
 
-    jy61_get_attitude(&self->jy61_dev, &roll, &pitch, &yaw);
-    lsm303_get_heading(&self->mag, roll, pitch, &heading);
+    bno080_hpr(&self->imu, &heading, &pitch, &roll);
 
     DATA_SOURCE(self)->roll = roll;
     DATA_SOURCE(self)->pitch = pitch;
     DATA_SOURCE(self)->heading = heading;
-    /* Heading is not yaw and will be get using a magnetometer
-     * */
-
     gps_sensor_get_fix(&self->gps, &lat, &lon, &alt);
     DATA_SOURCE(self)->latitude = lat;
     DATA_SOURCE(self)->longitude = lon;

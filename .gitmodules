@@ -8,3 +8,6 @@
 [submodule "fg-roam"]
 	path = fg-roam
 	url = https://github.com/sam-itt/fg-roam.git
+[submodule "sensors/bno080"]
+	path = sensors/bno080
+	url = https://github.com/sam-itt/bno080

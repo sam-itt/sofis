@@ -65,7 +65,7 @@ USE_GLES=1
 NO_PRELOAD=1
 TINY_TEXTURES=1
 GL_LIB=brcmGLESv2
-JY61_DEV=\"/dev/serial0\"
+BNO080_DEV=\"/dev/i2c-0\"
 ```
 
 Then, proceed with the build:
@@ -140,17 +140,7 @@ Currently, these sensors are supported:
 |Kind         | Device      | State         |
 |-------------|-------------|---------------|
 |GPS          | gpsd        |  OK           |
-|Magnetometer | LSM303      | Bad           |
-|Gyro         | JY61 / WT61 | Pitch/Roll OK |
-
-SoFIS currently expects the Gyro on serial0 (JY61 is a serial device) and LSM303
-on `/dev/i2c-0`. While the gyro gives satisfactory results, the magnetometer
-needs does not. I couldn't get a fusion algorithm to work.
-
-I'm waiting for a coupe of (hopefully better) 9-DOF sensors with onboard fusion
-to show up in the mail to replace the JY61+LSM303 couple:
-* Bosch BNO080
-* ICM-20948
+|AHRS         | BNO080      |  OK           |
 
 ### Position
 
@@ -159,17 +149,24 @@ Please refer to gpsd documentation on how to do that. Once you have gpsd
 correctly outputing data from your GPS receiver, you can proceed with the next
 steps.
 
-### Atittude
+### Atittude / Heading
 
-As said earlier, SoFIS currently expects a JY61 on serial0 and a LSM303 on
-`/dev/i2c-0`. These values can be changed using #defines in the
-code(see `sensors-data-source.c`).
+SoFIS currently supports the BNO080 from Bosch/Hillcrest. This unit does
+onboard sensor fusion (gyros, accelerometers and magnetometer) and outputs the
+resulting orientation quaternion over i2c.
 
-While roll and pitch seems accurate enough, the magnetometer (heading) didn't
-yield anything usable.
+If you are running on a Raspberry Pi, and using onboard i2c, you'll need to
+modify your `/boot/config.txt` to get it to work. The Pi has a well-known
+hardware bug that make clock stretching impossible. This is easily fixed by
+setting the clock rate to a value that is acceptable to both the BNO080 and
+the Pi:
 
-These sensors will be replaced by a 9-DOF with onboard sensor fusion that gives
-a full orientation quaternion.
+```
+dtparam=i2c_arm=on
+dtparam=i2c_arm_baudrate=400000
+```
+SoFIS expects the IMU on `/dev/i2c-1` (default) or `/dev/i2c-0` (rpi). This
+value can be changed in `switches.local`
 
 ### Command line
 
@@ -217,6 +214,17 @@ You can now put the card in your Pi and boot. Login/passwords are:
 
 Continue through the steps at [Building](#building)
 
+### Wiring
+
+| BNO080      | RPI          |
+|-------------|--------------|
+| VCC (3.3V)  | #1 - 3.3V    |
+| GND         | #6 - GND     |
+| SDA         | #8 - SDA0    |
+| SCL         | #9 - SCL0    |
+
+![rpi-bno080][8]
+
 ## Contributing
 
 SoFIS is still in very early stages of development. If you are willing to help
@@ -237,3 +245,4 @@ get in touch first by opening a new github issue.
 [5]: https://gpsd.io/
 [6]: https://github.com/sam-itt/gentoo-pie/releases/download/0.0.1/sdcard-gentoo.img.xz
 [7]: http://stratux.me/
+[8]: https://github.com/sam-itt/sofis/blob/media/sofis-bno080-rpi.png?raw=true
