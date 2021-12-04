@@ -56,7 +56,7 @@ VerticalStair *vertical_stair_init(VerticalStair *self, const char *bg_img, cons
     self->font = font;
     if(!rv || !self->font)
         return NULL; //TODO: Will leak self->scale.ruler
-    self->font->refcnt++;
+    PCF_StaticFontRef(self->font);
     generic_layer_build_texture(GENERIC_LAYER(&self->scale));
     generic_layer_build_texture(&self->cursor);
 

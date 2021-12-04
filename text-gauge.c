@@ -77,10 +77,13 @@ static void *text_gauge_dispose(TextGauge *self)
 static void text_gauge_dispose_font(TextGauge *self)
 {
     if(!self->font.is_static && self->font.font){
-        self->font.font->xfont.refcnt--;
+        PCF_FontUnref(self->font.font);
         PCF_CloseFont(self->font.font);
     }else if(self->font.static_font){
-        self->font.static_font->refcnt--;
+        /* TODO: This is confusing. There should be only one
+         * of unref/free
+         * */
+        PCF_StaticFontUnref(self->font.static_font);
         PCF_FreeStaticFont(self->font.static_font);
     }
 }
@@ -90,7 +93,7 @@ void text_gauge_set_font(TextGauge *self, PCF_Font *font)
     text_gauge_dispose_font(self);
 
     self->font.font = font;
-    self->font.font->xfont.refcnt++;
+    PCF_FontRef(self->font.font);
     self->font.is_static = false;
 }
 
@@ -98,7 +101,7 @@ void text_gauge_set_static_font(TextGauge *self, PCF_StaticFont *font)
 {
     text_gauge_dispose_font(self);
 
-    font->refcnt++;
+    PCF_StaticFontRef(font);
     self->font.static_font = font;
     self->font.is_static = true;
 }

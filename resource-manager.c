@@ -54,7 +54,7 @@ void resource_manager_shutdown(void)
                     self->fonts[i]
                 );
             }
-            self->fonts[i]->xfont.refcnt--;
+            PCF_FontUnref(self->fonts[i]);
             PCF_CloseFont(self->fonts[i]);
         }
     }
@@ -68,7 +68,7 @@ void resource_manager_shutdown(void)
                 self->sfonts[i].font
             );
         }
-        self->sfonts[i].font->refcnt--;
+        PCF_StaticFontUnref(self->sfonts[i].font);
         PCF_FreeStaticFont(self->sfonts[i].font);
     }
     if(self->sfonts)
@@ -106,7 +106,7 @@ PCF_Font *resource_manager_get_font(FontResource font)
     if(!self->fonts[font]){
         self->fonts[font] = PCF_OpenFont(resource_manager_get_font_filename(font));
         if(self->fonts[font])
-            self->fonts[font]->xfont.refcnt++;
+            PCF_FontRef(self->fonts[font]);
     }
     return self->fonts[font];
 }
@@ -185,5 +185,5 @@ static void resource_manager_push_static_font(PCF_StaticFont *font, FontResource
     self->sfonts[self->n_sfonts].font = font;
     self->sfonts[self->n_sfonts].creator = creator;
     self->n_sfonts++;
-    font->refcnt++;
+    PCF_StaticFontRef(font);
 }
