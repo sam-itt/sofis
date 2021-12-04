@@ -8,13 +8,14 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
+#include <string.h>
 
 #include <SDL2/SDL.h>
 #include <SDL_gpu.h>
 
-#include "SDL_keycode.h"
 #include "base-gauge.h"
 #include "basic-hud.h"
+#include "button.h"
 #include "compass-gauge.h"
 #include "data-source.h"
 #include "elevator-gauge.h"
@@ -37,6 +38,10 @@
 #include "roll-slip-gauge.h"
 #include "tape-gauge.h"
 #include "map-gauge.h"
+#include "text-box.h"
+#include "list-box.h"
+#include "data.h"
+
 
 #include "sdl-colors.h"
 #include "res-dirs.h"
@@ -68,6 +73,14 @@ CompassGauge *compass = NULL;
 /*TapeGauge *tape_gauge2 = NULL;*/
 SidePanel *panel = NULL;
 MapGauge *map = NULL;
+
+TextBox *text;
+ListBox *list;
+
+BaseWidget *focused;
+char **active_strings;
+size_t nactive_strings;
+
 
 float gval = 0.0;
 float alt = 900.0;
@@ -101,232 +114,188 @@ float compute_vs(float old_alt, float new_alt, Uint32 elapsed);
 /*Return true to quit the app*/
 bool handle_keyboard(SDL_KeyboardEvent *event, Uint32 elapsed)
 {
+    if(event->state != SDL_PRESSED) return false;
     switch(event->keysym.sym){
         case SDLK_ESCAPE:
-            if(event->state == SDL_PRESSED)
-                return true;
+            return true;
             break;
         case SDLK_t:
-            if(event->state == SDL_PRESSED){
-                gval += GVAL_INC;
-                if(gval > 99)
-                    gval = 99;
-                /*odo_gauge_set_value(gauge, gval, true);*/
+            gval += GVAL_INC;
+            if(gval > 99)
+                gval = 99;
+            /*odo_gauge_set_value(gauge, gval, true);*/
 //                printf("Odo gauge just set to %0.2f\n",gval);
-            }
             break;
         case SDLK_g:
-            if(event->state == SDL_PRESSED){
-                gval -= GVAL_INC;
-                if(gval < 0)
-                    gval = 0;
-                /*odo_gauge_set_value(gauge, gval, true);*/
+            gval -= GVAL_INC;
+            if(gval < 0)
+                gval = 0;
+            /*odo_gauge_set_value(gauge, gval, true);*/
 //                printf("Odo gauge just set to %0.2f\n",gval);
-            }
             break;
         case SDLK_a:
-            if(event->state == SDL_PRESSED){
-                ias += IAS_INC;
-                airspeed_indicator_set_value(asi, ias);
-                /*basic_hud_set(hud, 1, AIRSPEED, ias);*/
-                /*tape_gauge_set_value(tape_gauge2, ias, true);*/
-            }
+            ias += IAS_INC;
+            airspeed_indicator_set_value(asi, ias);
+            /*basic_hud_set(hud, 1, AIRSPEED, ias);*/
+            /*tape_gauge_set_value(tape_gauge2, ias, true);*/
             break;
         case SDLK_z:
-            if(event->state == SDL_PRESSED){
-                ias -= IAS_INC;
-                airspeed_indicator_set_value(asi, ias);
-                /*basic_hud_set(hud, 1, AIRSPEED, ias);*/
-                /*tape_gauge_set_value(tape_gauge2, ias, true);*/
-            }
+            ias -= IAS_INC;
+            airspeed_indicator_set_value(asi, ias);
+            /*basic_hud_set(hud, 1, AIRSPEED, ias);*/
+            /*tape_gauge_set_value(tape_gauge2, ias, true);*/
             break;
         case SDLK_UP:
-            if(event->state == SDL_PRESSED){
-                /*vs = compute_vs(alt, alt+ALT_INC, elapsed);*/
-                alt += ALT_INC;
+            /*vs = compute_vs(alt, alt+ALT_INC, elapsed);*/
+            alt += ALT_INC;
 /*                ladder_gauge_set_value(ladder, alt, true);*/
-                /*odo_gauge_set_value(wheel, alt, true);*/
-                /*alt_indicator_set_value(alt_ind, alt, true);*/
-                //alt_group_set_altitude(group, alt);
-                /*alt_group_set_values(group, alt, vs);*/
-                /*basic_hud_set(hud, 1, ALTITUDE, alt);*/
+            /*odo_gauge_set_value(wheel, alt, true);*/
+            /*alt_indicator_set_value(alt_ind, alt, true);*/
+            //alt_group_set_altitude(group, alt);
+            /*alt_group_set_values(group, alt, vs);*/
+            /*basic_hud_set(hud, 1, ALTITUDE, alt);*/
 /*                sprintf(txtbuf, "Altitude: %0.2f", alt);*/
-                /*text_gauge_set_value(txt, txtbuf);*/
-                /*tape_gauge_set_value(tape_gauge, alt, true);*/
-                map_gauge_move_viewport(map, 0, -10, true);
-            }
+            /*text_gauge_set_value(txt, txtbuf);*/
+            /*tape_gauge_set_value(tape_gauge, alt, true);*/
+            map_gauge_move_viewport(map, 0, -10, true);
             break;
         case SDLK_DOWN:
-            if(event->state == SDL_PRESSED){
-                /*vs = compute_vs(alt, alt-ALT_INC, elapsed);*/
-                alt -= ALT_INC;
+            /*vs = compute_vs(alt, alt-ALT_INC, elapsed);*/
+            alt -= ALT_INC;
 /*                ladder_gauge_set_value(ladder, alt, true);*/
-                /*odo_gauge_set_value(wheel, alt, true);*/
-                /*alt_indicator_set_value(alt_ind, alt, true);*/
-                //alt_group_set_altitude(group, alt);
-                /*alt_group_set_values(group, alt, vs);*/
-                /*basic_hud_set(hud, 1, ALTITUDE, alt);*/
+            /*odo_gauge_set_value(wheel, alt, true);*/
+            /*alt_indicator_set_value(alt_ind, alt, true);*/
+            //alt_group_set_altitude(group, alt);
+            /*alt_group_set_values(group, alt, vs);*/
+            /*basic_hud_set(hud, 1, ALTITUDE, alt);*/
 /*                sprintf(txtbuf, "Altitude: %0.2f", alt);*/
-                /*text_gauge_set_value(txt, txtbuf);*/
-                /*tape_gauge_set_value(tape_gauge, alt, true);*/
-                map_gauge_move_viewport(map, 0, 10, true);
-            }
+            /*text_gauge_set_value(txt, txtbuf);*/
+            /*tape_gauge_set_value(tape_gauge, alt, true);*/
+            map_gauge_move_viewport(map, 0, 10, true);
             break;
         case SDLK_LEFT:
-            if(event->state == SDL_PRESSED){
-                map_gauge_move_viewport(map, -10, 0, true);
-            }
+            map_gauge_move_viewport(map, -10, 0, true);
             break;
         case SDLK_RIGHT:
-            if(event->state == SDL_PRESSED){
-                map_gauge_move_viewport(map, 10, 0, true);
-            }
+            map_gauge_move_viewport(map, 10, 0, true);
             break;
         case SDLK_KP_PLUS:
-            if(event->state == SDL_PRESSED){
-                map_gauge_set_level(map, map->level+1);
-            }
+            map_gauge_set_level(map, map->level+1);
             break;
         case SDLK_KP_MINUS:
-            if(event->state == SDL_PRESSED){
-                map_gauge_set_level(map, map->level-1);
-            }
+            map_gauge_set_level(map, map->level-1);
             break;
         case SDLK_l:
-            if(event->state == SDL_PRESSED){
-                /*odo_gauge_set_value(wheel, 300, true);*/
-            }
+            /*odo_gauge_set_value(wheel, 300, true);*/
             break;
         case SDLK_PAGEUP:
-            if(event->state == SDL_PRESSED){
 /*                if(odo_val < odo->max_value)*/
-                    /*odo_val += ODO_INC;*/
-                /*odo_gauge_set_value(odo, odo_val, true);*/
-                /*odo_gauge_set_value(gauge, odo_val, true);*/
-            }
+                /*odo_val += ODO_INC;*/
+            /*odo_gauge_set_value(odo, odo_val, true);*/
+            /*odo_gauge_set_value(gauge, odo_val, true);*/
             break;
         case SDLK_PAGEDOWN:
-            if(event->state == SDL_PRESSED){
 /*                if(odo_val > 0.0)*/
-                    /*odo_val -= ODO_INC;*/
-                /*odo_gauge_set_value(odo, odo_val, true);*/
-                /*odo_gauge_set_value(gauge, odo_val, true);*/
-            }
+                /*odo_val -= ODO_INC;*/
+            /*odo_gauge_set_value(odo, odo_val, true);*/
+            /*odo_gauge_set_value(gauge, odo_val, true);*/
             break;
         case SDLK_p:
-            if(event->state == SDL_PRESSED){
 //                if(vs < stair->scale.end)
-                    vs += VARIO_INC;
-                /*vertical_stair_set_value(stair, vs, true);*/
-                /*alt_group_set_vertical_speed(group, vs);*/
-                basic_hud_set(hud, 1, VERTICAL_SPEED, vs);
-            }
+                vs += VARIO_INC;
+            /*vertical_stair_set_value(stair, vs, true);*/
+            /*alt_group_set_vertical_speed(group, vs);*/
+            basic_hud_set(hud, 1, VERTICAL_SPEED, vs);
             break;
         case SDLK_m:
-            if(event->state == SDL_PRESSED){
 //                if(vs > stair->scale.start)
-                    vs -= VARIO_INC;
-                /*vertical_stair_set_value(stair, vs, true);*/
-                /*alt_group_set_vertical_speed(group, vs);*/
-                basic_hud_set(hud, 1, VERTICAL_SPEED, vs);
-            }
+                vs -= VARIO_INC;
+            /*vertical_stair_set_value(stair, vs, true);*/
+            /*alt_group_set_vertical_speed(group, vs);*/
+            basic_hud_set(hud, 1, VERTICAL_SPEED, vs);
             break;
         case SDLK_x:
-            if(event->state == SDL_PRESSED){
-                    pitch -= PITCH_INC;
-                attitude_indicator_set_pitch(ai, pitch, true);
-                basic_hud_set(hud, 1, PITCH, pitch);
-            }
+                pitch -= PITCH_INC;
+            attitude_indicator_set_pitch(ai, pitch, true);
+            basic_hud_set(hud, 1, PITCH, pitch);
             break;
         case SDLK_s:
-            if(event->state == SDL_PRESSED){
-                    pitch += PITCH_INC;
-                attitude_indicator_set_pitch(ai, pitch, true);
-                basic_hud_set(hud, 1, PITCH, pitch);
-            }
+                pitch += PITCH_INC;
+            attitude_indicator_set_pitch(ai, pitch, true);
+            basic_hud_set(hud, 1, PITCH, pitch);
             break;
         case SDLK_c:
-            if(event->state == SDL_PRESSED){
-                roll -= ROLL_INC;
-                attitude_indicator_set_roll(ai, roll, true);
-                roll_slip_gauge_set_value(rsg, roll, true);
-                /*basic_hud_set(hud, 1, ROLL, roll);*/
-            }
+            roll -= ROLL_INC;
+            attitude_indicator_set_roll(ai, roll, true);
+            roll_slip_gauge_set_value(rsg, roll, true);
+            /*basic_hud_set(hud, 1, ROLL, roll);*/
             break;
         case SDLK_d:
-            if(event->state == SDL_PRESSED){
-                roll += ROLL_INC;
-                attitude_indicator_set_roll(ai, roll, true);
-                roll_slip_gauge_set_value(rsg, roll, true);
-                /*basic_hud_set(hud, 1, ROLL, roll);*/
-            }
+            roll += ROLL_INC;
+            attitude_indicator_set_roll(ai, roll, true);
+            roll_slip_gauge_set_value(rsg, roll, true);
+            /*basic_hud_set(hud, 1, ROLL, roll);*/
             break;
         case SDLK_e:
-            if(event->state == SDL_PRESSED){
-                heading += HEADING_INC;
-                heading = fmod(heading, 360.0);
-                if(heading < 0)
-                    heading += 360.0;
-                compass_gauge_set_value(compass, heading, true);
-                /*basic_hud_set(hud, 1, HEADING, heading);*/
-            }
+            heading += HEADING_INC;
+            heading = fmod(heading, 360.0);
+            if(heading < 0)
+                heading += 360.0;
+            compass_gauge_set_value(compass, heading, true);
+            /*basic_hud_set(hud, 1, HEADING, heading);*/
             break;
         case SDLK_y:
-            if(event->state == SDL_PRESSED){
-                /*if(fishval < fish->ruler.end){*/
-                    /*fishval += FISHVAL_INC;*/
-                    /*fishbone_gauge_set_value(fish, fishval, true);*/
-                /*}*/
-            }
+            /*if(fishval < fish->ruler.end){*/
+                /*fishval += FISHVAL_INC;*/
+                /*fishbone_gauge_set_value(fish, fishval, true);*/
+            /*}*/
             break;
         case SDLK_h:
-            if(event->state == SDL_PRESSED){
-                /*if(fishval > fish->ruler.start){*/
-                    /*fishval -= FISHVAL_INC;*/
-                    /*fishbone_gauge_set_value(fish, fishval, true);*/
-                /*}*/
-            }
+            /*if(fishval > fish->ruler.start){*/
+                /*fishval -= FISHVAL_INC;*/
+                /*fishbone_gauge_set_value(fish, fishval, true);*/
+            /*}*/
             break;
         case SDLK_j:
-            if(event->state == SDL_PRESSED){
 /*                if(eleval < elevator->ruler.end){*/
-                    /*eleval += ELEVAL_INC;*/
-                    /*elevator_gauge_set_value(elevator, eleval, true);*/
-                /*}*/
-            }
+                /*eleval += ELEVAL_INC;*/
+                /*elevator_gauge_set_value(elevator, eleval, true);*/
+            /*}*/
             break;
         case SDLK_k:
-            if(event->state == SDL_PRESSED){
 /*                if(eleval > elevator->ruler.start){*/
-                    /*eleval -= ELEVAL_INC;*/
-                    /*elevator_gauge_set_value(elevator, eleval, true);*/
-                /*}*/
-            }
+                /*eleval -= ELEVAL_INC;*/
+                /*elevator_gauge_set_value(elevator, eleval, true);*/
+            /*}*/
             break;
         case SDLK_i:
-            if(event->state == SDL_PRESSED){
-                slip_deg -= SLIP_INC;
-                roll_slip_gauge_set_slip(rsg, slip_deg, true);
-            }
+            slip_deg -= SLIP_INC;
+            roll_slip_gauge_set_slip(rsg, slip_deg, true);
             break;
         case SDLK_o:
-            if(event->state == SDL_PRESSED){
-                slip_deg += SLIP_INC;
-                roll_slip_gauge_set_slip(rsg, slip_deg, true);
-            }
+            slip_deg += SLIP_INC;
+            roll_slip_gauge_set_slip(rsg, slip_deg, true);
             break;
         case SDLK_SPACE:
-            if(event->state == SDL_PRESSED){
-                printf("Alt is: %f\n", alt);
-                printf("Roll is: %f\n", roll);
-                printf("pitch is: %f\n", pitch);
-                printf("heading is: %f\n", heading);
+            printf("Alt is: %f\n", alt);
+            printf("Roll is: %f\n", roll);
+            printf("pitch is: %f\n", pitch);
+            printf("heading is: %f\n", heading);
 //                printf("TextGauge value: %s\n", txt->value);
-            }
             break;
-
-
+        default:{
+        }
     }
+    bool keep_focus = base_widget_handle_event(focused, event);
+    if(!keep_focus){
+        focused->has_focus = false;
+        focused = ((void*)focused == (void*)text)
+                ? BASE_WIDGET(list)
+                : BASE_WIDGET(text);
+        focused->has_focus = true;
+    }
+
+
     return false;
 }
 
@@ -363,6 +332,24 @@ float compute_vs(float old_alt, float new_alt, Uint32 elapsed)
 
     return rv;
 }
+
+void update_list_content(TextBox *txtbx)
+{
+    nactive_strings = 0;
+    for(int i = 0; i < nstrings; i++){
+        if(strcasestr(strings[i], txtbx->text)){
+            active_strings[nactive_strings] = (char *)strings[i];
+            nactive_strings++;
+        }
+    }
+    list_box_set_rows(list, nactive_strings, (const char**)active_strings);
+}
+
+void print_selection(ListBox *self)
+{
+    printf("Selection: %s\n",self->rows[self->selected_row]);
+}
+
 
 
 int main(int argc, char **argv)
@@ -589,6 +576,44 @@ int main(int argc, char **argv)
     SDL_FillRect(screenSurface, NULL, SDL_UFBLUE(screenSurface));
 #endif
 
+    active_strings = calloc(nstrings, sizeof(char*));
+    nactive_strings = 0;
+
+    PCF_Font *fnt = resource_manager_get_font(TERMINUS_24);
+    text = text_box_new(
+        12*20,
+        PCF_FontCharHeight(fnt),
+        TERMINUS_24
+    );
+    SDL_Rect txtRect = {640/2, 480/2 - 100, base_gauge_w(BASE_GAUGE(text)), base_gauge_h(BASE_GAUGE(text))};
+    text_box_set_allowed_chars(text, true, 3, " -", PCF_UPPER_CASE, PCF_DIGITS);
+    text->changed_callback = update_list_content;
+    text_box_start_editing(text);
+
+    list = list_box_new(
+        BASE_GAUGE(text)->frame.w,
+        200, TERMINUS_24
+    );
+    SDL_Rect listRect = {640/2,
+        txtRect.y + BASE_GAUGE(text)->frame.h + 3,
+        base_gauge_w(BASE_GAUGE(list)),
+        base_gauge_h(BASE_GAUGE(list))
+    };
+    list_box_set_rows(list, nstrings, strings);
+    list->selection_validated = print_selection;
+    focused = BASE_WIDGET(text);
+    focused->has_focus = true;
+
+
+
+    Button *btn = button_new("Validate", TERMINUS_24, 12*20, 24);
+    SDL_Rect btn_rect ={
+        640/2,
+        480/2 - 100,
+        base_gauge_w(BASE_GAUGE(btn)),
+        base_gauge_h(BASE_GAUGE(btn))
+    };
+
     done = false;
     Uint32 ticks;
     Uint32 last_ticks = 0;
@@ -623,7 +648,7 @@ int main(int argc, char **argv)
         /*base_gauge_render(BASE_GAUGE(asi), elapsed, &(RenderContext){rtarget, &vrect, NULL});*/
 //
 
-        base_gauge_render(BASE_GAUGE(rsg), elapsed, &(RenderContext){rtarget, &dst, NULL});
+//        base_gauge_render(BASE_GAUGE(rsg), elapsed, &(RenderContext){rtarget, &dst, NULL});
         /*base_gauge_render(BASE_GAUGE(ai), elapsed, &(RenderContext){rtarget, &whole, NULL});*/
 
         /*base_gauge_render(BASE_GAUGE(hud), elapsed, &(RenderContext){rtarget, &whole, NULL});*/
@@ -635,6 +660,9 @@ int main(int argc, char **argv)
         /*base_gauge_render(BASE_GAUGE(tape_gauge), elapsed, &(RenderContext){rtarget, &vrect, NULL});*/
         /*base_gauge_render(BASE_GAUGE(tape_gauge2), elapsed, &(RenderContext){rtarget, &vrect, NULL});*/
         /*base_gauge_render(BASE_GAUGE(map), elapsed, &(RenderContext){rtarget, &center_rect, NULL});*/
+        /*base_gauge_render(BASE_GAUGE(text), elapsed, &(RenderContext){rtarget, &txtRect, NULL});*/
+        /*base_gauge_render(BASE_GAUGE(list), elapsed, &(RenderContext){rtarget, &listRect, NULL});*/
+        base_gauge_render(BASE_GAUGE(btn), elapsed, &(RenderContext){rtarget, &btn_rect, NULL});
 #if USE_SDL_GPU
 		GPU_Flip(gpu_screen);
 #else
@@ -699,6 +727,8 @@ int main(int argc, char **argv)
     /*base_gauge_free(BASE_GAUGE(compass));*/
     /*base_gauge_free(BASE_GAUGE(tape_gauge));*/
     /*base_gauge_free(BASE_GAUGE(tape_gauge2));*/
+    base_gauge_free(BASE_GAUGE(text));
+    base_gauge_free(BASE_GAUGE(list));
     resource_manager_shutdown();
     data_source_free(data_source_get_instance());
 #if USE_SDL_GPU

@@ -16,6 +16,7 @@ BNO080=$(SRCDIR)/sensors/bno080
 CC=gcc
 CFLAGS=-g3 -O0 `pkg-config glib-2.0 sdl2 SDL2_image libgps --cflags` \
 	   -I$(SRCDIR) \
+	   -I$(SRCDIR)/widgets \
 	   -I$(SRCDIR)/sdl-pcf/src \
 	   -I$(FGCONN) \
 	   -I$(FGTAPE) \
@@ -41,6 +42,7 @@ CFLAGS=-g3 -O0 `pkg-config glib-2.0 sdl2 SDL2_image libgps --cflags` \
 LDFLAGS=-lz -lm `pkg-config glib-2.0 sdl2 SDL2_image libgps --libs` -Wl,--as-needed -lSDL2_gpu -l$(GL_LIB) -lpthread -lcurl
 EXEC=sofis
 SRC= $(filter-out $(SRCDIR)/main.c $(SRCDIR)/testbench.c, $(wildcard $(SRCDIR)/*.c))
+SRC+= $(wildcard $(SRCDIR)/widgets/*.c)
 SRC+= $(wildcard $(SRCDIR)/sdl-pcf/src/*.c)
 SRC+= $(filter-out $(FGCONN)/fg-connector-test.c, $(wildcard $(FGCONN)/*.c))
 SRC+= $(filter-out $(FGTAPE)/fg-tape-reader.c, $(wildcard $(FGTAPE)/*.c))
