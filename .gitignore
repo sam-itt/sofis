@@ -3,6 +3,13 @@ test-sdl
 .ycm_extra_conf.py
 local-data
 .clangd/
+.cache/
+.gdb_history
 compile_commands.json
 testbench
 switches.local
+TODO
+bench-debug
+debug
+sofis
+
