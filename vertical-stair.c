@@ -136,11 +136,10 @@ static void vertical_stair_render(VerticalStair *self, Uint32 dt, RenderContext 
     );
 
     for(int i = 0; i < self->state.nchars; i++){
-        base_gauge_draw_static_font_glyph(BASE_GAUGE(self),
+        base_gauge_draw_static_font_patch(BASE_GAUGE(self),
             ctx,
             self->font,
-            &self->state.chars[i].src,
-            &self->state.chars[i].dst
+            &self->state.chars[i]
         );
     }
 }

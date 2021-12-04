@@ -105,9 +105,12 @@ void base_gauge_draw_rubis(BaseGauge *self, RenderContext *ctx,
 void base_gauge_draw_outline(BaseGauge *self, RenderContext *ctx,
                              SDL_Color *color, SDL_Rect *area);
 
-void base_gauge_draw_static_font_glyph(BaseGauge *self, RenderContext *ctx,
+void base_gauge_draw_static_font_patch(BaseGauge *self, RenderContext *ctx,
                                        PCF_StaticFont *font,
-                                       SDL_Point *src, SDL_Point *dst);
+                                       PCF_StaticFontPatch *patch);
+void base_gauge_draw_static_font_rect_patch(BaseGauge *self, RenderContext *ctx,
+                                            PCF_StaticFont *font,
+                                            PCF_StaticFontRectPatch *patch);
 
 int base_gauge_blit_rotated_texture(BaseGauge *self, RenderContext *ctx,
                                     GPU_Image *src, SDL_Rect *srcrect,

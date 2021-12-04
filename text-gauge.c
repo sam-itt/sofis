@@ -261,11 +261,10 @@ static inline void text_gauge_static_font_render(TextGauge *self, Uint32 dt,
         base_gauge_draw_outline(BASE_GAUGE(self), ctx, &SDL_WHITE, NULL);
 
     for(int i = 0; i < self->state.nchars; i++){
-        base_gauge_draw_static_font_glyph(BASE_GAUGE(self),
+        base_gauge_draw_static_font_patch(BASE_GAUGE(self),
             ctx,
             self->font.static_font,
-            &self->state.chars[i].src,
-            &self->state.chars[i].dst
+            &self->state.chars[i]
         );
     }
 }
