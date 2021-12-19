@@ -450,20 +450,19 @@ SidePanel *side_panel_init(SidePanel *self, int width, int height)
 
 void side_panel_set_rpm(SidePanel *self, float value)
 {
-    char buffer[10];
-
     elevator_gauge_set_value(self->rpm, value, true);
-
-    snprintf(buffer, 10, "%04d RPM", (int)value);
-    text_gauge_set_value(self->rpm_txt, buffer);
+    text_gauge_set_value_formatn(self->rpm_txt,
+        10,
+        "%04d RPM", (int)value
+    );
 }
 
 void side_panel_set_fuel_flow(SidePanel *self, float value)
 {
-    char buffer[10];
-
-    snprintf(buffer, 10, "%0.2f GPH", value);
-    text_gauge_set_value(self->fuel_flow_value, buffer);
+    text_gauge_set_value_formatn(self->fuel_flow_value,
+        10,
+        "%0.2f GPH", value
+    );
 }
 
 void side_panel_set_oil_temp(SidePanel *self, float value)

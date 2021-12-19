@@ -98,15 +98,16 @@ bool alt_indicator_set_value(AltIndicator *self, float value, bool animated)
 /*HPa*/
 void alt_indicator_set_qnh(AltIndicator *self, float value)
 {
-    char number[5]; //4 digits, final 0x0
     int ivalue;
 
     ivalue = round(value);
 
     if(self->qnh != ivalue){
         self->qnh = ivalue;
-        snprintf(number, 5, "%04d", self->qnh);
-        text_gauge_set_value(self->qnh_txt, number);
+        text_gauge_set_value_formatn(self->qnh_txt,
+            4, /*4 digits*/
+            "%04d", self->qnh
+        );
     }
 }
 

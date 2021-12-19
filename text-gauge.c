@@ -114,29 +114,49 @@ void text_gauge_set_color(TextGauge *self, SDL_Color color, Uint8 which)
         self->bg_color = color;
 }
 
+/**
+ * @brief Ensure that the TextGauge can store at least
+ * @param size chars.
+ *
+ * @param self The TextGauge
+ * @param size the number of chars that need to be stored.
+ * The actual allocation will be size+1 to accomodate the
+ * trailing NULL byte. The internal size can be greater than
+ * @param size.
+ *
+ * @return True on success, false on failure.
+ */
+bool text_gauge_set_size(TextGauge *self, size_t size)
+{
+
+    if(size+1 > self->asize){
+        char *tmp;
+        tmp = realloc(self->value, (size+1) * sizeof(char));
+        if(!tmp) return false;
+        self->asize = size+1;
+        self->value = tmp;
+    }
+
+    if(size > self->state.achars){
+        void *tmp;
+        tmp = realloc(self->state.chars, size * sizeof(PCF_StaticFontPatch));
+        if(!tmp) return false;
+        self->state.chars = tmp;
+        self->state.achars = size;
+    }
+
+    return true;
+}
+
 bool text_gauge_set_value(TextGauge *self, const char *value)
 {
     int newlen;
     /*TODO: This is going to be quite mem-intesive, use a pool or something
      * and resort to allocation only when needing large pools*/
     newlen = strlen(value);
-    if(newlen > self->asize){
-        char *tmp;
-        tmp = realloc(self->value, (newlen+1) * sizeof(char));
-        if(!tmp) return false;
-        self->asize = newlen;
-        self->value = tmp;
-        self->asize = newlen;
-    }
 
-    if(newlen > self->state.achars){
-        void *tmp;
-        tmp = realloc(self->state.chars, newlen * sizeof(PCF_StaticFontPatch));
-        if(!tmp) return false;
-        self->state.chars = tmp;
-
-        self->state.achars = newlen;
-    }
+    if(!text_gauge_set_size(self, newlen))
+        return false;
 
     strcpy(self->value, value);
     self->len = newlen;
@@ -144,6 +164,32 @@ bool text_gauge_set_value(TextGauge *self, const char *value)
 
     BASE_GAUGE(self)->dirty = true;
     return true;
+}
+
+/**
+ * @brief Sets the value of a TextGauge using a printf-like format.
+ *
+ * @param self a TextGauge
+ * @param size The maximum number of chars to print, excluding the NULL byte
+ * @param fmt A printf-like format string
+ * @param ... Arguments to the format
+ *
+ * @return True on success, false if all the chars couldn't be printed
+ */
+bool text_gauge_set_value_formatn(TextGauge *self, size_t size, const char *fmt, ...)
+{
+    va_list ap;
+    int rv;
+
+    if(!text_gauge_set_size(self, size))
+        return false;
+
+    va_start(ap, fmt);
+    rv = vsnprintf(self->value, size+1, fmt, ap);
+    va_end(ap);
+    self->len = rv <= size ? rv : strlen(self->value);
+    BASE_GAUGE(self)->dirty = true;
+    return rv <= size;
 }
 
 static inline void text_gauge_static_font_update_state(TextGauge *self, Uint32 dt)

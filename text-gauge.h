@@ -44,7 +44,9 @@ typedef struct{
 TextGauge *text_gauge_new(const char *value, bool outlined, int w, int h);
 TextGauge *text_gauge_init(TextGauge *self, const char *value, bool outlined, int w, int h);
 
+bool text_gauge_set_size(TextGauge *self, size_t size);
 bool text_gauge_set_value(TextGauge *self, const char *value);
+bool text_gauge_set_value_formatn(TextGauge *self, size_t size, const char *fmt, ...);
 void text_gauge_set_color(TextGauge *self, SDL_Color color, Uint8 which);
 
 void text_gauge_set_font(TextGauge *self, PCF_Font *font);

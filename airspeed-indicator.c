@@ -75,13 +75,14 @@ AirspeedIndicator *airspeed_indicator_init(AirspeedIndicator *self, speed_t v_so
 bool airspeed_indicator_set_value(AirspeedIndicator *self, float value)
 {
     float cad; /*Current air density, must be in kg/m3 (same unit as RHO_0)*/
-    char number[10]; //TAS XXXKT plus \0
 
     cad = RHO_0; /*Placeholder, should be reported by a sensor*/
 
     self->tas = round(value * sqrt(RHO_0/cad));
-    snprintf(number, 10, "TAS %03dKT", self->tas);
-    text_gauge_set_value(self->txt, number);
+    text_gauge_set_value_formatn(self->txt,
+        9, /*TAS XXXKT*/
+        "TAS %03dKT", self->tas
+    );
 
     tape_gauge_set_value(self->tape, value, true);
 

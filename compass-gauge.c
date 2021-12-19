@@ -148,9 +148,10 @@ static void compass_gauge_update_state(CompassGauge *self, Uint32 dt)
         SDL_BlitSurface(self->inner.canvas, NULL,self->state.rbuffer, NULL);
     }
 #endif
-    char cvalue[5]; //3 digits, degree sign and '\0'
-    snprintf(cvalue, 5, "%03d", (int)SFV_GAUGE(self)->value);
-    text_gauge_set_value(self->caption, cvalue);
+    text_gauge_set_value_formatn(self->caption,
+        4, /*3 digits plus degree sign*/
+        "%03d", (int)SFV_GAUGE(self)->value
+    );
 }
 
 static void compass_gauge_render(CompassGauge *self, Uint32 dt, RenderContext *ctx)
