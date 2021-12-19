@@ -53,7 +53,7 @@ CompassGauge *compass_gauge_init(CompassGauge *self)
         return NULL;
     }
 
-    self->caption = text_gauge_new("000°", true, 28, 12);
+    self->caption = text_gauge_new("000\x8f", true, 28, 12);
     if(!self->caption)
         return NULL;
     text_gauge_set_color(self->caption, SDL_BLACK, BACKGROUND_COLOR);
@@ -150,7 +150,7 @@ static void compass_gauge_update_state(CompassGauge *self, Uint32 dt)
 #endif
     text_gauge_set_value_formatn(self->caption,
         4, /*3 digits plus degree sign*/
-        "%03d", (int)SFV_GAUGE(self)->value
+        "%03d\x8f", (int)SFV_GAUGE(self)->value
     );
 }
 
