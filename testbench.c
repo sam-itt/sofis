@@ -16,12 +16,14 @@
 #include "base-gauge.h"
 #include "basic-hud.h"
 #include "compass-gauge.h"
+#include "data-source.h"
 #include "elevator-gauge.h"
 #include "fishbone-gauge.h"
 #include "ladder-gauge.h"
 #include "alt-ladder-page-descriptor.h"
 
 #include "ladder-page.h"
+#include "mock-data-source.h"
 #include "odo-gauge.h"
 #include "alt-indicator.h"
 #include "resource-manager.h"
@@ -413,7 +415,7 @@ int main(int argc, char **argv)
     colors[2] = SDL_MapRGB(screenSurface->format, 0x00, 0xFF, 0x00);
     colors[3] = SDL_MapRGB(screenSurface->format, 0x11, 0x56, 0xFF);
 #endif
-
+    data_source_set((DataSource*)mock_data_source_new());
 /*    gauge = odo_gauge_new(digit_barrel_new(*/
         /*resource_manager_get_font(TERMINUS_32), 0, 99,10),*/
         /*-1,-1*/
@@ -698,6 +700,7 @@ int main(int argc, char **argv)
     /*base_gauge_free(BASE_GAUGE(tape_gauge));*/
     /*base_gauge_free(BASE_GAUGE(tape_gauge2));*/
     resource_manager_shutdown();
+    data_source_free(data_source_get_instance());
 #if USE_SDL_GPU
 	GPU_Quit();
 #else

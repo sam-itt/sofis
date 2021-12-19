@@ -26,6 +26,7 @@
 #define ENABLE_FGTAPE 1
 #define ENABLE_SENSORS 1
 #define ENABLE_STRATUX 1
+#define ENABLE_MOCK 1
 
 #include "data-source.h"
 #if ENABLE_FGCONN
@@ -40,6 +41,9 @@
 #if ENABLE_STRATUX
 #include "stratux-data-source.h"
 #endif
+#if ENABLE_MOCK
+#include "mock-data-source.h"
+#endif
 
 #define SCREEN_WIDTH 640
 #define SCREEN_HEIGHT 480
@@ -51,6 +55,7 @@ typedef enum{
     MODE_FGTAPE,
     MODE_SENSORS,
     MODE_STRATUX,
+    MODE_MOCK,
     N_MODES
 }RunningMode;
 
@@ -194,13 +199,17 @@ bool handle_events(Uint32 elapsed)
 const char *pretty_mode(RunningMode mode)
 {
     switch(mode){
-        case MODE_SENSORS:
-            return "SensorsDataSource";
         case MODE_FGREMOTE:
             return "FGDataSource";
-            break;
         case MODE_FGTAPE:
             return "FGTapeDataSource";
+        case MODE_SENSORS:
+            return "SensorsDataSource";
+        case MODE_STRATUX:
+            return "StratuxDataSource";
+        case MODE_MOCK:
+            return "MockDataSource";
+
         default:
             return "Unknown!";
     }
@@ -225,7 +234,8 @@ int main(int argc, char **argv)
             g_mode = MODE_FGREMOTE;
         else if(!strcmp(argv[1], "--stratux"))
             g_mode = MODE_STRATUX;
-
+        else if(!strcmp(argv[1], "--mock"))
+            g_mode = MODE_MOCK;
     }
 
     switch(g_mode){
@@ -238,6 +248,9 @@ int main(int argc, char **argv)
         case MODE_STRATUX:
             g_ds = (DataSource *)stratux_data_source_new();
             break;
+        case MODE_MOCK:
+            g_ds = (DataSource*)mock_data_source_new();
+            break;
         case MODE_FGTAPE: //Fallthtough
         default:
             g_ds = (DataSource *)fg_tape_data_source_new("fg-io/fg-tape/dr400.fgtape", 120);
@@ -248,6 +261,7 @@ int main(int argc, char **argv)
         printf("Couldn't create DataSource (%s), bailing out\n", pretty_mode(g_mode));
         exit(EXIT_FAILURE);
     }
+    data_source_set(g_ds);
 
 #if USE_SDL_GPU
     GPU_Target* gpu_screen = NULL;
@@ -330,6 +344,7 @@ int main(int argc, char **argv)
 
     if(g_mode == MODE_FGREMOTE)
         fg_data_source_banner((FGDataSource*)g_ds);
+    /*TODO: Move that to DataSource*/
     DATA_SOURCE(g_ds)->latitude = NAN;
     printf("Waiting for fix.");
     do{

@@ -52,6 +52,9 @@ typedef struct _DataSource{
     float fuel_qty;
 }DataSource;
 
+DataSource *data_source_get(void);
+void data_source_set(DataSource *source);
+
 static inline bool data_source_frame(DataSource *self, uint32_t dt)
 {
     return self->ops->frame(self, dt);
