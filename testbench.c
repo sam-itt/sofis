@@ -14,6 +14,7 @@
 #include <SDL_gpu.h>
 
 #include "base-gauge.h"
+#include "base-widget.h"
 #include "basic-hud.h"
 #include "button.h"
 #include "compass-gauge.h"
@@ -38,10 +39,7 @@
 #include "roll-slip-gauge.h"
 #include "tape-gauge.h"
 #include "map-gauge.h"
-#include "text-box.h"
-#include "list-box.h"
-#include "data.h"
-
+#include "direct-to-dialog.h"
 
 #include "sdl-colors.h"
 #include "res-dirs.h"
@@ -74,13 +72,7 @@ CompassGauge *compass = NULL;
 SidePanel *panel = NULL;
 MapGauge *map = NULL;
 
-TextBox *text;
-ListBox *list;
-
-BaseWidget *focused;
-char **active_strings;
-size_t nactive_strings;
-
+DirectToDialog *direct = NULL;
 
 float gval = 0.0;
 float alt = 900.0;
@@ -286,14 +278,8 @@ bool handle_keyboard(SDL_KeyboardEvent *event, Uint32 elapsed)
         default:{
         }
     }
-    bool keep_focus = base_widget_handle_event(focused, event);
-    if(!keep_focus){
-        focused->has_focus = false;
-        focused = ((void*)focused == (void*)text)
-                ? BASE_WIDGET(list)
-                : BASE_WIDGET(text);
-        focused->has_focus = true;
-    }
+    if(direct->visible)
+        base_widget_handle_event(BASE_WIDGET(direct), event);
 
 
     return false;
@@ -332,24 +318,6 @@ float compute_vs(float old_alt, float new_alt, Uint32 elapsed)
 
     return rv;
 }
-
-void update_list_content(TextBox *txtbx)
-{
-    nactive_strings = 0;
-    for(int i = 0; i < nstrings; i++){
-        if(strcasestr(strings[i], txtbx->text)){
-            active_strings[nactive_strings] = (char *)strings[i];
-            nactive_strings++;
-        }
-    }
-    list_box_set_rows(list, nactive_strings, (const char**)active_strings);
-}
-
-void print_selection(ListBox *self)
-{
-    printf("Selection: %s\n",self->rows[self->selected_row]);
-}
-
 
 
 int main(int argc, char **argv)
@@ -576,35 +544,13 @@ int main(int argc, char **argv)
     SDL_FillRect(screenSurface, NULL, SDL_UFBLUE(screenSurface));
 #endif
 
-    active_strings = calloc(nstrings, sizeof(char*));
-    nactive_strings = 0;
-
-    PCF_Font *fnt = resource_manager_get_font(TERMINUS_24);
-    text = text_box_new(
-        12*20,
-        PCF_FontCharHeight(fnt),
-        TERMINUS_24
-    );
-    SDL_Rect txtRect = {640/2, 480/2 - 100, base_gauge_w(BASE_GAUGE(text)), base_gauge_h(BASE_GAUGE(text))};
-    text_box_set_allowed_chars(text, true, 3, " -", PCF_UPPER_CASE, PCF_DIGITS);
-    text->changed_callback = update_list_content;
-    text_box_start_editing(text);
-
-    list = list_box_new(
-        BASE_GAUGE(text)->frame.w,
-        200, TERMINUS_24
-    );
-    SDL_Rect listRect = {640/2,
-        txtRect.y + BASE_GAUGE(text)->frame.h + 3,
-        base_gauge_w(BASE_GAUGE(list)),
-        base_gauge_h(BASE_GAUGE(list))
+    direct = direct_to_dialog_new();
+    SDL_Rect direct_rect ={
+        640/2,
+        480/2 - 100,
+        base_gauge_w(BASE_GAUGE(direct)),
+        base_gauge_h(BASE_GAUGE(direct))
     };
-    list_box_set_rows(list, nstrings, strings);
-    list->selection_validated = print_selection;
-    focused = BASE_WIDGET(text);
-    focused->has_focus = true;
-
-
 
     Button *btn = button_new("Validate", TERMINUS_24, 12*20, 24);
     SDL_Rect btn_rect ={
@@ -660,9 +606,9 @@ int main(int argc, char **argv)
         /*base_gauge_render(BASE_GAUGE(tape_gauge), elapsed, &(RenderContext){rtarget, &vrect, NULL});*/
         /*base_gauge_render(BASE_GAUGE(tape_gauge2), elapsed, &(RenderContext){rtarget, &vrect, NULL});*/
         /*base_gauge_render(BASE_GAUGE(map), elapsed, &(RenderContext){rtarget, &center_rect, NULL});*/
-        /*base_gauge_render(BASE_GAUGE(text), elapsed, &(RenderContext){rtarget, &txtRect, NULL});*/
-        /*base_gauge_render(BASE_GAUGE(list), elapsed, &(RenderContext){rtarget, &listRect, NULL});*/
-        base_gauge_render(BASE_GAUGE(btn), elapsed, &(RenderContext){rtarget, &btn_rect, NULL});
+        if(direct->visible)
+            base_gauge_render(BASE_GAUGE(direct), elapsed, &(RenderContext){rtarget, &direct_rect, NULL});
+//        base_gauge_render(BASE_GAUGE(btn), elapsed, &(RenderContext){rtarget, &btn_rect, NULL});
 #if USE_SDL_GPU
 		GPU_Flip(gpu_screen);
 #else
@@ -727,8 +673,7 @@ int main(int argc, char **argv)
     /*base_gauge_free(BASE_GAUGE(compass));*/
     /*base_gauge_free(BASE_GAUGE(tape_gauge));*/
     /*base_gauge_free(BASE_GAUGE(tape_gauge2));*/
-    base_gauge_free(BASE_GAUGE(text));
-    base_gauge_free(BASE_GAUGE(list));
+    base_gauge_free(BASE_GAUGE(direct));
     resource_manager_shutdown();
     data_source_free(data_source_get_instance());
 #if USE_SDL_GPU

@@ -17,6 +17,7 @@ CC=gcc
 CFLAGS=-g3 -O0 `pkg-config glib-2.0 sdl2 SDL2_image libgps --cflags` \
 	   -I$(SRCDIR) \
 	   -I$(SRCDIR)/widgets \
+	   -I$(SRCDIR)/dialogs \
 	   -I$(SRCDIR)/sdl-pcf/src \
 	   -I$(FGCONN) \
 	   -I$(FGTAPE) \
@@ -43,6 +44,7 @@ LDFLAGS=-lz -lm `pkg-config glib-2.0 sdl2 SDL2_image libgps --libs` -Wl,--as-nee
 EXEC=sofis
 SRC= $(filter-out $(SRCDIR)/main.c $(SRCDIR)/testbench.c, $(wildcard $(SRCDIR)/*.c))
 SRC+= $(wildcard $(SRCDIR)/widgets/*.c)
+SRC+= $(wildcard $(SRCDIR)/dialogs/*.c)
 SRC+= $(wildcard $(SRCDIR)/sdl-pcf/src/*.c)
 SRC+= $(filter-out $(FGCONN)/fg-connector-test.c, $(wildcard $(FGCONN)/*.c))
 SRC+= $(filter-out $(FGTAPE)/fg-tape-reader.c, $(wildcard $(FGTAPE)/*.c))
@@ -69,7 +71,7 @@ testbench: $(OBJ) $(TEST_OBJ)
 .PHONY: clean mrproper
 
 clean:
-	rm -rf *.o sdl-pcf/src/*.o fg-roam/src/*.o fg-io/fg-tape/*.o sensors/*.o
+	rm -rf *.o sdl-pcf/src/*.o fg-roam/src/*.o fg-io/fg-tape/*.o sensors/*.o widgets/*.o dialogs/*.o
 
 mrproper: clean
 	rm -rf $(EXEC)
