@@ -96,22 +96,22 @@ bool handle_keyboard(SDL_KeyboardEvent *event, Uint32 elapsed)
             break;
 
         /*MapGauge controls*/
-        case SDLK_UP:
+        case SDLK_KP_8: /*keypad up arrows*/
             if(event->state == SDL_PRESSED){
                 map_gauge_manipulate_viewport(map, 0, -10, true);
             }
             break;
-        case SDLK_DOWN:
+        case SDLK_KP_2: /*keypad down arrows*/
             if(event->state == SDL_PRESSED){
                 map_gauge_manipulate_viewport(map, 0, 10, true);
             }
             break;
-        case SDLK_LEFT:
+        case SDLK_KP_4: /*keypad left arrows*/
             if(event->state == SDL_PRESSED){
                 map_gauge_manipulate_viewport(map, -10, 0, true);
             }
             break;
-        case SDLK_RIGHT:
+        case SDLK_KP_6: /*keypad right arrows*/
             if(event->state == SDL_PRESSED){
                 map_gauge_manipulate_viewport(map, 10, 0, true);
             }
