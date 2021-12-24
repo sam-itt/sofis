@@ -7,8 +7,6 @@
  */
 #include <stdint.h>
 
-#include "SDL_surface.h"
-#include "SDL_timer.h"
 #include "base-gauge.h"
 #include "generic-layer.h"
 #include "map-gauge.h"
@@ -18,6 +16,9 @@
 #include "misc.h"
 #include "sdl-colors.h"
 #include "res-dirs.h"
+
+#include "SDL_surface.h"
+#include "SDL_timer.h"
 
 /*Each tile is 256x256 px*/
 #define TILE_SIZE 256
@@ -172,8 +173,8 @@ static MapGauge *map_gauge_dispose(MapGauge *self)
  * @brief Sets the current zoom level show by the gauge. Valid levels are
  * 0 to MAP_GAUGE_MAX_LEVEL, owing to types internally used to store positions.
 
- * TODO: ATM This is 15 due to SDL_Rect(int) usage, should be 16 with uint32_t used
- * everywhere else. Fix by creating a SDLExt_URect using Uint32 + Intersection function
+ * The current maximum level is 23 with ints (32 bits) which is more than
+ * sufficient for aviation purposes
  *
  * This function will try its best to keep the current area and zoom on it.
  *
@@ -184,7 +185,7 @@ static MapGauge *map_gauge_dispose(MapGauge *self)
 bool map_gauge_set_level(MapGauge *self, uintf8_t level)
 {
     double lat, lon;
-    uint32_t new_x, new_y;
+    int32_t new_x, new_y;
 
     if(level > 15)
         return false;
@@ -215,7 +216,7 @@ bool map_gauge_set_level(MapGauge *self, uintf8_t level)
 bool map_gauge_set_marker_position(MapGauge *self, double latitude, double longitude)
 {
     bool rv;
-    uint32_t new_x,new_y;
+    int32_t new_x,new_y;
 
     /* TODO: This is purely based on time and should not be in this function
      * it should be some kind of animation or use another system to have
@@ -369,7 +370,7 @@ bool map_gauge_move_viewport(MapGauge *self, int32_t dx, int32_t dy, bool animat
 /**
  * @brief Sets the viewport to the given position (in pixels). The position
  * is a "world" position in the virtual current map level that goes from
- * 0,0 to 2^level-1,2^level-1.
+ * 0,0 to (256*2^level)-1,(256*2^level)-1.
  *
  * This function takes an absolute position to go to. For a movement relative
  * to the current position, @see map_gauge_move_viewport.
@@ -384,7 +385,7 @@ bool map_gauge_move_viewport(MapGauge *self, int32_t dx, int32_t dy, bool animat
  * viewport position to the aforementioned area.
  * @return true on success, false on failure.
  */
-bool map_gauge_set_viewport(MapGauge *self, uint32_t x, uint32_t y, bool animated)
+bool map_gauge_set_viewport(MapGauge *self, int32_t x, int32_t y, bool animated)
 {
     uint32_t map_lastcoord = map_math_size(self->level) - 1;
     x = clamp(x, 0, map_lastcoord - base_gauge_w(BASE_GAUGE(self)));
@@ -405,7 +406,7 @@ bool map_gauge_set_viewport(MapGauge *self, uint32_t x, uint32_t y, bool animate
     return true;
 }
 
-static GenericLayer *map_gauge_get_tile(MapGauge *self, uintf8_t level, uint32_t x, uint32_t y)
+static GenericLayer *map_gauge_get_tile(MapGauge *self, uintf8_t level, int32_t x, int32_t y)
 {
     GenericLayer *rv;
 
@@ -452,25 +453,27 @@ end:
 /*TODO: split up*/
 static void map_gauge_update_state(MapGauge *self, Uint32 dt)
 {
-    /* We go up to level 16, which is 65536 tiles
-     * (from 0 to 65535) in both directions*/
-    uintf16_t tl_tile_x, tl_tile_y; /*top left*/
-    uintf16_t br_tile_x, br_tile_y; /*bottom right*/
+    /* We go up to level 23, which is 8388608 tiles
+     * (from 0 to 8388607) in both directions*/
+    int32_t tl_tile_x, tl_tile_y; /*top left*/
+    int32_t br_tile_x, br_tile_y; /*bottom right*/
 
     tl_tile_x = self->world_x / TILE_SIZE;
     tl_tile_y = self->world_y / TILE_SIZE;
 
-    uint32_t lastx = self->world_x + base_gauge_w(BASE_GAUGE(self)) - 1;
-    uint32_t lasty = self->world_y + base_gauge_h(BASE_GAUGE(self)) - 1;
+    int32_t lastx = self->world_x + base_gauge_w(BASE_GAUGE(self)) - 1;
+    int32_t lasty = self->world_y + base_gauge_h(BASE_GAUGE(self)) - 1;
     br_tile_x = lastx / TILE_SIZE;
     br_tile_y = lasty / TILE_SIZE;
 
-    uintf16_t x_tile_span = (br_tile_x - tl_tile_x) + 1;
-    uintf16_t y_tile_span = (br_tile_y - tl_tile_y) + 1;
-    uintf16_t tile_span = x_tile_span * y_tile_span;
+    int32_t x_tile_span = (br_tile_x - tl_tile_x) + 1;
+    int32_t y_tile_span = (br_tile_y - tl_tile_y) + 1;
+    int32_t tile_span = x_tile_span * y_tile_span;
 
     /*There will be as many patches as tiles over which we are located*/
-    /*TODO: Multiply by the number of providers*/
+    /* Currently an X,Y tile is the fusion of all X,Y tiles
+     * given by providers that can provide that tile.
+     */
     if(tile_span > self->state.apatches){
         void *tmp;
         size_t stmp;

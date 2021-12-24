@@ -54,7 +54,7 @@ bool map_tile_cache_set_size(MapTileCache *self, uintf8_t cache_size)
 }
 
 GenericLayer *map_tile_cache_get(MapTileCache *self,
-                                 uintf8_t level, uint32_t x, uint32_t y)
+                                 uintf8_t level, int32_t x, int32_t y)
 {
     for(int i = 0; i < self->ncached; i++){
         if(map_tile_descriptor_match(&self->tile_cache[i],level, x, y)){
@@ -66,7 +66,7 @@ GenericLayer *map_tile_cache_get(MapTileCache *self,
 }
 
 bool map_tile_cache_add(MapTileCache *self, GenericLayer *tile,
-                        uintf8_t level, uint32_t x, uint32_t y)
+                        uintf8_t level, int32_t x, int32_t y)
 {
     generic_layer_ref(tile);
     if(self->ncached == self->acache){

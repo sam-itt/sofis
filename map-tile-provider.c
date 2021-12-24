@@ -18,7 +18,7 @@
 #include "misc.h"
 
 static bool map_tile_provider_read_config(MapTileProvider *self);
-static bool map_tile_provider_has_tile(MapTileProvider *self, uintf8_t level, uint32_t x, uint32_t y);
+static bool map_tile_provider_has_tile(MapTileProvider *self, uintf8_t level, int32_t x, int32_t y);
 
 /**
  * @brief Creates a fetching URL for a given tile.
@@ -36,7 +36,7 @@ static bool map_tile_provider_has_tile(MapTileProvider *self, uintf8_t level, ui
  */
 static const char *map_provider_url_template_set(MapProviderUrlTemplate *self,
                                           uint8_t level,
-                                          uint32_t x, uint32_t y)
+                                          int32_t x, int32_t y)
 {
     char tmp;
 
@@ -141,7 +141,7 @@ MapTileProvider *map_tile_provider_free(MapTileProvider *self)
  * @param y y-coordinate of the tile in the map
  * @return A GenericLayer pointer or NULL on failure
  */
-GenericLayer *map_tile_provider_get_tile(MapTileProvider *self, uintf8_t level, uint32_t x, uint32_t y)
+GenericLayer *map_tile_provider_get_tile(MapTileProvider *self, uintf8_t level, int32_t x, int32_t y)
 {
     char *filename;
     GenericLayer *rv = NULL;
@@ -187,7 +187,7 @@ int map_tile_provider_compare_ptr(MapTileProvider **self, MapTileProvider **othe
 }
 
 
-static bool map_tile_provider_has_tile(MapTileProvider *self, uintf8_t level, uint32_t x, uint32_t y)
+static bool map_tile_provider_has_tile(MapTileProvider *self, uintf8_t level, int32_t x, int32_t y)
 {
     int i;
 
@@ -213,7 +213,6 @@ static bool map_tile_provider_has_tile(MapTileProvider *self, uintf8_t level, ui
  * @param area: A MapTileProviderArea to fill with parsed values.
  *
  * @return true on success, false otherwise
- * TODO: Current implementation using atoi() restrics to level 15
  */
 static bool map_config_read_area(const char *line, MapTileProviderArea *area)
 {
@@ -228,7 +227,7 @@ static bool map_config_read_area(const char *line, MapTileProviderArea *area)
     }
 
     /* TODO: replace atoi() with something that can handle
-     * unsigned ints full range, and failures.*/
+     * failures.*/
     area->level = atoi(parts[0]);
     area->left = atoi(parts[1]);
     area->right = atoi(parts[2]);

@@ -14,9 +14,11 @@
 #include "map-tile-provider.h"
 #include "misc.h"
 
-/*With uint32_t for tile coords we
- * can go to the 16th level*/
-#define MAP_GAUGE_MAX_LEVEL 16
+/* int(32) pixel coordinates go up to
+ * 2,147,483,647 which is the maximum coordinate
+ * of level 23
+ */
+#define MAP_GAUGE_MAX_LEVEL 23
 
 typedef struct{
     /*TODO: Array of pointers to layers, as much as providers/overlays*/
@@ -43,8 +45,8 @@ typedef struct{
      * Note: this is the point marked, the icon
      * itself is centered on these coordinates
      */
-    uint32_t x;
-    uint32_t y;
+    int32_t x;
+    int32_t y;
     float heading;
 }MapGaugeMarker;
 
@@ -55,8 +57,8 @@ typedef struct{
     /*current zoom level*/
     uintf8_t level;
     /*Top-left coordinates of the viewport*/
-    uint32_t world_x;
-    uint32_t world_y;
+    int32_t world_x;
+    int32_t world_y;
 
     /*The little plane on the map*/
     MapGaugeMarker marker;
@@ -85,5 +87,5 @@ bool map_gauge_center_on_marker(MapGauge *self, bool animated);
 
 bool map_gauge_follow_marker(MapGauge *self);
 bool map_gauge_move_viewport(MapGauge *self, int32_t dx, int32_t dy, bool animated);
-bool map_gauge_set_viewport(MapGauge *self, uint32_t x, uint32_t y, bool animated);
+bool map_gauge_set_viewport(MapGauge *self, int32_t x, int32_t y, bool animated);
 #endif /* MAP_GAUGE_H */

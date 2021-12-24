@@ -21,6 +21,6 @@ static inline uint32_t map_math_size(uintf8_t level)
     return ((uint32_t)256) << level;
 }
 
-bool map_math_geo_to_pixel(double latitude, double longitude, uintf8_t level, uint32_t *px, uint32_t *py);
-void map_math_pixel_to_geo(uint32_t px, uint32_t py, uintf8_t level, double *latitude, double *longitude);
+bool map_math_geo_to_pixel(double latitude, double longitude, uintf8_t level, int32_t *px, int32_t *py);
+void map_math_pixel_to_geo(int32_t px, int32_t py, uintf8_t level, double *latitude, double *longitude);
 #endif /* MAP_MATH_H */

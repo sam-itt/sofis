@@ -18,7 +18,7 @@
 #define MAX_LONGITUDE  180
 
 
-bool map_math_geo_to_pixel(double latitude, double longitude, uintf8_t level, uint32_t *px, uint32_t *py)
+bool map_math_geo_to_pixel(double latitude, double longitude, uintf8_t level, int32_t *px, int32_t *py)
 {
     latitude = map_math_clip(latitude, MIN_LATITUDE, MAX_LATITUDE);
     longitude = map_math_clip(longitude, MIN_LONGITUDE, MAX_LONGITUDE);
@@ -33,7 +33,7 @@ bool map_math_geo_to_pixel(double latitude, double longitude, uintf8_t level, ui
     return true;
 }
 
-void map_math_pixel_to_geo(uint32_t px, uint32_t py, uintf8_t level, double *latitude, double *longitude)
+void map_math_pixel_to_geo(int32_t px, int32_t py, uintf8_t level, double *latitude, double *longitude)
 {
     double mapSize = map_math_size(level);
     double x = (map_math_clip(px, 0, mapSize - 1) / mapSize) - 0.5;

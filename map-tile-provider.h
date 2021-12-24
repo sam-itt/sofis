@@ -12,13 +12,17 @@
 #include "generic-layer.h"
 #include "misc.h"
 
+/* MAP_GAUGE_MAX_LEVEL 23
+ * has 8388608 tiles from 0 to 8388607
+ * which needs 24 bits. Nearest type is int32
+ */
 typedef struct{
     uint8_t level;
 
-    uint32_t left;
-    uint32_t right;
-    uint32_t top;
-    uint32_t bottom;
+    int32_t left;
+    int32_t right;
+    int32_t top;
+    int32_t bottom;
 }MapTileProviderArea;
 
 typedef struct{
@@ -52,7 +56,7 @@ MapTileProvider *map_tile_provider_init(MapTileProvider *self, const char *home,
 MapTileProvider *map_tile_provider_dispose(MapTileProvider *self);
 MapTileProvider *map_tile_provider_free(MapTileProvider *self);
 
-GenericLayer *map_tile_provider_get_tile(MapTileProvider *self, uintf8_t level, uint32_t x, uint32_t y);
+GenericLayer *map_tile_provider_get_tile(MapTileProvider *self, uintf8_t level, int32_t x, int32_t y);
 
 int map_tile_provider_compare(MapTileProvider *self, MapTileProvider *other);
 int map_tile_provider_compare_ptr(MapTileProvider **self, MapTileProvider **other);

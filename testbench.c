@@ -278,8 +278,8 @@ bool handle_keyboard(SDL_KeyboardEvent *event, Uint32 elapsed)
         default:{
         }
     }
-    if(direct->visible)
-        base_widget_handle_event(BASE_WIDGET(direct), event);
+    /*if(direct->visible)*/
+        /*base_widget_handle_event(BASE_WIDGET(direct), event);*/
 
 
     return false;
@@ -605,9 +605,9 @@ int main(int argc, char **argv)
         /*base_gauge_render(BASE_GAUGE(compass), elapsed, &(RenderContext){rtarget, &center_rect, NULL});*/
         /*base_gauge_render(BASE_GAUGE(tape_gauge), elapsed, &(RenderContext){rtarget, &vrect, NULL});*/
         /*base_gauge_render(BASE_GAUGE(tape_gauge2), elapsed, &(RenderContext){rtarget, &vrect, NULL});*/
-        /*base_gauge_render(BASE_GAUGE(map), elapsed, &(RenderContext){rtarget, &center_rect, NULL});*/
-        if(direct->visible)
-            base_gauge_render(BASE_GAUGE(direct), elapsed, &(RenderContext){rtarget, &direct_rect, NULL});
+        base_gauge_render(BASE_GAUGE(map), elapsed, &(RenderContext){rtarget, &center_rect, NULL});
+        /*if(direct->visible)*/
+            /*base_gauge_render(BASE_GAUGE(direct), elapsed, &(RenderContext){rtarget, &direct_rect, NULL});*/
 //        base_gauge_render(BASE_GAUGE(btn), elapsed, &(RenderContext){rtarget, &btn_rect, NULL});
 #if USE_SDL_GPU
 		GPU_Flip(gpu_screen);
