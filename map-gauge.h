@@ -12,6 +12,7 @@
 #include "generic-layer.h"
 #include "map-tile-cache.h"
 #include "map-provider.h"
+#include "route-map-provider.h"
 #include "misc.h"
 
 /* int(32) pixel coordinates go up to
@@ -72,6 +73,7 @@ typedef struct{
     MapProvider *overlays[1]; /*static for now*/
     size_t noverlays;
 
+    RouteMapProvider *route_overlay;
 
     MapGaugeState state;
 }MapGauge;

@@ -14,6 +14,7 @@
 #include "map-tile-cache.h"
 #include "map-provider.h"
 #include "static-map-provider.h"
+#include "route-map-provider.h"
 #include "misc.h"
 #include "sdl-colors.h"
 #include "res-dirs.h"
@@ -99,6 +100,11 @@ MapGauge *map_gauge_init(MapGauge *self, int w, int h)
     int twidth, theight;
     size_t cache_tiles;
 
+    base_gauge_init(BASE_GAUGE(self),
+        &map_gauge_ops,
+        w, h
+    );
+
     twidth = w / TILE_SIZE;
     theight = h /TILE_SIZE;
     /* Worst case is the view centered on the junction of 4 tiles
@@ -109,18 +115,26 @@ MapGauge *map_gauge_init(MapGauge *self, int w, int h)
     cache_tiles = (MAX(twidth, 1) * MAX(twidth, 1)) * 4;
     map_tile_cache_init(&self->tile_cache, cache_tiles);
 
+    /*TODO: Runtime / GUI selection of maps*/
 #if HAVE_IGN_OACI_MAP
     self->tile_providers[self->ntile_providers++] = (MapProvider*)static_map_provider_new(
-        MAPS_HOME"/ign-oaci", "jpg",-1
+        MAPS_HOME"/ign-oaci", "jpg",0
     );
-#endif
+#else
     self->tile_providers[self->ntile_providers++] = (MapProvider*)static_map_provider_new(
         MAPS_HOME"/osm", "png", 0
     );
+#endif
 
+#if !HAVE_IGN_OACI_MAP
     self->overlays[self->noverlays++] = (MapProvider*)static_map_provider_new(
         MAPS_HOME"/openaip", "png", 0
     );
+#endif
+
+    self->route_overlay = route_map_provider_new();
+    if(!self->route_overlay)
+        return NULL;
 
     qsort(self->tile_providers,
         self->ntile_providers,
@@ -135,11 +149,6 @@ MapGauge *map_gauge_init(MapGauge *self, int w, int h)
     /*TODO: Scale the plane relative to the gauge's size*/
     generic_layer_init_from_file(&self->marker.layer, IMG_DIR"/plane32.png");
     generic_layer_build_texture(&self->marker.layer);
-
-    base_gauge_init(BASE_GAUGE(self),
-        &map_gauge_ops,
-        w, h
-    );
 
     return self;
 }
@@ -166,6 +175,7 @@ static MapGauge *map_gauge_dispose(MapGauge *self)
     for(int i = 0; i < self->noverlays; i++)
         map_provider_free(self->overlays[i]);
 
+    map_provider_free(MAP_PROVIDER(self->route_overlay));
     map_tile_cache_dispose(&self->tile_cache);
     return self;
 }
@@ -439,6 +449,16 @@ static GenericLayer *map_gauge_get_tile(MapGauge *self, uintf8_t level, int32_t 
     for(int i = 0; i < self->noverlays; i++){
         tmp = map_provider_get_tile(self->overlays[i], level, x, y);
         if(!tmp) continue;
+        SDL_BlitSurface(
+            tmp->canvas, NULL,
+            rv->canvas,NULL
+        );
+        generic_layer_free(tmp);
+    }
+
+    /*Apply the route drawing, if any*/
+    tmp = map_provider_get_tile(MAP_PROVIDER(self->route_overlay), level, x, y);
+    if(tmp){
         SDL_BlitSurface(
             tmp->canvas, NULL,
             rv->canvas,NULL

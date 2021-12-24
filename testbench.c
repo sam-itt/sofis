@@ -39,6 +39,7 @@
 #include "roll-slip-gauge.h"
 #include "tape-gauge.h"
 #include "map-gauge.h"
+#include "route-map-provider.h"
 #include "direct-to-dialog.h"
 
 #include "sdl-colors.h"
@@ -519,8 +520,13 @@ int main(int argc, char **argv)
     /*panel = side_panel_new(-1, -1);*/
     map = map_gauge_new(128,128);
     map->level = 7;
-    map_gauge_set_marker_position(map, 45.21749913, 5.84249663);
+//    map_gauge_set_marker_position(map, 45.21749913, 5.84249663);
+    map_gauge_set_marker_position(map, 43.32066538, 3.35199859);
     map_gauge_center_on_marker(map, true);
+    route_map_provider_set_route(map->route_overlay,
+        &(GeoLocation){43.32066538, 3.35199859},
+        &(GeoLocation){47.06086, 2.37017}
+    );
 
 
     SDL_Rect dst = {SCREEN_WIDTH/2,SCREEN_HEIGHT/2,0,0};
