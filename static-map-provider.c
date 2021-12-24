@@ -1,45 +1,44 @@
 #ifndef _GNU_SOURCE
 #define _GNU_SOURCE
-#include "map-tile-provider.h"
 #endif
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
 
-#include "static-map-tile-provider.h"
+#include "static-map-provider.h"
 #include "http-download.h"
 
-static bool static_map_tile_provider_read_config(StaticMapTileProvider *self);
-static const char *static_map_tile_provider_url_template_set(StaticMapTileProviderUrlTemplate *self,
+static bool static_map_provider_read_config(StaticMapProvider *self);
+static const char *static_map_provider_url_template_set(StaticMapProviderUrlTemplate *self,
                                           uint8_t level,
                                           int32_t x, int32_t y);
 
-static GenericLayer *static_map_tile_provider_get_tile(StaticMapTileProvider *self, uintf8_t level, int32_t x, int32_t y);
-static MapTileProvider *static_map_tile_provider_dispose(StaticMapTileProvider *self);
-static MapTileProviderOps static_map_tile_provider_ops = {
-    .get_tile = (MapTileProviderGetTileFunc)static_map_tile_provider_get_tile,
-    .dispose = (MapTileProviderDisposeFunc)static_map_tile_provider_dispose
+static GenericLayer *static_map_provider_get_tile(StaticMapProvider *self, uintf8_t level, int32_t x, int32_t y);
+static MapProvider *static_map_provider_dispose(StaticMapProvider *self);
+static MapProviderOps static_map_provider_ops = {
+    .get_tile = (MapProviderGetTileFunc)static_map_provider_get_tile,
+    .dispose = (MapProviderDisposeFunc)static_map_provider_dispose
 };
 
-StaticMapTileProvider *static_map_tile_provider_new(const char *home, const char *format,
+StaticMapProvider *static_map_provider_new(const char *home, const char *format,
                                        intf8_t priority)
 {
-    StaticMapTileProvider *self;
+    StaticMapProvider *self;
 
-    self = calloc(1, sizeof(StaticMapTileProvider));
+    self = calloc(1, sizeof(StaticMapProvider));
     if(self){
-        if(!static_map_tile_provider_init(self, home, format, priority))
-            return (StaticMapTileProvider*)map_tile_provider_free(MAP_TILE_PROVIDER(self));
+        if(!static_map_provider_init(self, home, format, priority))
+            return (StaticMapProvider*)map_provider_free(MAP_PROVIDER(self));
     }
     return self;
 }
 
-StaticMapTileProvider *static_map_tile_provider_init(StaticMapTileProvider *self, const char *home,
+StaticMapProvider *static_map_provider_init(StaticMapProvider *self, const char *home,
                                         const char *format, intf8_t priority)
 {
-    map_tile_provider_init(
-        MAP_TILE_PROVIDER(self),
-        &static_map_tile_provider_ops,
+    map_provider_init(
+        MAP_PROVIDER(self),
+        &static_map_provider_ops,
         priority
     );
 
@@ -51,12 +50,12 @@ StaticMapTileProvider *static_map_tile_provider_init(StaticMapTileProvider *self
 
     /*The read config can fail and the provider still be
      * usable: no config file, etc.*/
-    static_map_tile_provider_read_config(self);
+    static_map_provider_read_config(self);
 
     return self;
 }
 
-static MapTileProvider *static_map_tile_provider_dispose(StaticMapTileProvider *self)
+static MapProvider *static_map_provider_dispose(StaticMapProvider *self)
 {
     if(self->home)
         free(self->home);
@@ -64,7 +63,7 @@ static MapTileProvider *static_map_tile_provider_dispose(StaticMapTileProvider *
         free(self->format);
     if(self->url.base)
         free(self->url.base);
-    return map_tile_provider_dispose(MAP_TILE_PROVIDER(self));
+    return map_provider_dispose(MAP_PROVIDER(self));
 }
 
 /**
@@ -72,18 +71,18 @@ static MapTileProvider *static_map_tile_provider_dispose(StaticMapTileProvider *
  *
  * Client code is responsible for freeing the layer @see generic_layer_free
  *
- * @param self a StaticMapTileProvider
+ * @param self a StaticMapProvider
  * @param level Zoom level
  * @param x x-coordinate of the tile in the map
  * @param y y-coordinate of the tile in the map
  * @return A GenericLayer pointer or NULL on failure
  */
-static GenericLayer *static_map_tile_provider_get_tile(StaticMapTileProvider *self, uintf8_t level, int32_t x, int32_t y)
+static GenericLayer *static_map_provider_get_tile(StaticMapProvider *self, uintf8_t level, int32_t x, int32_t y)
 {
     char *filename;
     GenericLayer *rv = NULL;
 
-    if(MAP_TILE_PROVIDER(self)->nareas && !map_tile_provider_has_tile(MAP_TILE_PROVIDER(self), level, x, y))
+    if(MAP_PROVIDER(self)->nareas && !map_provider_has_tile(MAP_PROVIDER(self), level, x, y))
         return NULL;
 
     asprintf(&filename, "%s/%d/%d/%d.%s", self->home, level, x, y, self->format);
@@ -97,7 +96,7 @@ static GenericLayer *static_map_tile_provider_get_tile(StaticMapTileProvider *se
          *  and for demos.
          * */
         if(!self->url.base) goto out;
-        static_map_tile_provider_url_template_set(&self->url, level, x, y);
+        static_map_provider_url_template_set(&self->url, level, x, y);
         if(!http_download_file(self->url.base, filename)){
             goto out;
         }
@@ -124,7 +123,7 @@ out:
  * @parm y The y coordinates of the tile within level @param level
  * @return The url that can be used to fetch the tile.
  */
-static const char *static_map_tile_provider_url_template_set(StaticMapTileProviderUrlTemplate *self,
+static const char *static_map_provider_url_template_set(StaticMapProviderUrlTemplate *self,
                                           uint8_t level,
                                           int32_t x, int32_t y)
 {
@@ -166,11 +165,11 @@ static const char *static_map_tile_provider_url_template_set(StaticMapTileProvid
  *
  * @param line: A line, without trailing spaces that begins with 'area:'
  * (without quotes).
- * @param area: A MapTileProviderArea to fill with parsed values.
+ * @param area: A MapProviderArea to fill with parsed values.
  *
  * @return true on success, false otherwise
  */
-static bool map_config_read_area(const char *line, MapTileProviderArea *area)
+static bool map_config_read_area(const char *line, MapProviderArea *area)
 {
     size_t found;
     char *parts[5];
@@ -201,7 +200,7 @@ static bool map_config_read_area(const char *line, MapTileProviderArea *area)
  *
  * @return true on success, false otherwise
  */
-static bool map_config_read_url_template(uintf8_t keyword_len, const char *line, StaticMapTileProviderUrlTemplate *url)
+static bool map_config_read_url_template(uintf8_t keyword_len, const char *line, StaticMapProviderUrlTemplate *url)
 {
     char *tmp;
     size_t read;
@@ -235,7 +234,7 @@ static bool map_config_read_url_template(uintf8_t keyword_len, const char *line,
     return true;
 }
 
-static bool static_map_tile_provider_read_config(StaticMapTileProvider *self)
+static bool static_map_provider_read_config(StaticMapProvider *self)
 {
     char *filename;
     size_t flen;
@@ -271,7 +270,7 @@ static bool static_map_tile_provider_read_config(StaticMapTileProvider *self)
     }
     /*Then allocate and fill*/
     printf("Found %zu level areas\n", nareas);
-    map_tile_provider_set_nareas(MAP_TILE_PROVIDER(self), nareas);
+    map_provider_set_nareas(MAP_PROVIDER(self), nareas);
 
     fseek(fp, mark, SEEK_SET);
     size_t current_area = 0;
@@ -279,9 +278,9 @@ static bool static_map_tile_provider_read_config(StaticMapTileProvider *self)
         iter = nibble_spaces(line, read);
         if(!iter || *iter == '#' ) continue;
 
-        if(MAP_TILE_PROVIDER(self)->areas && !strncmp(iter, "area:",5)){
+        if(MAP_PROVIDER(self)->areas && !strncmp(iter, "area:",5)){
             bool rv;
-            rv = map_config_read_area(iter, &MAP_TILE_PROVIDER(self)->areas[current_area++]);
+            rv = map_config_read_area(iter, &MAP_PROVIDER(self)->areas[current_area++]);
             if(!rv) continue; /*TODO: (currently) does nothing*/
         }else if(!strncmp(iter, "src:",4)){
             bool rv;

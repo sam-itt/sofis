@@ -13,43 +13,43 @@
 #include <stdint.h>
 #include <unistd.h>
 
-#include "map-tile-provider.h"
+#include "map-provider.h"
 #include "misc.h"
 
-MapTileProvider *map_tile_provider_init(MapTileProvider *self,
-                                        MapTileProviderOps *ops, intf8_t priority)
+MapProvider *map_provider_init(MapProvider *self,
+                                        MapProviderOps *ops, intf8_t priority)
 {
     self->ops = ops;
     self->priority = priority;
     return self;
 }
 
-MapTileProvider *map_tile_provider_dispose(MapTileProvider *self)
+MapProvider *map_provider_dispose(MapProvider *self)
 {
     if(self->areas)
         free(self->areas);
     return self;
 }
 
-MapTileProvider *map_tile_provider_free(MapTileProvider *self)
+MapProvider *map_provider_free(MapProvider *self)
 {
     if(self->ops->dispose)
-        self->ops->dispose(MAP_TILE_PROVIDER(self));
-    map_tile_provider_dispose(self);
+        self->ops->dispose(MAP_PROVIDER(self));
+    map_provider_dispose(self);
     free(self);
     return NULL;
 }
 
-bool map_tile_provider_set_nareas(MapTileProvider *self, size_t nareas)
+bool map_provider_set_nareas(MapProvider *self, size_t nareas)
 {
     if(nareas > self->nareas){
-        void *tmp = realloc(self->areas, sizeof(MapTileProviderArea)*nareas);
+        void *tmp = realloc(self->areas, sizeof(MapProviderArea)*nareas);
         if(!tmp)
             return false;
         memset(
-            (MapTileProviderArea*)tmp + self->nareas,
+            (MapProviderArea*)tmp + self->nareas,
             0,
-            (nareas - self->nareas) * sizeof(MapTileProviderArea)
+            (nareas - self->nareas) * sizeof(MapProviderArea)
         );
         self->areas = tmp;
         self->nareas = nareas;
@@ -57,7 +57,7 @@ bool map_tile_provider_set_nareas(MapTileProvider *self, size_t nareas)
     return true;
 }
 
-bool map_tile_provider_has_tile(MapTileProvider *self, uintf8_t level, int32_t x, int32_t y)
+bool map_provider_has_tile(MapProvider *self, uintf8_t level, int32_t x, int32_t y)
 {
     int i;
 
@@ -73,7 +73,7 @@ bool map_tile_provider_has_tile(MapTileProvider *self, uintf8_t level, int32_t x
     return (i == 0);
 }
 
-int map_tile_provider_compare(MapTileProvider *self, MapTileProvider *other)
+int map_provider_compare(MapProvider *self, MapProvider *other)
 {
     if(self->priority < other->priority)
         return -1;
@@ -82,8 +82,8 @@ int map_tile_provider_compare(MapTileProvider *self, MapTileProvider *other)
     return 0;
 }
 
-int map_tile_provider_compare_ptr(MapTileProvider **self, MapTileProvider **other)
+int map_provider_compare_ptr(MapProvider **self, MapProvider **other)
 {
-    return map_tile_provider_compare(*self, *other);
+    return map_provider_compare(*self, *other);
 }
 

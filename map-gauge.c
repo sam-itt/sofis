@@ -12,8 +12,8 @@
 #include "map-gauge.h"
 #include "map-math.h"
 #include "map-tile-cache.h"
-#include "map-tile-provider.h"
-#include "static-map-tile-provider.h"
+#include "map-provider.h"
+#include "static-map-provider.h"
 #include "misc.h"
 #include "sdl-colors.h"
 #include "res-dirs.h"
@@ -110,25 +110,25 @@ MapGauge *map_gauge_init(MapGauge *self, int w, int h)
     map_tile_cache_init(&self->tile_cache, cache_tiles);
 
 #if HAVE_IGN_OACI_MAP
-    self->tile_providers[self->ntile_providers++] = (MapTileProvider*)static_map_tile_provider_new(
+    self->tile_providers[self->ntile_providers++] = (MapProvider*)static_map_provider_new(
         MAPS_HOME"/ign-oaci", "jpg",-1
     );
 #endif
-    self->tile_providers[self->ntile_providers++] = (MapTileProvider*)static_map_tile_provider_new(
+    self->tile_providers[self->ntile_providers++] = (MapProvider*)static_map_provider_new(
         MAPS_HOME"/osm", "png", 0
     );
 
-    self->overlays[self->noverlays++] = (MapTileProvider*)static_map_tile_provider_new(
+    self->overlays[self->noverlays++] = (MapProvider*)static_map_provider_new(
         MAPS_HOME"/openaip", "png", 0
     );
 
     qsort(self->tile_providers,
         self->ntile_providers,
-        sizeof(MapTileProvider*), (__compar_fn_t)map_tile_provider_compare_ptr
+        sizeof(MapProvider*), (__compar_fn_t)map_provider_compare_ptr
     );
     qsort(self->overlays,
         self->noverlays,
-        sizeof(MapTileProvider*), (__compar_fn_t)map_tile_provider_compare_ptr
+        sizeof(MapProvider*), (__compar_fn_t)map_provider_compare_ptr
     );
 
 
@@ -161,10 +161,10 @@ static MapGauge *map_gauge_dispose(MapGauge *self)
 
     generic_layer_dispose(&self->marker.layer);
     for(int i = 0; i < self->ntile_providers; i++)
-        map_tile_provider_free(self->tile_providers[i]);
+        map_provider_free(self->tile_providers[i]);
 
     for(int i = 0; i < self->noverlays; i++)
-        map_tile_provider_free(self->overlays[i]);
+        map_provider_free(self->overlays[i]);
 
     map_tile_cache_dispose(&self->tile_cache);
     return self;
@@ -422,7 +422,7 @@ static GenericLayer *map_gauge_get_tile(MapGauge *self, uintf8_t level, int32_t 
      * priority is negative, no overlay will be applied
      * */
     for(int i = 0; i < self->ntile_providers; i++){
-        rv = map_tile_provider_get_tile(self->tile_providers[i],
+        rv = map_provider_get_tile(self->tile_providers[i],
             level, x, y
         );
         if(rv){
@@ -437,7 +437,7 @@ static GenericLayer *map_gauge_get_tile(MapGauge *self, uintf8_t level, int32_t 
      * */
     GenericLayer *tmp;
     for(int i = 0; i < self->noverlays; i++){
-        tmp = map_tile_provider_get_tile(self->overlays[i], level, x, y);
+        tmp = map_provider_get_tile(self->overlays[i], level, x, y);
         if(!tmp) continue;
         SDL_BlitSurface(
             tmp->canvas, NULL,

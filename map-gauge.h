@@ -11,7 +11,7 @@
 #include "base-gauge.h"
 #include "generic-layer.h"
 #include "map-tile-cache.h"
-#include "map-tile-provider.h"
+#include "map-provider.h"
 #include "misc.h"
 
 /* int(32) pixel coordinates go up to
@@ -66,10 +66,10 @@ typedef struct{
     bool roaming; /*The view is roaming around and not tied to the marker*/
     Uint32 last_manipulation;
 
-    MapTileProvider *tile_providers[2]; /*static for now*/
+    MapProvider *tile_providers[2]; /*static for now*/
     size_t ntile_providers;
 
-    MapTileProvider *overlays[1]; /*static for now*/
+    MapProvider *overlays[1]; /*static for now*/
     size_t noverlays;
 
 
