@@ -13,6 +13,7 @@
 #include "map-math.h"
 #include "map-tile-cache.h"
 #include "map-tile-provider.h"
+#include "static-map-tile-provider.h"
 #include "misc.h"
 #include "sdl-colors.h"
 #include "res-dirs.h"
@@ -109,15 +110,15 @@ MapGauge *map_gauge_init(MapGauge *self, int w, int h)
     map_tile_cache_init(&self->tile_cache, cache_tiles);
 
 #if HAVE_IGN_OACI_MAP
-    self->tile_providers[self->ntile_providers++] = map_tile_provider_new(
+    self->tile_providers[self->ntile_providers++] = (MapTileProvider*)static_map_tile_provider_new(
         MAPS_HOME"/ign-oaci", "jpg",-1
     );
 #endif
-    self->tile_providers[self->ntile_providers++] = map_tile_provider_new(
+    self->tile_providers[self->ntile_providers++] = (MapTileProvider*)static_map_tile_provider_new(
         MAPS_HOME"/osm", "png", 0
     );
 
-    self->overlays[self->noverlays++] = map_tile_provider_new(
+    self->overlays[self->noverlays++] = (MapTileProvider*)static_map_tile_provider_new(
         MAPS_HOME"/openaip", "png", 0
     );
 

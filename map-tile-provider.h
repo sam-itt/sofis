@@ -25,38 +25,39 @@ typedef struct{
     int32_t bottom;
 }MapTileProviderArea;
 
+typedef struct _MapTileProvider MapTileProvider;
+typedef GenericLayer *(*MapTileProviderGetTileFunc)(MapTileProvider *self,
+                                                   uintf8_t level,
+                                                   int32_t x, int32_t y);
+typedef MapTileProvider *(*MapTileProviderDisposeFunc)(MapTileProvider *self);
 typedef struct{
-    /* In TMS mode, the Y axis (tiles coordinates within the world map)
-     * is reversed*/
-    bool is_tms;
-    char *base;
+    MapTileProviderGetTileFunc get_tile;
+    MapTileProviderDisposeFunc dispose;
+}MapTileProviderOps;
 
-    char *lvl;
-    char *tilex;
-    char *tiley;
-}MapProviderUrlTemplate;
-
-typedef struct{
-    char *home;
-    char *format; /*tile file extension*/
-    MapProviderUrlTemplate url;
-
+typedef struct _MapTileProvider{
+    MapTileProviderOps *ops;
     intf8_t priority;
 
     MapTileProviderArea *areas;
     size_t nareas;
 }MapTileProvider;
 
+#define MAP_TILE_PROVIDER(self) ((MapTileProvider*)(self))
 
-MapTileProvider *map_tile_provider_new(const char *home, const char *format, intf8_t priority);
-
-MapTileProvider *map_tile_provider_init(MapTileProvider *self, const char *home,
-                                        const char *format, intf8_t priority);
-
+MapTileProvider *map_tile_provider_init(MapTileProvider *self,
+                                        MapTileProviderOps *ops, intf8_t priority);
 MapTileProvider *map_tile_provider_dispose(MapTileProvider *self);
 MapTileProvider *map_tile_provider_free(MapTileProvider *self);
 
-GenericLayer *map_tile_provider_get_tile(MapTileProvider *self, uintf8_t level, int32_t x, int32_t y);
+bool map_tile_provider_set_nareas(MapTileProvider *self, size_t nareas);
+
+bool map_tile_provider_has_tile(MapTileProvider *self, uintf8_t level, int32_t x, int32_t y);
+static inline GenericLayer *map_tile_provider_get_tile(MapTileProvider *self, uintf8_t level, int32_t x, int32_t y)
+{
+    return self->ops->get_tile(self, level, x, y);
+}
+
 
 int map_tile_provider_compare(MapTileProvider *self, MapTileProvider *other);
 int map_tile_provider_compare_ptr(MapTileProvider **self, MapTileProvider **other);
