@@ -106,26 +106,43 @@ static bool fg_data_source_frame(FGDataSource *self, uint32_t dt)
     if(!rv)
         return false;
 
-    DATA_SOURCE(self)->latitude = packet.latitude;
-    DATA_SOURCE(self)->longitude = packet.longitude;
-    DATA_SOURCE(self)->altitude = packet.altitude;
+    data_source_set_location(
+        DATA_SOURCE(self), &(LocationData){
+            .super.latitude = packet.latitude,
+            .super.longitude = packet.longitude,
+            .altitude = packet.altitude
+        }
+    );
 
-    DATA_SOURCE(self)->airspeed = packet.airspeed;
-    DATA_SOURCE(self)->vertical_speed = packet.vertical_speed;
+    data_source_set_dynamics(
+        DATA_SOURCE(self), &(DynamicsData){
+            .airspeed = packet.airspeed,
+            .vertical_speed = packet.vertical_speed,
+            .slip_rad = packet.side_slip
+        }
+    );
 
-    DATA_SOURCE(self)->roll = packet.roll;
-    DATA_SOURCE(self)->pitch = packet.pitch;
-    DATA_SOURCE(self)->heading = packet.heading;
+    data_source_set_attitude(
+        DATA_SOURCE(self), &(AttitudeData){
+            .roll = packet.roll,
+            .pitch = packet.pitch,
+            .heading = packet.heading
+        }
+    );
 
-    DATA_SOURCE(self)->slip_rad = packet.side_slip;
+    data_source_set_engine_data(
+        DATA_SOURCE(self), &(EngineData){
+            .rpm = packet.rpm,
+            .fuel_flow = packet.fuel_flow,
+            .oil_temp = packet.oil_temp,
+            .oil_press = packet.oil_px,
+            .cht = packet.cht,
+            .fuel_px = packet.fuel_px,
+            .fuel_qty = packet.fuel_qty
+        }
+    );
 
-    DATA_SOURCE(self)->rpm = packet.rpm;
-    DATA_SOURCE(self)->fuel_flow = packet.fuel_flow;
-    DATA_SOURCE(self)->oil_temp = packet.oil_temp;
-    DATA_SOURCE(self)->oil_press = packet.oil_px;
-    DATA_SOURCE(self)->cht = packet.cht;
-    DATA_SOURCE(self)->fuel_px = packet.fuel_px;
-    DATA_SOURCE(self)->fuel_qty = packet.fuel_qty;
+    DATA_SOURCE(self)->has_fix = true;
 
     return true;
 }

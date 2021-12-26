@@ -464,29 +464,16 @@ void side_panel_set_fuel_flow(SidePanel *self, float value)
     );
 }
 
-void side_panel_set_oil_temp(SidePanel *self, float value)
-{
-    fishbone_gauge_set_value(self->oil_temp, value, true);
-}
 
-void side_panel_set_oil_press(SidePanel *self, float value)
+void side_panel_engine_data_changed(SidePanel *self, EngineData *newv)
 {
-    fishbone_gauge_set_value(self->oil_press, value, true);
-}
-
-void side_panel_set_cht(SidePanel *self, float value)
-{
-    fishbone_gauge_set_value(self->cht, value, true);
-}
-
-void side_panel_set_fuel_px(SidePanel *self, float value)
-{
-    fishbone_gauge_set_value(self->fuel_px, value, true);
-}
-
-void side_panel_set_fuel_qty(SidePanel *self, float value)
-{
-    fishbone_gauge_set_value(self->fuel_qty, value, true);
+    side_panel_set_rpm(self, newv->rpm);
+    side_panel_set_fuel_flow(self, newv->fuel_flow);
+    side_panel_set_oil_temp(self, newv->oil_temp);
+    side_panel_set_oil_press(self, newv->oil_press);
+    side_panel_set_cht(self, newv->cht);
+    side_panel_set_fuel_px(self, newv->fuel_px);
+    side_panel_set_fuel_qty(self, newv->fuel_qty);
 }
 
 static void side_panel_render(SidePanel *self, Uint32 dt, RenderContext *ctx)

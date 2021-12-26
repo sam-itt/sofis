@@ -12,6 +12,7 @@
 #include "elevator-gauge.h"
 #include "fishbone-gauge.h"
 #include "text-gauge.h"
+#include "data-source.h"
 
 typedef enum{
     EGT,
@@ -76,11 +77,33 @@ SidePanel *side_panel_init(SidePanel *self, int width, int height);
 
 void side_panel_set_rpm(SidePanel *self, float value);
 void side_panel_set_fuel_flow(SidePanel *self, float value);
-void side_panel_set_oil_temp(SidePanel *self, float value);
-void side_panel_set_oil_press(SidePanel *self, float value);
-void side_panel_set_cht(SidePanel *self, float value);
-void side_panel_set_fuel_px(SidePanel *self, float value);
-void side_panel_set_fuel_qty(SidePanel *self, float value);
 
+static inline void side_panel_set_oil_temp(SidePanel *self, float value)
+{
+    fishbone_gauge_set_value(self->oil_temp, value, true);
+}
+
+static inline void side_panel_set_oil_press(SidePanel *self, float value)
+{
+    fishbone_gauge_set_value(self->oil_press, value, true);
+}
+
+static inline void side_panel_set_cht(SidePanel *self, float value)
+{
+    fishbone_gauge_set_value(self->cht, value, true);
+}
+
+static inline void side_panel_set_fuel_px(SidePanel *self, float value)
+{
+    fishbone_gauge_set_value(self->fuel_px, value, true);
+}
+
+static inline void side_panel_set_fuel_qty(SidePanel *self, float value)
+{
+    fishbone_gauge_set_value(self->fuel_qty, value, true);
+}
+
+
+void side_panel_engine_data_changed(SidePanel *self, EngineData *newv);
 #endif /* SIDE_PANEL_H */
 

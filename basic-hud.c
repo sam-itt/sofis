@@ -170,3 +170,28 @@ float basic_hud_get(BasicHud *self, HudValue hv)
     }
     return NAN;
 }
+
+void basic_hud_attitude_changed(BasicHud *self, AttitudeData *newv)
+{
+    attitude_indicator_set_pitch(self->attitude, newv->pitch, true);
+    attitude_indicator_set_roll(self->attitude, newv->roll, true);
+    compass_gauge_set_value(self->compass, newv->heading, true);
+    attitude_indicator_set_heading(self->attitude, newv->heading);
+}
+
+void basic_hud_dynamics_changed(BasicHud *self, DynamicsData *newv)
+{
+//    printf("called with airpseed: %f, vertical speed: %f\n", newv->airspeed, newv->vertical_speed*60);
+    airspeed_indicator_set_value(self->airspeed, newv->airspeed);
+    /* Convert fps to fpm
+     * TODO: Document and make units consistent
+     * */
+    alt_group_set_vertical_speed(self->altgroup, newv->vertical_speed * 60);
+    roll_slip_gauge_set_slip(self->attitude->rollslip, newv->slip_rad * 180.0/M_PI, true);
+}
+
+void basic_hud_location_changed(BasicHud *self, LocationData *newv)
+{
+    alt_group_set_altitude(self->altgroup, newv->altitude);
+}
+

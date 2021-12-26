@@ -50,7 +50,7 @@ FGTapeDataSource *fg_tape_data_source_new(char *filename, int start_pos)
     self = calloc(1, sizeof(FGTapeDataSource));
     if(self){
         if(!fg_tape_data_souce_init(self, filename, start_pos)){
-            free(self);
+            data_source_free(DATA_SOURCE(self));
             return NULL;
         }
     }
@@ -119,25 +119,44 @@ static bool fg_tape_data_source_frame(FGTapeDataSource *self, uint32_t dt)
     if(rv <= 0)
         return false; /*Error or end of tape*/
 
-    DATA_SOURCE(self)->latitude = record.latitude;
-    DATA_SOURCE(self)->longitude = record.longitude;
-    DATA_SOURCE(self)->altitude = record.altitude;
 
-    DATA_SOURCE(self)->airspeed = record.airspeed;
-    DATA_SOURCE(self)->vertical_speed = record.vertical_speed;
-    DATA_SOURCE(self)->slip_rad = record.slip_rad;
+    data_source_set_location(
+        DATA_SOURCE(self), &(LocationData){
+            .super.latitude = record.latitude,
+            .super.longitude = record.longitude,
+            .altitude = record.altitude
+        }
+    );
 
-    DATA_SOURCE(self)->roll = record.roll;
-    DATA_SOURCE(self)->pitch = record.pitch;
-    DATA_SOURCE(self)->heading = record.heading;
+    data_source_set_dynamics(
+        DATA_SOURCE(self), &(DynamicsData){
+            .airspeed = record.airspeed,
+            .vertical_speed = record.vertical_speed,
+            .slip_rad = record.slip_rad
+        }
+    );
 
-    DATA_SOURCE(self)->rpm = record.rpm;
-    DATA_SOURCE(self)->fuel_flow = record.fuel_flow;
-    DATA_SOURCE(self)->oil_temp = record.oil_temp;
-    DATA_SOURCE(self)->oil_press = record.oil_press;
-    DATA_SOURCE(self)->cht = record.cht;
-    DATA_SOURCE(self)->fuel_px = record.fuel_px;
-    DATA_SOURCE(self)->fuel_qty = record.fuel_qty;
+    data_source_set_attitude(
+        DATA_SOURCE(self), &(AttitudeData){
+            .roll = record.roll,
+            .pitch = record.pitch,
+            .heading = record.heading
+        }
+    );
+
+    data_source_set_engine_data(
+        DATA_SOURCE(self), &(EngineData){
+            .rpm = record.rpm,
+            .fuel_flow = record.fuel_flow,
+            .oil_temp = record.oil_temp,
+            .oil_press = record.oil_press, /*TODO: All to _px*/
+            .cht = record.cht,
+            .fuel_px = record.fuel_px,
+            .fuel_qty = record.fuel_qty
+        }
+    );
+
+    DATA_SOURCE(self)->has_fix = true;
 
     return true;
 }

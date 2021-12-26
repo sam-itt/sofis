@@ -13,6 +13,7 @@
 #include "map-tile-cache.h"
 #include "map-provider.h"
 #include "route-map-provider.h"
+#include "data-source.h"
 #include "misc.h"
 
 /* int(32) pixel coordinates go up to
@@ -90,4 +91,8 @@ bool map_gauge_center_on_marker(MapGauge *self, bool animated);
 bool map_gauge_follow_marker(MapGauge *self);
 bool map_gauge_move_viewport(MapGauge *self, int32_t dx, int32_t dy, bool animated);
 bool map_gauge_set_viewport(MapGauge *self, int32_t x, int32_t y, bool animated);
+
+
+void map_gauge_location_changed(MapGauge *self, LocationData *newv);
+void map_gauge_attitude_changed(MapGauge *self, AttitudeData *newv);
 #endif /* MAP_GAUGE_H */

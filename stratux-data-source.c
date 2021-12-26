@@ -82,18 +82,37 @@ static bool stratux_data_source_frame(StratuxDataSource *self, uint32_t dt)
         heading = fmod(heading, 360.0);
     if(!isnan(mheading))
         mheading = fmod(mheading, 360.0);
-    DATA_SOURCE(self)->latitude = lat;
-    DATA_SOURCE(self)->longitude = lon;
-    DATA_SOURCE(self)->altitude = alt;
+    data_source_set_location(
+        DATA_SOURCE(self), &(LocationData){
+            .super.latitude = lat,
+            .super.longitude = lon,
+            .altitude = alt
+        }
+    );
 
-    DATA_SOURCE(self)->vertical_speed = vertical_speed_gps;
+    data_source_set_dynamics(
+        DATA_SOURCE(self), &(DynamicsData){
+            .airspeed = DATA_SOURCE(self)->dynamics.airspeed,
+            .vertical_speed = vertical_speed_gps,
+            .slip_rad = DATA_SOURCE(self)->dynamics.slip_rad
+        }
+    );
 
-    DATA_SOURCE(self)->roll = roll;
-    DATA_SOURCE(self)->pitch = pitch;
+
+    float new_heading;
     if(!isnan(heading))
-        DATA_SOURCE(self)->heading = fmod(heading,360.0);
+        new_heading = fmod(heading,360.0);
     else if(!isnan(mheading))
-        DATA_SOURCE(self)->heading = fmod(mheading,360.0);
+        new_heading = fmod(mheading,360.0);
+
+    data_source_set_attitude(
+        DATA_SOURCE(self), &(AttitudeData){
+            .roll = roll,
+            .pitch = pitch,
+            .heading = new_heading
+        }
+    );
+
 #if 0
     printf("lat: %f lon: %f, alt: %f\n"
         "roll: %f pitch: %f heading(gyro): %f heading(mag): %f\n",
@@ -102,6 +121,8 @@ static bool stratux_data_source_frame(StratuxDataSource *self, uint32_t dt)
     );
 #endif
     self->buf->len = 0;
+
+    DATA_SOURCE(self)->has_fix = true;
     return true;
 }
 

@@ -471,6 +471,17 @@ end:
     return rv;
 }
 
+void map_gauge_location_changed(MapGauge *self, LocationData *newv)
+{
+    map_gauge_set_marker_position(self, newv->super.latitude, newv->super.longitude);
+}
+
+void map_gauge_attitude_changed(MapGauge *self, AttitudeData *newv)
+{
+    map_gauge_set_marker_heading(self, newv->heading);
+}
+
+
 /*TODO: split up*/
 static void map_gauge_update_state(MapGauge *self, Uint32 dt)
 {

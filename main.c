@@ -69,6 +69,14 @@ RunningMode g_mode;
 /*Return true to quit the app*/
 bool handle_keyboard(SDL_KeyboardEvent *event, Uint32 elapsed)
 {
+    AttitudeData new_attitude;
+    LocationData new_location;
+    bool attitude_dirty = false;
+    bool location_dirty = false;
+
+    new_attitude = g_ds->attitude;
+    new_location = g_ds->location;
+
     switch(event->keysym.sym){
         /*App control*/
         case SDLK_ESCAPE:
@@ -89,8 +97,8 @@ bool handle_keyboard(SDL_KeyboardEvent *event, Uint32 elapsed)
         case SDLK_p:
             if(event->state == SDL_PRESSED){
                 printf("Pitch: %f\nHeading: %f\n",
-                    g_ds->pitch,
-                    g_ds->heading
+                    g_ds->attitude.pitch,
+                    g_ds->attitude.heading
                 );
             }
             break;
@@ -134,42 +142,60 @@ bool handle_keyboard(SDL_KeyboardEvent *event, Uint32 elapsed)
 
         /*Manual camera/position control*/
         case SDLK_z:
-            if(event->state == SDL_PRESSED)
-                g_ds->pitch += 1.0;
+            if(event->state == SDL_PRESSED){
+                new_attitude.pitch += 1.0;
+                attitude_dirty = true;
+            }
             break;
         case SDLK_s:
-            if(event->state == SDL_PRESSED)
-                g_ds->pitch -= 1.0;
+            if(event->state == SDL_PRESSED){
+                new_attitude.pitch -= 1.0;
+                attitude_dirty = true;
+            }
             break;
         case SDLK_q:
-            if(event->state == SDL_PRESSED)
-                g_ds->roll -= 1.0;
+            if(event->state == SDL_PRESSED){
+                new_attitude.roll -= 1.0;
+                attitude_dirty = true;
+            }
             break;
         case SDLK_d:
-            if(event->state == SDL_PRESSED)
-                g_ds->roll += 1.0;
+            if(event->state == SDL_PRESSED){
+                new_attitude.roll += 1.0;
+                attitude_dirty = true;
+            }
             break;
         case SDLK_a:
             if(event->state == SDL_PRESSED){
-                g_ds->heading -= 1.0;
-                g_ds->heading = fmodf(g_ds->heading, 360.0);
+                new_attitude.heading -= 1.0;
+                new_attitude.heading = fmodf(new_attitude.heading, 360.0);
+                attitude_dirty = true;
             }
             break;
         case SDLK_e:
             if(event->state == SDL_PRESSED){
-                g_ds->heading += 1.0;
-                g_ds->heading = fmodf(g_ds->heading, 360.0);
+                new_attitude.heading += 1.0;
+                new_attitude.heading = fmodf(new_attitude.heading, 360.0);
+                attitude_dirty = true;
             }
             break;
         case SDLK_PAGEUP:
-            if(event->state == SDL_PRESSED)
-                g_ds->altitude += 10;
+            if(event->state == SDL_PRESSED){
+                new_location.altitude += 10;
+                attitude_dirty = true;
+            }
             break;
         case SDLK_PAGEDOWN:
-            if(event->state == SDL_PRESSED)
-                g_ds->altitude -= 10;
+            if(event->state == SDL_PRESSED){
+                new_location.altitude -= 10;
+                attitude_dirty = true;
+            }
             break;
     }
+    if(attitude_dirty)
+        data_source_set_attitude(g_ds, &new_attitude);
+    if(location_dirty)
+        data_source_set_location(g_ds, &new_location);
     return false;
 }
 
@@ -215,6 +241,23 @@ const char *pretty_mode(RunningMode mode)
     }
 
 }
+
+#if ENABLE_3D
+void update_terrain_viewer_location(TerrainViewer *self, LocationData *newv)
+{
+    double lon = fmod(newv->super.longitude+180, 360.0) - 180;
+    plane_set_position(self->plane, newv->super.latitude, lon, newv->altitude/3.281 + 2);
+    self->dirty = true;
+    /*printf("Position set to: lat:%f lon:%f alt:%f\n", newv->super.latitude, lon, newv->altitude);*/
+    /*exit(0);*/
+}
+
+void update_terrain_viewer_attitude(TerrainViewer *self, AttitudeData *newv)
+{
+    plane_set_attitude(self->plane, newv->roll, newv->pitch, newv->heading);
+    self->dirty = true;
+}
+#endif
 
 int main(int argc, char **argv)
 {
@@ -344,16 +387,40 @@ int main(int argc, char **argv)
 
     if(g_mode == MODE_FGREMOTE)
         fg_data_source_banner((FGDataSource*)g_ds);
-    /*TODO: Move that to DataSource*/
-    DATA_SOURCE(g_ds)->latitude = NAN;
+
+    data_source_add_events_listener(g_ds, hud, 3,
+        ATTITUDE_DATA, basic_hud_attitude_changed,
+        DYNAMICS_DATA, basic_hud_dynamics_changed,
+        LOCATION_DATA, basic_hud_location_changed
+    );
+
+    data_source_add_listener(g_ds, ENGINE_DATA, &(ValueListener){
+        .callback = (ValueListenerFunc)side_panel_engine_data_changed,
+        .target = panel
+    });
+
+    data_source_add_events_listener(g_ds, map, 2,
+        LOCATION_DATA, map_gauge_location_changed,
+        ATTITUDE_DATA, map_gauge_attitude_changed
+    );
+
+#if ENABLE_3D
+    data_source_add_events_listener(g_ds, viewer, 2,
+        LOCATION_DATA, update_terrain_viewer_location,
+        ATTITUDE_DATA, update_terrain_viewer_attitude
+    );
+#endif
+    data_source_print_listener_stats(g_ds);
+
     printf("Waiting for fix.");
     do{
         data_source_frame(DATA_SOURCE(g_ds), 0);
         printf(".");
         fflush(stdout);
         sleep(1); /*sleep for 1 sec*/
-    }while(isnan(DATA_SOURCE(g_ds)->latitude));
+    }while(!DATA_SOURCE(g_ds)->has_fix);
     printf("\n");
+
 
     last_dtms = 0;
     startms = SDL_GetTicks();
@@ -366,39 +433,14 @@ int main(int argc, char **argv)
 
         if(data_source_frame(DATA_SOURCE(g_ds), dtms - last_dtms)){
             last_dtms = dtms;
-            basic_hud_set(hud,  7,
-                ALTITUDE, (double)DATA_SOURCE(g_ds)->altitude,
-                AIRSPEED, (double)DATA_SOURCE(g_ds)->airspeed,
-                VERTICAL_SPEED, (double)DATA_SOURCE(g_ds)->vertical_speed * 60, /*Convert fps to fpm*/
-                PITCH, (double)DATA_SOURCE(g_ds)->pitch,
-                ROLL, (double)DATA_SOURCE(g_ds)->roll,
-                HEADING, (double)DATA_SOURCE(g_ds)->heading,
-                SLIP, (double)DATA_SOURCE(g_ds)->slip_rad* 180.0/M_PI
-            );
-
-            side_panel_set_rpm(panel, DATA_SOURCE(g_ds)->rpm);
-            side_panel_set_fuel_flow(panel, DATA_SOURCE(g_ds)->fuel_flow);
-            side_panel_set_oil_temp(panel, DATA_SOURCE(g_ds)->oil_temp);
-            side_panel_set_oil_press(panel, DATA_SOURCE(g_ds)->oil_press);
-            side_panel_set_cht(panel, DATA_SOURCE(g_ds)->cht);
-            side_panel_set_fuel_px(panel, DATA_SOURCE(g_ds)->fuel_px);
-            side_panel_set_fuel_qty(panel, DATA_SOURCE(g_ds)->fuel_qty);
-
-            map_gauge_set_marker_position(map, DATA_SOURCE(g_ds)->latitude, DATA_SOURCE(g_ds)->longitude);
-            map_gauge_set_marker_heading(map, DATA_SOURCE(g_ds)->heading);
 
 #if ENABLE_3D
-            float lon = fmod(DATA_SOURCE(g_ds)->longitude+180, 360.0) - 180;
-            terrain_viewer_update_plane(viewer,
-                DATA_SOURCE(g_ds)->latitude, DATA_SOURCE(g_ds)->longitude, DATA_SOURCE(g_ds)->altitude/3.281 + 2,
-                DATA_SOURCE(g_ds)->roll, DATA_SOURCE(g_ds)->pitch, DATA_SOURCE(g_ds)->heading
-            );
             if(last_ticks == 0){ //Do an invisible frame to trigger preload
                 GPU_FlushBlitBuffer(); /*begin 3*/
                 terrain_viewer_frame(viewer);
                 GPU_ResetRendererState(); /*end 3d*/
-		/*Reset startms as initial loading can take up a while*/
-		startms = SDL_GetTicks();
+                /*Reset startms as initial loading can take up a while*/
+                startms = SDL_GetTicks();
             }
 #endif
         }

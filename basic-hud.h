@@ -13,6 +13,7 @@
 #include "attitude-indicator.h"
 #include "airspeed-indicator.h"
 #include "compass-gauge.h"
+#include "data-source.h"
 
 typedef enum{
     ALTITUDE,
@@ -53,4 +54,7 @@ float basic_hud_get(BasicHud *self, HudValue hv);
 void basic_hud_set(BasicHud *self, int nvalues, ...);
 void basic_hud_set_values(BasicHud *self, int nvalues, va_list ap);
 
+void basic_hud_attitude_changed(BasicHud *self, AttitudeData *newv);
+void basic_hud_dynamics_changed(BasicHud *self, DynamicsData *newv);
+void basic_hud_location_changed(BasicHud *self, LocationData *newv);
 #endif /* BASIC_HUD_H */

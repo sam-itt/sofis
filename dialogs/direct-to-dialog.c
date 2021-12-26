@@ -1,6 +1,3 @@
-#include "airport.h"
-#include "button.h"
-#include "resource-manager.h"
 #define _GNU_SOURCE
 #include <stdio.h>
 #include <stdlib.h>
@@ -15,7 +12,6 @@
 #include "text-gauge.h"
 #include "misc.h"
 #include "data-source.h"
-#include "geo-location.h"
 
 static void direct_to_dialog_render(DirectToDialog *self, Uint32 dt, RenderContext *ctx);
 static bool direct_to_dialog_handle_event(DirectToDialog *self, SDL_KeyboardEvent *event);
@@ -249,10 +245,10 @@ static void selection_changed(DirectToDialog *self, ListBox *sender)
     self->longitude->len = strlen(self->longitude->value);
     BASE_GAUGE(self->longitude)->dirty = true;
 
-    ds = data_source_get();
+    ds = data_source_get_instance();
     if(!ds) return;
 
-    me = (GeoLocation){ds->latitude, ds->longitude};
+    me = *(GeoLocation*)&ds->location;
     ap = (GeoLocation){airport->latitude, airport->longitude};
 
     double distance = geo_location_distance_to(&me, &ap);
