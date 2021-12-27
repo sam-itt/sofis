@@ -16,6 +16,10 @@
 #define BNO080_DEV "/dev/i2c-1"
 #endif
 
+#ifndef ENABLE_MOCK_GPS
+#define ENABLE_MOCK_GPS 0
+#endif
+
 static bool sensors_data_source_frame(SensorsDataSource *self, uint32_t dt);
 static SensorsDataSource *sensors_data_source_dispose(SensorsDataSource *self);
 static DataSourceOps sensors_data_source_ops = {
@@ -54,13 +58,15 @@ SensorsDataSource *sensors_data_source_init(SensorsDataSource *self)
         exit(EXIT_FAILURE);
     }
 
+#if !ENABLE_MOCK_GPS
     gps_sensor_start(&self->gps);
-
+#else
     DATA_SOURCE(self)->latitude = 45.215470;
     DATA_SOURCE(self)->longitude = 5.844828;
     DATA_SOURCE(self)->altitude = 718.267245;
 
     DATA_SOURCE(self)->heading = 43.698940;
+#endif
 
     return self;
 }
@@ -86,10 +92,15 @@ static bool sensors_data_source_frame(SensorsDataSource *self, uint32_t dt)
     DATA_SOURCE(self)->roll = roll;
     DATA_SOURCE(self)->pitch = pitch;
     DATA_SOURCE(self)->heading = heading;
+#if !ENABLE_MOCK_GPS
     gps_sensor_get_fix(&self->gps, &lat, &lon, &alt);
     DATA_SOURCE(self)->latitude = lat;
     DATA_SOURCE(self)->longitude = lon;
     DATA_SOURCE(self)->altitude = alt*3.281; /*Comes in meters(gps), must be in feets*/
-
+#else
+    DATA_SOURCE(self)->latitude = 45.215470;
+    DATA_SOURCE(self)->longitude = 5.844828;
+    DATA_SOURCE(self)->altitude = 718.267245;
+#endif
     return true;
 }

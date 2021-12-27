@@ -31,6 +31,7 @@ CFLAGS=-g3 -O0 `pkg-config glib-2.0 sdl2 SDL2_image libgps --cflags` \
 	   -DFGR_HOME=$(FGR_HOME) \
 	   -DSFS_HOME=$(SFS_HOME) \
 	   -DBNO080_DEV=$(BNO080_DEV) \
+	   -DENABLE_MOCK_GPS=$(ENABLE_MOCK_GPS) \
 	   -DENABLE_PERF_COUNTERS=1 \
 	   -DUSE_GLES=$(USE_GLES) \
 	   -DENABLE_3D=$(ENABLE_3D) \
