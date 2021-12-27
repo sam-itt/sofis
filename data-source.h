@@ -17,11 +17,13 @@
 #define MAX_ATTITUDE_LISTENERS 3
 #define MAX_DYNAMICS_LISTENERS 1
 #define MAX_ENGINE_DATA_LISTENERS 1
+#define MAX_ROUTE_DATA_LISTENERS 2
 #define TOTAL_MAX_LISTENERS \
           MAX_LOCATION_LISTENERS \
         + MAX_ATTITUDE_LISTENERS \
         + MAX_DYNAMICS_LISTENERS \
-        + MAX_ENGINE_DATA_LISTENERS
+        + MAX_ENGINE_DATA_LISTENERS \
+        + MAX_ROUTE_DATA_LISTENERS
 
 typedef struct _DataSource DataSource;
 typedef bool (*DataSourceFrameFunc)(DataSource *self, uint32_t dt);
@@ -46,6 +48,7 @@ typedef enum{
     ATTITUDE_DATA,
     DYNAMICS_DATA,
     ENGINE_DATA,
+    ROUTE_DATA,
     N_VALUE_TYPES
 }DataType;
 
@@ -76,6 +79,10 @@ typedef struct{
     float altitude;
 }LocationData;
 
+typedef struct{
+    GeoLocation to;
+    GeoLocation from;
+}RouteData;
 
 typedef struct _DataSource{
     DataSourceOps *ops;
@@ -84,6 +91,7 @@ typedef struct _DataSource{
     AttitudeData attitude;
     DynamicsData dynamics;
     EngineData engine_data;
+    RouteData route;
 
     /* We want to avoid dynamic allocation for these.
      * Thus the adding functio will emit a warning at runtime if the values are
@@ -112,6 +120,7 @@ void data_source_set_location(DataSource *self, LocationData *location);
 void data_source_set_attitude(DataSource *self, AttitudeData *attitude);
 void data_source_set_dynamics(DataSource *self, DynamicsData *dynamics);
 void data_source_set_engine_data(DataSource *self, EngineData *engine_data);
+void data_source_set_route_data(DataSource *self, RouteData *route_data);
 
 static inline DataSource *data_source_init(DataSource *self, DataSourceOps *ops)
 {
@@ -170,5 +179,11 @@ static inline bool engine_data_equals(EngineData *a, EngineData *b)
           && (a->fuel_qty == b->fuel_qty);
 }
 
-
+static inline bool route_data_equals(RouteData *a, RouteData *b)
+{
+    return    (a->to.latitude == b->to.latitude)
+           && (a->to.longitude == b->to.longitude)
+           && (a->from.latitude == b->from.latitude)
+           && (a->from.longitude == b->from.longitude);
+}
 #endif /* DATA_SOURCE_H */

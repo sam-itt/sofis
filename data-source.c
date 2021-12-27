@@ -79,11 +79,13 @@ void data_source_print_listener_stats(DataSource *self)
         "\tlocation: %zu\n"
         "\tattitude: %zu\n"
         "\tdynamics: %zu\n"
-        "\tengine data: %zu\n",
+        "\tengine data: %zu\n"
+        "\troute: %zu\n",
         self->nlisteners[LOCATION_DATA],
         self->nlisteners[ATTITUDE_DATA],
         self->nlisteners[DYNAMICS_DATA],
-        self->nlisteners[ENGINE_DATA]
+        self->nlisteners[ENGINE_DATA],
+        self->nlisteners[ROUTE_DATA]
     );
 }
 
@@ -145,6 +147,17 @@ void data_source_set_engine_data(DataSource *self, EngineData *engine_data)
     self->engine_data = *engine_data;
 }
 
+void data_source_set_route_data(DataSource *self, RouteData *route_data)
+{
+    self = self ? self : data_source_get_instance();
+
+    if(route_data_equals(route_data, &self->route))
+        return;
+    data_source_fire_listeners(self, ROUTE_DATA, route_data);
+    self->route = *route_data;
+}
+
+
 static bool get_listener_range(DataType type, uintf8_t *start, uintf8_t *limit)
 {
     switch(type){
@@ -163,6 +176,11 @@ static bool get_listener_range(DataType type, uintf8_t *start, uintf8_t *limit)
         case ENGINE_DATA:
             *start = MAX_LOCATION_LISTENERS+MAX_ATTITUDE_LISTENERS+MAX_DYNAMICS_LISTENERS;
             *limit = *start + MAX_ENGINE_DATA_LISTENERS;
+            return true;
+        case ROUTE_DATA:
+            *start =  MAX_LOCATION_LISTENERS+MAX_ATTITUDE_LISTENERS
+                    + MAX_DYNAMICS_LISTENERS + MAX_ENGINE_DATA_LISTENERS;
+            *limit = *start + MAX_ROUTE_DATA_LISTENERS;
             return true;
         break;
         default:
