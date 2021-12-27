@@ -20,10 +20,9 @@
 #define GROUP_SPACE 8
 
 static void side_panel_render(SidePanel *self, Uint32 dt, RenderContext *ctx);
-static void side_panel_update_state(SidePanel *self, Uint32 dt);
 static BaseGaugeOps side_panel_ops = {
     .render = (RenderFunc)side_panel_render,
-    .update_state = (StateUpdateFunc)side_panel_update_state,
+    .update_state = (StateUpdateFunc)NULL,
     .dispose = (DisposeFunc)NULL
 };
 
@@ -488,12 +487,6 @@ void side_panel_set_fuel_px(SidePanel *self, float value)
 void side_panel_set_fuel_qty(SidePanel *self, float value)
 {
     fishbone_gauge_set_value(self->fuel_qty, value, true);
-}
-
-static void side_panel_update_state(SidePanel *self, Uint32 dt)
-{
-
-
 }
 
 static void side_panel_render(SidePanel *self, Uint32 dt, RenderContext *ctx)
