@@ -8,6 +8,7 @@
 #include <stdint.h>
 
 #include "base-gauge.h"
+#include "data-source.h"
 #include "generic-layer.h"
 #include "map-gauge.h"
 #include "map-math.h"
@@ -481,6 +482,14 @@ void map_gauge_attitude_changed(MapGauge *self, AttitudeData *newv)
     map_gauge_set_marker_heading(self, newv->heading);
 }
 
+void map_gauge_route_changed(MapGauge *self, RouteData *newv)
+{
+    route_map_provider_set_route(self->route_overlay,
+        &newv->from, &newv->to
+    );
+    map_tile_cache_clear(&self->tile_cache);
+    BASE_GAUGE(self)->dirty = true;
+}
 
 /*TODO: split up*/
 static void map_gauge_update_state(MapGauge *self, Uint32 dt)

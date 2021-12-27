@@ -95,4 +95,5 @@ bool map_gauge_set_viewport(MapGauge *self, int32_t x, int32_t y, bool animated)
 
 void map_gauge_location_changed(MapGauge *self, LocationData *newv);
 void map_gauge_attitude_changed(MapGauge *self, AttitudeData *newv);
+void map_gauge_route_changed(MapGauge *self, RouteData *newv);
 #endif /* MAP_GAUGE_H */

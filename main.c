@@ -13,10 +13,12 @@
 
 #include "base-gauge.h"
 #include "basic-hud.h"
+#include "dialogs/direct-to-dialog.h"
 #include "side-panel.h"
 #include "map-gauge.h"
 #include "resource-manager.h"
 #include "sdl-colors.h"
+#include "widgets/base-widget.h"
 
 #if ENABLE_3D
 #include "terrain-viewer.h"
@@ -62,6 +64,8 @@ typedef enum{
 BasicHud *hud = NULL;
 SidePanel *panel = NULL;
 MapGauge *map = NULL;
+DirectToDialog *ddt = NULL;
+
 bool g_show3d = false;
 DataSource *g_ds;
 RunningMode g_mode;
@@ -76,6 +80,9 @@ bool handle_keyboard(SDL_KeyboardEvent *event, Uint32 elapsed)
 
     new_attitude = g_ds->attitude;
     new_location = g_ds->location;
+
+    if(ddt && ddt->visible)
+        base_widget_handle_event(BASE_WIDGET(ddt), event);
 
     switch(event->keysym.sym){
         /*App control*/
@@ -137,6 +144,15 @@ bool handle_keyboard(SDL_KeyboardEvent *event, Uint32 elapsed)
         case SDLK_KP_DIVIDE:
             if(event->state == SDL_PRESSED){
                 map_gauge_center_on_marker(map, true);
+            }
+            break;
+
+        /*Go to dialog*/
+        case SDLK_g:
+            if(event->state == SDL_PRESSED){
+                if(!ddt)
+                    ddt = direct_to_dialog_new();
+                ddt->visible = true;
             }
             break;
 
@@ -363,6 +379,13 @@ int main(int argc, char **argv)
     map->level = 7;
     SDL_Rect maprect = {SCREEN_WIDTH-200,SCREEN_HEIGHT-160,base_gauge_w(BASE_GAUGE(map)),base_gauge_h(BASE_GAUGE(map))};
 
+    SDL_Rect ddtrect ={
+        640/2,
+        480/2 - 100,
+        12*20,
+        304
+    };
+
 #if ENABLE_3D
     TerrainViewer *viewer;
     viewer = terrain_viewer_new(-0.2);
@@ -399,9 +422,10 @@ int main(int argc, char **argv)
         .target = panel
     });
 
-    data_source_add_events_listener(g_ds, map, 2,
+    data_source_add_events_listener(g_ds, map, 3,
         LOCATION_DATA, map_gauge_location_changed,
-        ATTITUDE_DATA, map_gauge_attitude_changed
+        ATTITUDE_DATA, map_gauge_attitude_changed,
+        ROUTE_DATA, map_gauge_route_changed
     );
 
 #if ENABLE_3D
@@ -461,6 +485,8 @@ int main(int argc, char **argv)
         base_gauge_render(BASE_GAUGE(hud), elapsed, &(RenderContext){rtarget, &whole, NULL});
         base_gauge_render(BASE_GAUGE(panel), elapsed, &(RenderContext){rtarget, &sprect, NULL});
         base_gauge_render(BASE_GAUGE(map), elapsed, &(RenderContext){rtarget, &maprect, NULL});
+        if(ddt && ddt->visible)
+            base_gauge_render(BASE_GAUGE(ddt), elapsed, &(RenderContext){rtarget, &ddtrect, NULL});
         render_end = SDL_GetTicks();
         total_render_time += render_end - render_start;
         nrender_calls++;

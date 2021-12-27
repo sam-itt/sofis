@@ -197,7 +197,6 @@ DirectToDialog *direct_to_dialog_init(DirectToDialog *self)
 static void direct_to_dialog_render(DirectToDialog *self, Uint32 dt, RenderContext *ctx)
 {
     base_gauge_fill(BASE_GAUGE(self), ctx, NULL, &SDL_BLACK, false);
-//    base_gauge_render(BASE_GAUGE(self), dt, ctx);
 }
 
 static bool direct_to_dialog_handle_event(DirectToDialog *self, SDL_KeyboardEvent *event)
@@ -259,6 +258,7 @@ static void selection_changed(DirectToDialog *self, ListBox *sender)
 
     double bearing = geo_location_bearing(&me, &ap);
     text_gauge_set_value_formatn(self->bearing_value, 4, "%d\x8f", (int)round(bearing));
+
 #if 0
     printf("Current selection: code: %s name: %s latitude: %f "
         "longitude: %f elevation: %d\n",
@@ -277,6 +277,9 @@ static void button_pressed(DirectToDialog *self, Button *sender)
     ListModelRow *row = list_box_get_selected(self->list);
     Airport *airport = (Airport*)row->key;
 
+    DataSource *ds = data_source_get_instance();
+    if(!ds) return;
+
     printf("Current selection: code: %s name: %s latitude: %f "
         "longitude: %f elevation: %d\n",
         airport->code,
@@ -285,6 +288,11 @@ static void button_pressed(DirectToDialog *self, Button *sender)
         airport->longitude,
         airport->elevation
     );
+
+    data_source_set_route_data(ds, &(RouteData){
+        .from = ds->location.super,
+        .to = (GeoLocation){airport->latitude, airport->longitude}
+    });
 
     self->visible = false;
 }
