@@ -17,7 +17,7 @@
 #include "misc.h"
 
 MapProvider *map_provider_init(MapProvider *self,
-                                        MapProviderOps *ops, intf8_t priority)
+                               MapProviderOps *ops, intf8_t priority)
 {
     self->ops = ops;
     self->priority = priority;
@@ -28,15 +28,15 @@ MapProvider *map_provider_dispose(MapProvider *self)
 {
     if(self->areas)
         free(self->areas);
+
+    if(self->ops->dispose)
+        self->ops->dispose(MAP_PROVIDER(self));
     return self;
 }
 
 MapProvider *map_provider_free(MapProvider *self)
 {
-    if(self->ops->dispose)
-        self->ops->dispose(MAP_PROVIDER(self));
-    map_provider_dispose(self);
-    free(self);
+    free(map_provider_dispose(self));
     return NULL;
 }
 

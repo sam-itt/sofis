@@ -25,7 +25,7 @@ static GenericLayer *route_map_provider_get_tile(RouteMapProvider *self,
 
 static MapProviderOps route_map_provider_ops = {
     .get_tile = (MapProviderGetTileFunc)route_map_provider_get_tile,
-    .dispose = map_provider_dispose
+    .dispose = NULL
 };
 
 RouteMapProvider *route_map_provider_new(void)

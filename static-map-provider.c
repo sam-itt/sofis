@@ -11,7 +11,7 @@ static const char *static_map_provider_url_template_set(StaticMapProviderUrlTemp
                                           int32_t x, int32_t y);
 
 static GenericLayer *static_map_provider_get_tile(StaticMapProvider *self, uintf8_t level, int32_t x, int32_t y);
-static MapProvider *static_map_provider_dispose(StaticMapProvider *self);
+static StaticMapProvider *static_map_provider_dispose(StaticMapProvider *self);
 static MapProviderOps static_map_provider_ops = {
     .get_tile = (MapProviderGetTileFunc)static_map_provider_get_tile,
     .dispose = (MapProviderDisposeFunc)static_map_provider_dispose
@@ -69,7 +69,7 @@ StaticMapProvider *static_map_provider_init(StaticMapProvider *self, const char 
     return self;
 }
 
-static MapProvider *static_map_provider_dispose(StaticMapProvider *self)
+static StaticMapProvider *static_map_provider_dispose(StaticMapProvider *self)
 {
     if(self->home)
         free(self->home);
@@ -79,7 +79,7 @@ static MapProvider *static_map_provider_dispose(StaticMapProvider *self)
         free(self->url.base);
     if(self->buffer)
         free(self->buffer);
-    return map_provider_dispose(MAP_PROVIDER(self));
+    return self;
 }
 
 /**
