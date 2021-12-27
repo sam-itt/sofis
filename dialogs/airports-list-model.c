@@ -34,7 +34,7 @@ AirportListModel *airport_list_model_init(AirportListModel *self)
     self->fullnames = malloc(sizeof(char *) * self->nfullnames);
     if(!self->fullnames)
         return NULL;
-#if 0
+#if 1
     size_t binsize = 0;
     for(int i = 0; i < nfrench_airports; i++){
         binsize += strlen(french_airports[i].code);
@@ -84,7 +84,7 @@ static AirportListModel *airport_list_model_dispose(AirportListModel *self)
 {
     list_model_dispose(LIST_MODEL(self));
     if(self->fullnames){
-#if 1
+#if 0
         for(int i = 0; i < nfrench_airports; i++){
             if(self->fullnames[i])
                 free(self->fullnames[i]);
