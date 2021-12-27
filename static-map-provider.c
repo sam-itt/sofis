@@ -1,6 +1,3 @@
-#ifndef _GNU_SOURCE
-#define _GNU_SOURCE
-#endif
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -48,6 +45,23 @@ StaticMapProvider *static_map_provider_init(StaticMapProvider *self, const char 
     self->format = strdup(format);
     if(!self->format) return NULL;
 
+    /* format is HOME/LL/XXXXXXX/YYYYYYY.FORMAT
+     * We go up to level 23 which means tileX/Y
+     * can reach 8388607 which is 7 digits long
+     */
+    self->bsize = strlen(self->home)
+                 + 1 /*slash*/
+                 + 2 /*LL*/
+                 + 1 /*slash*/
+                 + 7 /*XXXXXXX*/
+                 + 1 /*slash*/
+                 + 7 /*YYYYYYY*/
+                 + 1 /*dot*/
+                 + strlen(self->format)
+                 + 1; /*null byte*/
+    self->buffer = malloc(sizeof(char)*self->bsize);
+    if(!self->buffer) return NULL;
+
     /*The read config can fail and the provider still be
      * usable: no config file, etc.*/
     static_map_provider_read_config(self);
@@ -63,6 +77,8 @@ static MapProvider *static_map_provider_dispose(StaticMapProvider *self)
         free(self->format);
     if(self->url.base)
         free(self->url.base);
+    if(self->buffer)
+        free(self->buffer);
     return map_provider_dispose(MAP_PROVIDER(self));
 }
 
@@ -79,14 +95,12 @@ static MapProvider *static_map_provider_dispose(StaticMapProvider *self)
  */
 static GenericLayer *static_map_provider_get_tile(StaticMapProvider *self, uintf8_t level, int32_t x, int32_t y)
 {
-    char *filename;
-    GenericLayer *rv = NULL;
 
     if(MAP_PROVIDER(self)->nareas && !map_provider_has_tile(MAP_PROVIDER(self), level, x, y))
         return NULL;
 
-    asprintf(&filename, "%s/%d/%d/%d.%s", self->home, level, x, y, self->format);
-    if(access(filename, F_OK) != 0){
+    snprintf(self->buffer, self->bsize, "%s/%d/%d/%d.%s", self->home, level, x, y, self->format);
+    if(access(self->buffer, F_OK) != 0){
         /*  This is downloading feature is not intended to make it
          *  into the final version. Maps should be deployed/installed
          *  as a whole (maybe using a grabbing script) and not tile by tile
@@ -95,17 +109,14 @@ static GenericLayer *static_map_provider_get_tile(StaticMapProvider *self, uintf
          *  This feature is nonetheless very useful for the dev version
          *  and for demos.
          * */
-        if(!self->url.base) goto out;
+        if(!self->url.base) return NULL;
         static_map_provider_url_template_set(&self->url, level, x, y);
-        if(!http_download_file(self->url.base, filename)){
-            goto out;
+        if(!http_download_file(self->url.base, self->buffer)){
+            return NULL;
         }
     }
 
-    rv = generic_layer_new_from_file(filename);
-out:
-    free(filename);
-    return rv;
+    return generic_layer_new_from_file(self->buffer);
 }
 
 

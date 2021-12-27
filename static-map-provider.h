@@ -19,6 +19,8 @@ typedef struct{
 
     char *home;
     char *format; /*tile file extension*/
+    char *buffer; /*store filenames*/
+    size_t bsize; /*in bytes*/
     StaticMapProviderUrlTemplate url;
 }StaticMapProvider;
 
