@@ -41,6 +41,7 @@ GenericLayer *map_tile_cache_get(MapTileCache *self,
 bool map_tile_cache_add(MapTileCache *self, GenericLayer *tile,
                         uintf8_t level, int32_t x, int32_t y);
 
+void map_tile_cache_clear(MapTileCache *self);
 
 static inline bool map_tile_descriptor_match(MapTileDescriptor *self,
                                              uintf8_t level,

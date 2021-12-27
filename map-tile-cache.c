@@ -53,6 +53,14 @@ bool map_tile_cache_set_size(MapTileCache *self, uintf8_t cache_size)
     return true;
 }
 
+void map_tile_cache_clear(MapTileCache *self)
+{
+    for(int i = 0; i < self->ncached; i++)
+        generic_layer_unref(self->tile_cache[i].layer);
+
+    self->ncached = 0;
+}
+
 GenericLayer *map_tile_cache_get(MapTileCache *self,
                                  uintf8_t level, int32_t x, int32_t y)
 {
