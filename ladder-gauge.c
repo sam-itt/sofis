@@ -30,7 +30,7 @@ LadderGauge *ladder_gauge_new(LadderPageDescriptor *descriptor, int rubis)
     self = calloc(1, sizeof(LadderGauge));
     if(self){
         if(!ladder_gauge_init(self, descriptor,rubis)){
-            return base_gauge_dispose(BASE_GAUGE(self));
+            return base_gauge_free(BASE_GAUGE(self));
         }
     }
     return self;

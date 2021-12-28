@@ -29,7 +29,7 @@ AirspeedIndicator *airspeed_indicator_new(speed_t v_so, speed_t v_s1, speed_t v_
     self = calloc(1, sizeof(AirspeedIndicator));
     if(self){
         if(!airspeed_indicator_init(self, v_so, v_s1, v_fe, v_no, v_ne)){
-            return base_gauge_dispose(BASE_GAUGE(self));
+            return base_gauge_free(BASE_GAUGE(self));
         }
     }
     return self;

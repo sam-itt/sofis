@@ -37,7 +37,7 @@ TextGauge *text_gauge_new(const char *value, bool outlined, int w, int h)
     self = calloc(1, sizeof(TextGauge));
     if(self){
         if(!text_gauge_init(self, value, outlined, w, h)){
-            return base_gauge_dispose(BASE_GAUGE(self));
+            return base_gauge_free(BASE_GAUGE(self));
         }
     }
     return self;

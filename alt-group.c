@@ -29,7 +29,7 @@ AltGroup *alt_group_new(void)
     self = calloc(1, sizeof(AltGroup));
     if(self){
         if(!alt_group_init(self)){
-            return base_gauge_dispose(BASE_GAUGE(self));
+            return base_gauge_free(BASE_GAUGE(self));
         }
     }
     return self;
@@ -45,6 +45,9 @@ AltGroup *alt_group_init(AltGroup *self)
     if(!self->vsi || !self->altimeter)
         goto bail;
 
+    /* TODO: Move me as first operation to ensure that Ops are always
+     * set when we return NULL so that base_gauge_dispose (called by
+     * base_gauge_free) can properly dispose any gauge-allocated resources*/
     base_gauge_init(
         BASE_GAUGE(self),
         &alt_group_ops,

@@ -29,7 +29,7 @@ AltIndicator *alt_indicator_new(void)
     self = calloc(1, sizeof(AltIndicator));
     if(self){
         if(!alt_indicator_init(self)){
-            return base_gauge_dispose(BASE_GAUGE(self));
+            return base_gauge_free(BASE_GAUGE(self));
         }
     }
     return self;

@@ -44,7 +44,7 @@ OdoGauge *odo_gauge_new(DigitBarrel *barrel, int height, int rubis)
     self = calloc(1, sizeof(OdoGauge));
     if(self){
         if(!odo_gauge_init(self, rubis, 1, height, barrel)){
-            return base_gauge_dispose(BASE_GAUGE(self));
+            return base_gauge_free(BASE_GAUGE(self));
         }
     }
     return self;
@@ -62,8 +62,7 @@ OdoGauge *odo_gauge_new_multiple(int rubis, int nbarrels, ...)
         rv = odo_gauge_vainit(self, rubis, nbarrels, args);
         va_end(args);
         if(!rv){
-            free(self);
-            return NULL;
+            return base_gauge_free(BASE_GAUGE(self));
         }
     }
     return self;
@@ -77,8 +76,7 @@ OdoGauge *odo_gauge_vanew_multiple(int rubis, int nbarrels, va_list ap)
     if(self){
         rv = odo_gauge_vainit(self, rubis, nbarrels, ap);
         if(!rv){
-            free(self);
-            return NULL;
+            return base_gauge_free(BASE_GAUGE(self));
         }
     }
     return self;
@@ -130,6 +128,9 @@ OdoGauge *odo_gauge_vainit(OdoGauge *self, int rubis, int nbarrels, va_list ap)
 #if 0
     void *rv = animated_gauge_init(ANIMATED_GAUGE(self), ANIMATED_GAUGE_OPS(&odo_gauge_ops), width, max_height);
 #else
+    /* TODO: Move me as first operation to ensure that Ops are always
+     * set when we return NULL so that base_gauge_dispose (called by
+     * base_gauge_free) can properly dispose any gauge-allocated resources*/
     void *rv = base_gauge_init(BASE_GAUGE(self), &odo_gauge_ops, width, max_height);
 #endif
     if(!rv){

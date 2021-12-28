@@ -53,7 +53,7 @@ ElevatorGauge *elevator_gauge_new(bool marked, Location elevator_location,
             bar_max_w, bar_max_h,
             nzones, zones);
         if(!rv){
-            return base_gauge_dispose(BASE_GAUGE(self));
+            return base_gauge_free(BASE_GAUGE(self));
         }
     }
     return self;
@@ -154,6 +154,9 @@ ElevatorGauge *elevator_gauge_init(ElevatorGauge *self,
         .h = GENERIC_LAYER(&self->ruler)->canvas->h
     };
 
+    /* TODO: Move me as first operation to ensure that Ops are always
+     * set when we return NULL so that base_gauge_dispose (called by
+     * base_gauge_free) can properly dispose any gauge-allocated resources*/
     base_gauge_init(BASE_GAUGE(self),
         &elevator_gauge_ops,
         GENERIC_LAYER(&self->ruler)->canvas->w + self->elevator->canvas->w,

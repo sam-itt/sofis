@@ -35,7 +35,7 @@ VerticalStair *vertical_stair_new(const char *bg_img, const char *cursor_img, PC
     self = calloc(1, sizeof(VerticalStair));
     if(self){
         if(!vertical_stair_init(self, bg_img, cursor_img, font)){
-            return base_gauge_dispose(BASE_GAUGE(self));
+            return base_gauge_free(BASE_GAUGE(self));
         }
     }
     return self;
@@ -60,6 +60,9 @@ VerticalStair *vertical_stair_init(VerticalStair *self, const char *bg_img, cons
     generic_layer_build_texture(GENERIC_LAYER(&self->scale));
     generic_layer_build_texture(&self->cursor);
 
+    /* TODO: Move me as first operation to ensure that Ops are always
+     * set when we return NULL so that base_gauge_dispose (called by
+     * base_gauge_free) can properly dispose any gauge-allocated resources*/
     base_gauge_init(BASE_GAUGE(self),
         &vertical_stair_ops,
         generic_layer_w(&self->cursor),

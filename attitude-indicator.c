@@ -44,7 +44,7 @@ AttitudeIndicator *attitude_indicator_new(int width, int height)
     self = calloc(1, sizeof(AttitudeIndicator));
     if(self){
         if(!attitude_indicator_init(self, width, height)){
-            return base_gauge_dispose(BASE_GAUGE(self));
+            return base_gauge_free(BASE_GAUGE(self));
         }
     }
     return self;

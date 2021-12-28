@@ -32,7 +32,7 @@ CompassGauge *compass_gauge_new(void)
     self = calloc(1, sizeof(CompassGauge));
     if(self){
         if(!compass_gauge_init(self)){
-            return base_gauge_dispose(BASE_GAUGE(self));
+            return base_gauge_free(BASE_GAUGE(self));
         }
     }
     return(self);
@@ -65,6 +65,9 @@ CompassGauge *compass_gauge_init(CompassGauge *self)
         )
     );
 
+    /* TODO: Move me as first operation to ensure that Ops are always
+     * set when we return NULL so that base_gauge_dispose (called by
+     * base_gauge_free) can properly dispose any gauge-allocated resources*/
     base_gauge_init(BASE_GAUGE(self),
         &compass_gauge_ops,
         generic_layer_w(&self->outer),
