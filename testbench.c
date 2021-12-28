@@ -677,9 +677,11 @@ int main(int argc, char **argv)
     /*base_gauge_free(BASE_GAUGE(elevator));*/
     /*base_gauge_free(BASE_GAUGE(panel));*/
     /*base_gauge_free(BASE_GAUGE(compass));*/
+    /*base_gauge_free(BASE_GAUGE(map));*/
     /*base_gauge_free(BASE_GAUGE(tape_gauge));*/
     /*base_gauge_free(BASE_GAUGE(tape_gauge2));*/
     base_gauge_free(BASE_GAUGE(direct));
+    /*base_gauge_free(BASE_GAUGE(btn));*/
     resource_manager_shutdown();
     data_source_free(data_source_get_instance());
 #if USE_SDL_GPU
