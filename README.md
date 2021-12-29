@@ -15,6 +15,25 @@ Running a pre-recorded (circuit) flight from LFLG (Grenoble, France):
 
 ![lflg circuit][1]
 
+Doing a direct-to from LFLG to LFMA (Aix-en-provance, France):
+
+![ddt-lfma][9]
+
+Controls are currently mapped to keyboard keys:
+* <kbd>g</kbd> to show the dialog
+* <kbd>&#8593;</kbd>, <kbd>&#8595;</kbd>, <kbd>&#8592;</kbd>, <kbd>&#8594;</kbd>: Contextual moves in the controls (scroll, change text, etc.)
+* <kbd>Enter</kbd> Validate
+
+Those controls will be mapped to a two-ring-plus-button rotatry encodre. Think
+as the left/right arrow being one of the ring, up/down the other one and enter
+the button click.
+
+Mini-map current keyboard controls are as follows:
+* Keypad arrow keys: Move the map
+* Keypad <kbd>/</kbd>: Center the map on plane
+* Keypad <kbd>+</kbd>: Zoom in
+* Keypad <kbd>-</kbd>: Zoom out
+
 Running on the very first Raspberry Pi:
 
 ![raspberry][2]
@@ -246,3 +265,5 @@ get in touch first by opening a new github issue.
 [6]: https://github.com/sam-itt/gentoo-pie/releases/download/0.0.1/sdcard-gentoo.img.xz
 [7]: http://stratux.me/
 [8]: https://github.com/sam-itt/sofis/blob/media/sofis-bno080-rpi.png?raw=true
+[9]: https://github.com/sam-itt/sofis/blob/media/sofis-direct-to.gif?raw=true
+
