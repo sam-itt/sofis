@@ -38,4 +38,5 @@ typedef struct{
 
 DirectToDialog *direct_to_dialog_new();
 DirectToDialog *direct_to_dialog_init(DirectToDialog *self);
+void direct_to_dialog_reset(DirectToDialog *self);
 #endif /* DIRECT_TO_H */

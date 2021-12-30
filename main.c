@@ -152,6 +152,8 @@ bool handle_keyboard(SDL_KeyboardEvent *event, Uint32 elapsed)
             if(event->state == SDL_PRESSED){
                 if(!ddt)
                     ddt = direct_to_dialog_new();
+                else
+                    direct_to_dialog_reset(ddt);
                 ddt->visible = true;
             }
             break;

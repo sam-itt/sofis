@@ -130,6 +130,7 @@ bool text_box_set_allowed_chars(TextBox *self, bool keep_order, int nsets, ...)
     return text_box_validate_font(self);
 }
 
+
 /**
  * @param text should not have leading or trailing spaces
  *
@@ -137,6 +138,15 @@ bool text_box_set_allowed_chars(TextBox *self, bool keep_order, int nsets, ...)
 bool text_box_set_text(TextBox *self, const char *text)
 {
     int ntlen;
+
+    if(text == NULL){
+        self->text[0] = 32;
+        self->tlen = 2;
+        self->current_index = 0;
+        self->text_size = (SDL_Rect){0,0,0,0};
+        BASE_GAUGE(self)->dirty = true;
+        return true;
+    }
 
     ntlen = strlen(text);
     if((ntlen+1) >= self->alen){

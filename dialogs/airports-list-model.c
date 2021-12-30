@@ -110,7 +110,7 @@ void airport_list_model_filter(AirportListModel *self, const char *filter)
 
     lself->nrows = 0;
     for(int i = 0; i < self->nfullnames; i++){
-        if(strcasestr(self->fullnames[i], filter)){
+        if(!filter || strcasestr(self->fullnames[i], filter)){
             lself->rows[lself->nrows].key = &french_airports[i];
             lself->rows[lself->nrows].label = self->fullnames[i];
             lself->row_lenghts[lself->nrows] = strlen(self->fullnames[i]);

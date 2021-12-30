@@ -201,6 +201,15 @@ DirectToDialog *direct_to_dialog_init(DirectToDialog *self)
     return self;
 }
 
+void direct_to_dialog_reset(DirectToDialog *self)
+{
+    text_box_set_text(self->text, NULL);
+    airport_list_model_filter((AirportListModel*)self->list->model, NULL);
+    self->focused->has_focus = false;
+    self->focused = BASE_WIDGET(self->text);
+    self->focused->has_focus = true;
+}
+
 static void direct_to_dialog_render(DirectToDialog *self, Uint32 dt, RenderContext *ctx)
 {
     base_gauge_fill(BASE_GAUGE(self), ctx, NULL, &SDL_BLACK, false);
