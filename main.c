@@ -11,6 +11,7 @@
 
 #include <SDL2/SDL.h>
 
+#include "SDL_keycode.h"
 #include "base-gauge.h"
 #include "basic-hud.h"
 #include "dialogs/direct-to-dialog.h"
@@ -80,9 +81,7 @@ bool handle_keyboard(SDL_KeyboardEvent *event, Uint32 elapsed)
 
     new_attitude = g_ds->attitude;
     new_location = g_ds->location;
-
-    if(ddt && ddt->visible)
-        base_widget_handle_event(BASE_WIDGET(ddt), event);
+    bool return_consumed = false;
 
     switch(event->keysym.sym){
         /*App control*/
@@ -95,7 +94,7 @@ bool handle_keyboard(SDL_KeyboardEvent *event, Uint32 elapsed)
                 g_show3d = !g_show3d;
             hud->attitude->mode = (g_show3d) ? AI_MODE_3D : AI_MODE_2D;
             break;
-        case SDLK_RETURN:
+        case SDLK_RETURN2:
             if(event->state == SDL_PRESSED){
                 if(g_mode == MODE_FGTAPE)
                     ((FGTapeDataSource*)(g_ds))->playing = !((FGTapeDataSource*)(g_ds))->playing;
@@ -148,13 +147,17 @@ bool handle_keyboard(SDL_KeyboardEvent *event, Uint32 elapsed)
             break;
 
         /*Go to dialog*/
-        case SDLK_g:
+        case SDLK_RETURN:
             if(event->state == SDL_PRESSED){
-                if(!ddt)
+                if(!ddt){
                     ddt = direct_to_dialog_new();
-                else
+                    return_consumed = true;
+                }
+                else if (ddt->visible != true){
                     direct_to_dialog_reset(ddt);
-                ddt->visible = true;
+                    ddt->visible = true;
+                    return_consumed = true;
+                }
             }
             break;
 
@@ -210,6 +213,10 @@ bool handle_keyboard(SDL_KeyboardEvent *event, Uint32 elapsed)
             }
             break;
     }
+    if(ddt && ddt->visible &&!return_consumed)
+        base_widget_handle_event(BASE_WIDGET(ddt), event);
+
+
     if(attitude_dirty)
         data_source_set_attitude(g_ds, &new_attitude);
     if(location_dirty)
