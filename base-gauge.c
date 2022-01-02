@@ -12,6 +12,7 @@
 
 #include "SDL_rect.h"
 #include "base-gauge.h"
+#include "misc.h"
 #include "sdl-colors.h"
 #include "view.h"
 
@@ -232,22 +233,25 @@ int base_gauge_blit_texture(BaseGauge *self, RenderContext *ctx,
 //    printf("After clipping: ");
 //    SDLExt_RectDump(&fdst);
 #endif
-    GPU_Rect *dst_rectf, *src_rectf;
     float x,y;
 
-    dst_rectf = &rectf(&fdst);
-
     if(!srcrect){
-        x = src->w/2.0 + dst_rectf->x;
-        y = src->h/2.0 + dst_rectf->y;
-        src_rectf = NULL;
+        x = src->w/2.0 + fdst.x;
+        y = src->h/2.0 + fdst.y;
     }else{
-        x = srcrect->w/2.0 + dst_rectf->x;
-        y = srcrect->h/2.0 + dst_rectf->y;
-        src_rectf = &rectf(srcrect);
+        x = srcrect->w/2.0 + fdst.x;
+        y = srcrect->h/2.0 + fdst.y;
     }
-
-    GPU_Blit(src, src_rectf, ctx->target.target, x, y);
+#if 0
+    printf(
+        "GPU_Blit from %p {.x:%0.2f, .y:%0.2f, .w:%0.2f, .h:%0.2f} to %p x:%0.2f y:%0.2f\n",
+        src,
+        src_rectf->x,src_rectf->y,
+        src_rectf->w,src_rectf->h,
+        ctx->target.target, x, y
+    );
+#endif
+    GPU_Blit(src, srcrect ? &rectf(srcrect) : NULL, ctx->target.target, x, y);
     return 0;
 }
 
