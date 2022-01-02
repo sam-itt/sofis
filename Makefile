@@ -13,8 +13,14 @@ FG_ROAM=$(SRCDIR)/fg-roam
 CGLM=$(FG_ROAM)/lib/cglm/include
 BNO080=$(SRCDIR)/sensors/bno080
 
+ifeq ($(BUILD_MODE),debug)
+	OPT_CFLAGS=-O0 -g3
+else
+	OPT_CFLAGS=-O2
+endif
+
 CC=gcc
-CFLAGS=-g3 -O0 `pkg-config glib-2.0 sdl2 SDL2_image libgps --cflags` \
+CFLAGS=$(OPT_CFLAGS) `pkg-config glib-2.0 sdl2 SDL2_image libgps --cflags` \
 	   -I$(SRCDIR) \
 	   -I$(SRCDIR)/widgets \
 	   -I$(SRCDIR)/dialogs \
