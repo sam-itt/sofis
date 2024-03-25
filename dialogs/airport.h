@@ -17,8 +17,6 @@ typedef struct{
     int elevation;
 }Airport;
 
-/*TODO: Load from a file*/
-static size_t nfrench_airports = 1511; /*TODO: sizeofs*/
 static Airport french_airports[] = {
     {
         .code = "LF0121",
@@ -10598,5 +10596,5 @@ static Airport french_airports[] = {
         .elevation = 463,
     }
 };
-
+static size_t nfrench_airports = sizeof(french_airports) / sizeof(french_airports[0]);
 #endif /* AIRPORT_H */

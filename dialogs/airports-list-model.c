@@ -57,7 +57,7 @@ AirportListModel *airport_list_model_init(AirportListModel *self)
     char *stashptr = self->namestash;
     for(int i = 0; i < nfrench_airports; i++){
         self->fullnames[i] = stashptr;
-        strcat(stashptr, french_airports[i].code);
+        strcpy(stashptr, french_airports[i].code);
         strcat(stashptr, " - ");
         strcat(stashptr, french_airports[i].name);
         while(*stashptr != '\0') stashptr++;

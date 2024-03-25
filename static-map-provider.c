@@ -221,10 +221,9 @@ static bool map_config_read_area(const char *line, MapProviderArea *area)
 static bool map_config_read_url_template(uintf8_t keyword_len, const char *line, StaticMapProviderUrlTemplate *url)
 {
     char *tmp;
-    size_t read;
     int len;
 
-    tmp = nibble_spaces(line+keyword_len, read);
+    tmp = nibble_spaces(line+keyword_len, 0);
     if(!tmp) return false;
     url->base = strdup(tmp);
     len = strlen(url->base);
