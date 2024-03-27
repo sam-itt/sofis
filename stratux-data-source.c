@@ -12,7 +12,7 @@
 #include <math.h>
 
 //#define API_ENDPOINT "http://127.0.0.1/getSituation"
-#define API_ENDPOINT "http://192.168.10.1/getSituation"
+#define API_ENDPOINT "http://127.0.0.1:5000/getSituation"
 
 char *json_get_value(const char *json, const char *key, size_t *keylen);
 double json_get_double_value(const char *json, const char *key, const char *nan_value);
