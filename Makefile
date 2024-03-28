@@ -87,8 +87,7 @@ configure:
 	git clone https://github.com/grimfang4/sdl-gpu.git sdl-gpu || (cd sdl-gpu && git pull)
 	cd sdl-gpu && cmake -G "Unix Makefiles" && make && sudo make install
 	# Initialize and update git submodules
-	git submodule foreach 'git checkout master && git pull origin master'
-	git submodule update --init --recursive
+	git submodule update --init --recursive --remote
 	# Configure sdl-pcf
 	cd sdl-pcf && autoreconf -i && ./configure --with-texture=sdl_gpu && cd ..
 	# Download and extract media
