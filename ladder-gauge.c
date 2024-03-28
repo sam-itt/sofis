@@ -164,7 +164,7 @@ static void ladder_gauge_update_state(LadderGauge *self, Uint32 dt)
             .x = 0,
             .y = generic_layer_h(GENERIC_LAYER(page)) + portion.y, //means - portion.y as portion.y < 0 here
             .w = generic_layer_w(GENERIC_LAYER(page)),
-            .h = generic_layer_h(GENERIC_LAYER(page)) - patch.y
+            .h = generic_layer_h(GENERIC_LAYER(page))
         };
         if(self->descriptor->direction == TOP_DOWN){
             /* 0 is on top, 100 is downwards. We need to fill the top with values before the begining

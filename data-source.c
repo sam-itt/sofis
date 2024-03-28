@@ -98,11 +98,14 @@ void data_source_print_listener_stats(DataSource *self)
 
 static void data_source_fire_listeners(DataSource *self, DataType type, void *param)
 {
-    uintf8_t idx, limit;
+    uintf8_t idx=0, limit=0;
 
     self = self ? self : data_source_get_instance();
 
-    get_listener_range(type, &idx, &limit);
+    if(!get_listener_range(type, &idx, &limit)) {
+        return;
+    }
+    
     for(int i = idx; i < idx + self->nlisteners[type]; i++){
         self->listeners[i].callback(
             self->listeners[i].target,
@@ -191,6 +194,8 @@ static bool get_listener_range(DataType type, uintf8_t *start, uintf8_t *limit)
             return true;
         break;
         default:
+            *start = 0;
+            *limit = 0;
             printf("CRIT: %s: bad type, problems ahead!\n",__FUNCTION__);
             return 0;
         break;

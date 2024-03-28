@@ -305,8 +305,8 @@ bool generic_ruler_draw_zones(GenericRuler *self, Location spine_location, int n
 {
     int begin, end;
 
-    int start_y,end_y;
-    int start_x, end_x;
+    int start_y = 0, end_y = -1;
+    int start_x = 0, end_x = -1;
     int npixels;
 
     if(self->orientation == RulerHorizontal){

@@ -1,0 +1,53 @@
+name: SonarCloud Scan
+on:
+  # Trigger analysis when pushing in master or pull requests, and when creating
+  # a pull request.
+  push:
+    branches:
+      - master
+  pull_request:
+      types: [opened, synchronize, reopened]
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    env:
+      BUILD_WRAPPER_OUT_DIR: build_wrapper_output_directory # Directory where build-wrapper output will be placed
+    steps:
+    - uses: actions/checkout@v3
+    - name: Install dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y libsdl2-dev libsdl2-image-dev libglib2.0-dev libcurl4-openssl-dev libgps-dev
+        # Assuming SDL_gpu needs to be installed from source or an external repository
+        # For SDL_gpu, add the specific installation steps here. This might involve adding a PPA, downloading the source, and compiling.
+    - name: Install SDL_gpu
+      run: |
+        git clone https://github.com/grimfang4/sdl-gpu.git sdl-gpu
+        cd sdl-gpu
+        cmake -G "Unix Makefiles"
+        make
+        sudo make install
+    - name: Setup SSH
+      run: |
+        mkdir -p ~/.ssh
+        echo "${{ secrets.SSH_PRIVATE_KEY_CI }}" > ~/.ssh/id_ed25519
+        chmod 600 ~/.ssh/id_ed25519
+        ssh-keyscan github.com >> ~/.ssh/known_hosts 
+    - name: Initialize and update git submodules
+      run: git submodule update --init --recursive
+    - name: Configure sdl-pcf
+      run: |
+        cd sdl-pcf
+        autoreconf -i
+        ./configure --with-texture=sdl_gpu
+        cd ..
+    - name:  Install sonar-scanner and build-wrapper
+      uses: sonarsource/sonarcloud-github-c-cpp@v2
+    - name: Run build-wrapper
+      run: |
+       build-wrapper-linux-x86-64 --out-dir ${{ env.BUILD_WRAPPER_OUT_DIR }} make
+    - name: Run sonar-scanner
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+      run: sonar-scanner --define sonar.scm.exclusions.disabled=true --define sonar.cfamily.build-wrapper-output="${{ env.BUILD_WRAPPER_OUT_DIR }}" #Consult https://docs.sonarcloud.io/advanced-setup/ci-based-analysis/sonarscanner-cli/ for more information and options

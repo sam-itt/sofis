@@ -3,11 +3,14 @@
 	url = https://github.com/sam-itt/sdl-pcf
 [submodule "fg-io"]
 	path = fg-io
-	url = https://github.com/sam-itt/fg-io.git
+	url = git@github.com:DamianBaranski/fg-io.git
+	branch = master
 	shallow = true
 [submodule "fg-roam"]
 	path = fg-roam
+	branch = master
 	url = git@github.com:DamianBaranski/fg-roam.git
 [submodule "sensors/bno080"]
 	path = sensors/bno080
+	branch = master
 	url = https://github.com/sam-itt/bno080
