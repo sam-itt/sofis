@@ -176,7 +176,7 @@ void digit_barrel_state_value(DigitBarrel *self, float value, SDL_Rect *region, 
             .x = 0,
             .y = generic_layer_h(layer) + portion.y, //means - portion.y as portion.y < 0 here
             .w = generic_layer_w(layer),
-            .h = generic_layer_h(layer) - patch.y
+            .h = generic_layer_h(layer)
         };
         state->patches[state->npatches].src = patch;
         state->patches[state->npatches].dst = dst_region;
