@@ -172,11 +172,12 @@ void digit_barrel_state_value(DigitBarrel *self, float value, SDL_Rect *region, 
 
     state->layer = layer;
     if(portion.y < 0){ //Fill top
+        int y = generic_layer_h(layer) + portion.y; //means - portion.y as portion.y < 0 here
         SDL_Rect patch = {
             .x = 0,
-            .y = generic_layer_h(layer) + portion.y, //means - portion.y as portion.y < 0 here
+            .y = y,
             .w = generic_layer_w(layer),
-            .h = generic_layer_h(layer)
+            .h = generic_layer_h(layer) - y
         };
         state->patches[state->npatches].src = patch;
         state->patches[state->npatches].dst = dst_region;

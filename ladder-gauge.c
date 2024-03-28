@@ -160,12 +160,14 @@ static void ladder_gauge_update_state(LadderGauge *self, Uint32 dt)
         portion.h = generic_layer_h(GENERIC_LAYER(page)) - portion.y;
     /*All pages must have the same size*/
     if(portion.y < 0){ //Fill top
+        int y = generic_layer_h(GENERIC_LAYER(page)) + portion.y;  //means - portion.y as portion.y < 0 here
         SDL_Rect patch = {
             .x = 0,
-            .y = generic_layer_h(GENERIC_LAYER(page)) + portion.y, //means - portion.y as portion.y < 0 here
+            .y = y,
             .w = generic_layer_w(GENERIC_LAYER(page)),
-            .h = generic_layer_h(GENERIC_LAYER(page))
+            .h = generic_layer_h(GENERIC_LAYER(page)) - y
         };
+        
         if(self->descriptor->direction == TOP_DOWN){
             /* 0 is on top, 100 is downwards. We need to fill the top with values before the begining
              * of the current page, i.e get the previous page */
