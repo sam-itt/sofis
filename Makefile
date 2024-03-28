@@ -12,6 +12,7 @@ FGTAPE=$(FG_IO)/fg-tape
 FG_ROAM=$(SRCDIR)/fg-roam
 CGLM=$(FG_ROAM)/lib/cglm/include
 BNO080=$(SRCDIR)/sensors/bno080
+SDL2INC=/usr/local/include/SDL2/
 
 ifeq ($(BUILD_MODE),debug)
 	OPT_CFLAGS=-O0 -g3
@@ -30,6 +31,7 @@ CFLAGS=$(OPT_CFLAGS) `pkg-config glib-2.0 sdl2 SDL2_image libgps --cflags` \
 	   -I$(BNO080) \
 	   -I$(CGLM) \
 	   -I$(FG_ROAM)/src \
+           -I$(SDL2INC) \
 	   -DUSE_SGPU_TEXTURE=1 \
 	   -DUSE_SDL_GPU=1 \
 	   -DENABLE_DEBUG_TRIANGLE=0 \
@@ -82,4 +84,3 @@ clean:
 
 mrproper: clean
 	rm -rf $(EXEC)
-
