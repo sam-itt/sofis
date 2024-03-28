@@ -163,9 +163,9 @@ char *json_get_value(const char *json, const char *key, size_t *keylen)
 
 double json_get_double_value(const char *json, const char *key, const char *nan_value)
 {
-    double rv;
-    char *strval;
-    size_t len;
+    double rv = 0;
+    char *strval = NULL;
+    size_t len = 0;
 
     strval = json_get_value(json, key, &len);
     if(!strval) return NAN;

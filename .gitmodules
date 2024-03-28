@@ -3,7 +3,7 @@
 	url = https://github.com/sam-itt/sdl-pcf
 [submodule "fg-io"]
 	path = fg-io
-	url = https://github.com/sam-itt/fg-io.git
+	url = git@github.com:DamianBaranski/fg-io.git
 	shallow = true
 [submodule "fg-roam"]
 	path = fg-roam
