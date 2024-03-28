@@ -45,3 +45,8 @@ jobs:
         tar -xf media.tar.gz --strip-components=1 -C fg-roam/
     - name: Build
       run: make
+    - name: Upload x86 binary
+      uses: actions/upload-artifact@v2
+      with:
+        name: sofis-linux-x86
+        path: /home/runner/work/sofis/sofis/sofis
