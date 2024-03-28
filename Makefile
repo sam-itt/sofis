@@ -30,6 +30,7 @@ CFLAGS=$(OPT_CFLAGS) `pkg-config glib-2.0 sdl2 SDL2_image libgps --cflags` \
 	   -I$(BNO080) \
 	   -I$(CGLM) \
 	   -I$(FG_ROAM)/src \
+	   -I/home/debian/git/sdl-gpu/include \
 	   -DUSE_SGPU_TEXTURE=1 \
 	   -DUSE_SDL_GPU=1 \
 	   -DENABLE_DEBUG_TRIANGLE=0 \
@@ -75,11 +76,26 @@ testbench: $(OBJ) $(TEST_OBJ)
 %.o: %.c
 	$(CC) -o $@ -c $< $(CFLAGS)
 
-.PHONY: clean mrproper
+.PHONY: clean mrproper configure
+
+configure:
+	# Install dependencies
+	sudo apt-get update
+	sudo apt-get install -y libsdl2-dev libsdl2-image-dev libglib2.0-dev libcurl4-openssl-dev libgps-dev
+	# Install SDL_gpu
+	git clone https://github.com/grimfang4/sdl-gpu.git sdl-gpu || (cd sdl-gpu && git pull)
+	cd sdl-gpu && cmake -G "Unix Makefiles" && make && sudo make install
+	# Initialize and update git submodules
+	git submodule update --init --recursive
+	# Configure sdl-pcf
+	cd sdl-pcf && autoreconf -i && ./configure --with-texture=sdl_gpu && cd ..
+	# Download and extract media
+	wget -nc https://github.com/sam-itt/fg-roam/archive/media.tar.gz -O media.tar.gz
+	tar -xf media.tar.gz --strip-components=1 -C fg-roam/
 
 clean:
 	rm -rf *.o sdl-pcf/src/*.o fg-roam/src/*.o fg-io/fg-tape/*.o sensors/*.o widgets/*.o dialogs/*.o
 
 mrproper: clean
-	rm -rf $(EXEC)
+	rm -rf $(EXEC) media.tar.gz
 
