@@ -73,7 +73,7 @@ ListBox *list_box_init(ListBox *self, FontResource font_id, int width, int heigh
     self->state.patches = malloc(sizeof(PCF_StaticFontRectPatch)
             * self->state.apatches
         );
-        printf("allocated %d patches\n", self->state.apatches);
+        printf("allocated %lu patches\n", self->state.apatches);
 
         self->sfont = resource_manager_get_static_font(font_id,
             &SDL_WHITE,
