@@ -1,0 +1,29 @@
+name: C/C++ CI
+
+on:
+  push:
+    branches: [ "master" ]
+  pull_request:
+    branches: [ "master" ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+    - name: Initialize and update git submodules
+      run: git submodule update --init --recursive
+    - name: Configure sdl-pcf
+      run: |
+        cd sdl-pcf
+        autoreconf -i
+        ./configure --with-texture=sdl_gpu
+        cd ..
+    - name: Download and extract media
+      run: |
+        wget https://github.com/sam-itt/fg-roam/archive/media.tar.gz
+        tar -xf media.tar.gz --strip-components=1 -C fg-roam/
+    - name: Build
+      run: make
+
