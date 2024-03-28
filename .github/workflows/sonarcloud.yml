@@ -41,14 +41,6 @@ jobs:
         autoreconf -i
         ./configure --with-texture=sdl_gpu
         cd ..
-    - name: Download and extract media
-      run: |
-        wget https://github.com/sam-itt/fg-roam/archive/media.tar.gz
-        tar -xf media.tar.gz --strip-components=1 -C fg-roam/
-    - uses: actions/checkout@v3
-      with:
-        # Disabling shallow clone is recommended for improving relevancy of reporting
-        fetch-depth: 0
     - name:  Install sonar-scanner and build-wrapper
       uses: sonarsource/sonarcloud-github-c-cpp@v2
     - name: Run build-wrapper
