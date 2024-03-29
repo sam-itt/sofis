@@ -17,3 +17,6 @@
 [submodule "plog"]
 	path = plog
 	url = git@github.com:lampmanyao/plog.git
+[submodule "c-logger"]
+	path = c-logger
+	url = git@github.com:yksz/c-logger.git

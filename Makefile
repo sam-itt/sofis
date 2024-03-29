@@ -6,6 +6,7 @@ FGR_HOME=\"./fg-roam/src\"
 SFS_HOME=\".\"
 
 SRCDIR=.
+LOGDIR=$(SRCDIR)/c-logger
 FG_IO=$(SRCDIR)/fg-io
 FGCONN=$(FG_IO)/flightgear-connector
 FGTAPE=$(FG_IO)/fg-tape
@@ -31,7 +32,8 @@ CFLAGS=$(OPT_CFLAGS) `pkg-config glib-2.0 sdl2 SDL2_image libgps --cflags` \
 	   -I$(BNO080) \
 	   -I$(CGLM) \
 	   -I$(FG_ROAM)/src \
-     -I$(SDL2INC) \
+           -I$(SDL2INC) \
+           -I$(LOGDIR)/src \
 	   -DUSE_SGPU_TEXTURE=1 \
 	   -DUSE_SDL_GPU=1 \
 	   -DENABLE_DEBUG_TRIANGLE=0 \
@@ -58,6 +60,7 @@ SRC+= $(wildcard $(SRCDIR)/sdl-pcf/src/*.c)
 SRC+= $(filter-out $(FGCONN)/fg-connector-test.c, $(wildcard $(FGCONN)/*.c))
 SRC+= $(filter-out $(FGTAPE)/fg-tape-reader.c, $(wildcard $(FGTAPE)/*.c))
 SRC+= $(wildcard $(SRCDIR)/sensors/*.c)
+SRC+= $(wildcard $(LOGDIR)/src/*.c)
 SRC+= $(filter-out $(BNO080)/test.c, $(wildcard $(BNO080)/*.c))
 ifeq ($(ENABLE_3D), 1)
 SRC+= $(filter-out $(FG_ROAM)/src/view-gl.c, $(wildcard $(FG_ROAM)/src/*.c))
