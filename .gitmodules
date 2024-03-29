@@ -14,9 +14,6 @@
 	path = sensors/bno080
 	branch = master
 	url = https://github.com/sam-itt/bno080
-[submodule "plog"]
-	path = plog
-	url = git@github.com:lampmanyao/plog.git
 [submodule "c-logger"]
 	path = c-logger
 	url = git@github.com:yksz/c-logger.git
