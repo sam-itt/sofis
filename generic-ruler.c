@@ -10,6 +10,7 @@
 
 #include "generic-ruler.h"
 
+#include "logger.h"
 #include "SDL_surface.h"
 #include "generic-layer.h"
 #include "misc.h"
@@ -78,7 +79,7 @@ GenericRuler *generic_ruler_init(GenericRuler *self,
     self->start = start;
     self->end = end;
     if(self->end < self->start){
-        printf("%s: self->end(%f) must be greather than self->start(%f).",
+    	LOG_ERROR("%s: self->end(%f) must be greather than self->start(%f).",
             __FUNCTION__, self->end, self->start
         );
         return NULL;
@@ -86,7 +87,7 @@ GenericRuler *generic_ruler_init(GenericRuler *self,
 
     self->hatch_step = (step > 0) ? step : self->end;
     if(fmodf(self->end,self->hatch_step) != 0){
-        printf("Warning: range end (%f) is not a multiple of hatch_step(%f), rendering will break\n",
+    	LOG_WARN("Warning: range end (%f) is not a multiple of hatch_step(%f), rendering will break",
             self->end,
             self->hatch_step
         );
@@ -192,7 +193,7 @@ bool generic_ruler_get_size_request(GenericRuler *self, int8_t precision, PCF_Fo
         }else if (markings_location == Bottom){
             bottom = TEXT_SPACE + glyph_height;
         }else{
-            printf("Unsupported Etching location for Horizontal orientation\n");
+        	LOG_ERROR("Unsupported Etching location for Horizontal orientation");
             return false;
         }
     }else if(self->orientation == RulerVertical){
@@ -224,19 +225,19 @@ bool generic_ruler_get_size_request(GenericRuler *self, int8_t precision, PCF_Fo
         }else if (markings_location == Right) {
             right = m_rect.w + TEXT_SPACE;
         }else{
-            printf("Unsupported Etching location for Vertical orientation\n");
+        	LOG_ERROR("Unsupported Etching location for Vertical orientation");
             return false;
         }
     }else{
-        printf("Unsupported orientation\n");
+    	LOG_ERROR("Unsupported orientation");
         return false;
     }
 
 //    printf("Width was %d, it's now %d\n", , fbw + left + right);
     *w = fbw + left + right;
     *h = fbh + top + bottom;
-    printf("Passed-in fbw: %d, returning w: %d\n",fbw, *w);
-    printf("ruler_area.w was: %d is now: %d\n",self->ruler_area.w, fbw);
+    LOG_INFO("Passed-in fbw: %d, returning w: %d",fbw, *w);
+    LOG_INFO("ruler_area.w was: %d is now: %d",self->ruler_area.w, fbw);
 
     self->ruler_area = (SDL_Rect){
         .x = left,
@@ -273,7 +274,7 @@ int generic_ruler_get_pixel_increment_for(GenericRuler *self, float value)
         else if(self->orientation == RulerVertical)
             return (value - self->start)*((self->ruler_area.h-1) - 0)/(self->end - self->start) + 0;
         else
-            printf("Unsupported orientation\n");
+        	LOG_ERROR("Unsupported orientation\n");
     }
     return -1;
 }
@@ -325,7 +326,7 @@ bool generic_ruler_draw_zones(GenericRuler *self, Location spine_location, int n
             start_y = SDLExt_RectLastY(&self->ruler_area) - npixels;
             end_y = SDLExt_RectLastY(&self->ruler_area);
         }else{
-            printf("Unsupported line position for Horizontal orientation");
+        	LOG_ERROR("Unsupported line position for Horizontal orientation");
             return false;
         }
     }else if(self->orientation == RulerVertical){
@@ -340,11 +341,11 @@ bool generic_ruler_draw_zones(GenericRuler *self, Location spine_location, int n
             start_x = SDLExt_RectLastX(&self->ruler_area) - npixels;
             end_x = SDLExt_RectLastX(&self->ruler_area);
         }else{
-            printf("Unsupported line position for Vertical orientation");
+        	LOG_ERROR("Unsupported line position for Vertical orientation");
             return false;
         }
     }else{
-            printf("Unsupported gauge orientation");
+    	    LOG_ERROR("Unsupported gauge orientation");
             return false;
     }
 
@@ -434,7 +435,7 @@ bool generic_ruler_etch_hatches(GenericRuler *self, Uint32 color, bool etch_spin
             else if(spine_location == Top)
                 y = self->ruler_area.y;
             else
-                printf("Unsupported line position for Horizontal orientation\n");
+            	LOG_ERROR("Unsupported line position for Horizontal orientation");
             if(y < 0)
                 return false; //TODO:Unlock pixels
             for(int x = self->ruler_area.x; x <= SDLExt_RectLastX(&self->ruler_area); x++)
@@ -447,7 +448,7 @@ bool generic_ruler_etch_hatches(GenericRuler *self, Uint32 color, bool etch_spin
                 pcursor = (self->direction == RulerGrowAlongAxis)
                           ? self->ruler_area.x + increment
                           : SDLExt_RectLastX(&self->ruler_area) - increment;
-                printf("Etching value %d at x=%d (increment was %d)\n", (int)i, pcursor, increment);
+                LOG_DEBUG("Etching value %d at x=%d (increment was %d)", (int)i, pcursor, increment);
                 for(int y = self->ruler_area.y; y <= SDLExt_RectLastY(&self->ruler_area); y++)
                     pixels[y * GENERIC_LAYER(self)->canvas->w + pcursor] = color;
             }
@@ -463,7 +464,7 @@ bool generic_ruler_etch_hatches(GenericRuler *self, Uint32 color, bool etch_spin
             else if(spine_location == Right)
                 x = SDLExt_RectLastX(&self->ruler_area);
             else
-                printf("Unsupported line position for Vertical orientation\n");
+            	LOG_ERROR("Unsupported line position for Vertical orientation");
             if(x < 0)
                 return false; //TODO:Unlock pixels
             for(int y = self->ruler_area.y; y <= SDLExt_RectLastY(&self->ruler_area); y++)
@@ -476,14 +477,14 @@ bool generic_ruler_etch_hatches(GenericRuler *self, Uint32 color, bool etch_spin
                 pcursor = (self->direction == RulerGrowAlongAxis)
                           ? self->ruler_area.y + increment
                           : SDLExt_RectLastY(&self->ruler_area) - increment;
-                printf("Drawing %f hatch at y = %d\n",i, pcursor);
+                LOG_DEBUG("Drawing %f hatch at y = %d\n",i, pcursor);
                 for(int x = self->ruler_area.x; x < self->ruler_area.x + self->ruler_area.w; x++){
                     pixels[pcursor * GENERIC_LAYER(self)->canvas->w + x] = color;
                 }
             }
         }
     }else{
-        printf("Unsupported orientation\n");
+    	LOG_ERROR("Unsupported orientation");
         return false; //TODO:Unlock pixels
     }
     generic_layer_unlock(GENERIC_LAYER(self));
@@ -534,7 +535,7 @@ bool generic_ruler_etch_markings(GenericRuler *self, Location markings_location,
                     CenterOnCol | AboveRow
                 );
             else{
-                printf("Unsupported etch position for horizontal scale\n");
+            	LOG_ERROR("Unsupported etch position for horizontal scale");
                 return false;
             }
         }
@@ -562,12 +563,12 @@ bool generic_ruler_etch_markings(GenericRuler *self, Location markings_location,
                     LeftToCol | CenterOnRow
                 );
             else{
-                printf("Unsupported etch position for vertical scale\n");
+            	LOG_ERROR("Unsupported etch position for vertical scale");
                 return false;
             }
         }
     }else{
-        printf("Unsupported orientation\n");
+    	LOG_ERROR("Unsupported orientation");
         return false;
     }
     return true;

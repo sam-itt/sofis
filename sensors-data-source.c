@@ -11,6 +11,7 @@
 
 #include "sensors-data-source.h"
 #include "sensors/gps-sensor.h"
+#include "logger.h"
 
 #ifndef BNO080_DEV
 #define BNO080_DEV "/dev/i2c-1"
@@ -47,14 +48,14 @@ SensorsDataSource *sensors_data_source_init(SensorsDataSource *self)
         return NULL;
 
     if(!bno080_init(&self->imu, 0x4b, BNO080_DEV)){
-        printf("Couldn't initialize BNO0808 device, bailing out\n");
+    	LOG_ERROR("Couldn't initialize BNO0808 device, bailing out\n");
         exit(EXIT_FAILURE);
     }
     bno080_enable_feature(&self->imu, ROTATION_VECTOR);
 
 
     if(!gps_sensor_init(&self->gps, "localhost", DEFAULT_GPSD_PORT)){
-        printf("Couldn't initialize GPS, bailing out\n");
+    	LOG_ERROR("Couldn't initialize GPS, bailing out\n");
         exit(EXIT_FAILURE);
     }
 

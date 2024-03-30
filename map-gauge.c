@@ -19,7 +19,7 @@
 #include "misc.h"
 #include "sdl-colors.h"
 #include "res-dirs.h"
-
+#include "logger.h"
 #include "SDL_surface.h"
 #include "SDL_timer.h"
 
@@ -538,7 +538,7 @@ static void map_gauge_update_state(MapGauge *self, Uint32 dt)
         for(int tilex = tl_tile_x; tilex <= br_tile_x; tilex++){
             layer = map_gauge_get_tile(self, self->level, tilex, tiley);
             if(!layer)
-                printf("Couldn't get tile layer for tile x:%d y:%d zoom:%d\n",tilex,tiley, self->level);
+            	LOG_ERROR("Couldn't get tile layer for tile x:%d y:%d zoom:%d\n",tilex,tiley, self->level);
             if(!layer) continue;
             /*TODO: Use rects with uint32_t,
              * SDL uses ints and will only go up to level 15*/

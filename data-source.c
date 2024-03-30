@@ -67,7 +67,7 @@ bool data_source_add_listener(DataSource *self, DataType type, ValueListener *li
 
     get_listener_range(type, &idx, &limit);
     if(self->nlisteners[type] == limit){
-        printf(
+    	LOG_ERROR(
             "Tried to add another location listener while %d limit has been reached."
             "Please increment the corresponding listeners limit\n", limit
         );
@@ -197,7 +197,7 @@ static bool get_listener_range(DataType type, uintf8_t *start, uintf8_t *limit)
         default:
             *start = 0;
             *limit = 0;
-            printf("CRIT: %s: bad type, problems ahead!\n",__FUNCTION__);
+            LOG_ERROR("CRIT: %s: bad type, problems ahead!\n",__FUNCTION__);
             return 0;
         break;
     };

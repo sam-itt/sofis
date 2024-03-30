@@ -12,7 +12,7 @@
 #include <netinet/in.h>
 #include <string.h>
 #include <arpa/inet.h>
-
+#include "logger.h"
 #include "data-source.h"
 #include "fg-data-source.h"
 
@@ -60,15 +60,15 @@ void fg_data_source_banner(FGDataSource *self)
     getifaddrs(&ifAddrStruct);
 
 
-    printf("Waiting for first packet from FlightGear\n");
-    printf("Be sure to:\n");
-    printf("1. have basic_proto.xml in $FG_ROOT/Protocol\n");
-    printf("2. Run FlightGear(fgfs) with --generic=socket,out,5,%sLOCAL_IP%s,%d,udp,basic_proto\n",
+    LOG_INFO("Waiting for first packet from FlightGear\n");
+    LOG_INFO("Be sure to:\n");
+    LOG_INFO("1. have basic_proto.xml in $FG_ROOT/Protocol\n");
+    LOG_INFO("2. Run FlightGear(fgfs) with --generic=socket,out,5,%sLOCAL_IP%s,%d,udp,basic_proto\n",
         "\x1B[1;31m",
         "\x1B[0m",
         self->port
     );
-    printf("Be sure to replace %sLOCAL_IP%s with the IP of the local machine, one of:\n",
+    LOG_INFO("Be sure to replace %sLOCAL_IP%s with the IP of the local machine, one of:\n",
         "\x1B[1;31m",
         "\x1B[0m"
     );
@@ -84,7 +84,7 @@ void fg_data_source_banner(FGDataSource *self)
             char addressBuffer[INET_ADDRSTRLEN];
             inet_ntop(AF_INET, tmpAddrPtr, addressBuffer, INET_ADDRSTRLEN);
             if(!strcmp(ifa->ifa_name, "lo")) continue;
-            printf("\t%s IP Address %s\n", ifa->ifa_name, addressBuffer);
+            LOG_INFO("\t%s IP Address %s\n", ifa->ifa_name, addressBuffer);
         }
     }
     if (ifAddrStruct!=NULL) freeifaddrs(ifAddrStruct);

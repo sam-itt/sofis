@@ -359,7 +359,7 @@ int main(int argc, char **argv)
 	gpu_screen = GPU_InitRenderer(GPU_RENDERER_OPENGL_2, SCREEN_WIDTH, SCREEN_HEIGHT, GPU_DEFAULT_INIT_FLAGS);
 #endif
 	if(gpu_screen == NULL){
-		LOG_FATAL("Initialization Error: Could not create a renderer with proper feature support for this demo.\n");
+		LOG_FATAL("Initialization Error: Could not create a renderer with proper feature support for this demo.");
 		return 1;
     }
     rtarget.target = gpu_screen;
@@ -381,7 +381,7 @@ int main(int argc, char **argv)
                 SDL_WINDOW_SHOWN
                 );
     if (window == NULL) {
-        LOG_FATAL("could not create window: %s\n", SDL_GetError());
+        LOG_FATAL("could not create window: %s", SDL_GetError());
         return 1;
     }
 
@@ -547,7 +547,7 @@ int main(int argc, char **argv)
         last_ticks = ticks;
     }while(!done);
 
-    LOG_INFO("Average rendering time (%d samples): %f ticks\n", nrender_calls, total_render_time*1.0/nrender_calls);
+    LOG_INFO("Average rendering time (%d samples): %f ticks", nrender_calls, total_render_time*1.0/nrender_calls);
     base_gauge_free(BASE_GAUGE(hud));
     base_gauge_free(BASE_GAUGE(panel));
     base_gauge_free(BASE_GAUGE(map));

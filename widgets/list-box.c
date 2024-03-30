@@ -15,7 +15,7 @@
 #include "list-model.h"
 #include "resource-manager.h"
 #include "sdl-colors.h"
-
+#include "logger.h"
 #include "misc.h"
 #include "text-box.h"
 #include "list-box.h"
@@ -73,7 +73,7 @@ ListBox *list_box_init(ListBox *self, FontResource font_id, int width, int heigh
     self->state.patches = malloc(sizeof(PCF_StaticFontRectPatch)
             * self->state.apatches
         );
-        printf("allocated %lu patches\n", self->state.apatches);
+        LOG_INFO("allocated %lu patches\n", self->state.apatches);
 
         self->sfont = resource_manager_get_static_font(font_id,
             &SDL_WHITE,
@@ -212,8 +212,8 @@ static void list_box_update(ListBox *self, Uint32 dt)
             state->apatches - state->npatches,
             state->patches + state->npatches
         );
-#if 0
-        printf("Line %d patches:\n", y);
+
+        LOG_DEBUG("Line %d patches:\n", y);
         for(int i = state->npatches; i < state->npatches + n_line_patches; i++){
             printf("\tPatch[%d]: src(x:%d y:%d w:%d h:%d) dst:(x:%d y:%d)\n", i,
                 state->patches[i].src.x, state->patches[i].src.y,
@@ -222,7 +222,7 @@ static void list_box_update(ListBox *self, Uint32 dt)
                 state->patches[i].dst.y
             );
         }
-#endif
+
         state->npatches += n_line_patches;
         if(n_line_patches){
             line_height = state->patches[state->npatches-1].src.h;

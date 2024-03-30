@@ -11,6 +11,7 @@
 
 #include "static-map-provider.h"
 #include "http-download.h"
+#include "logger.h"
 
 static bool static_map_provider_read_config(StaticMapProvider *self);
 static const char *static_map_provider_url_template_set(StaticMapProviderUrlTemplate *self,
@@ -195,7 +196,7 @@ static bool map_config_read_area(const char *line, MapProviderArea *area)
 
     found = split_str(line+5, isspace, parts, 5);
     if(found < 5){
-        printf("Missing area part: %s\n", area_parts[found]);
+    	LOG_ERROR("Missing area part: %s\n", area_parts[found]);
         return false;
     }
 
@@ -229,23 +230,23 @@ static bool map_config_read_url_template(uintf8_t keyword_len, const char *line,
     len = strlen(url->base);
     if(url->base[len-1] == '\n')
         url->base[len-1] = '\0';
-    printf("Found url: %s\n", url->base);
+    LOG_INFO("Found url: %s", url->base);
 
     url->lvl = strstr(url->base, "%LEVEL%");
     if(!url->lvl){
-        printf("Missing %%LEVE%% placeholder in url template\n");
+    	LOG_ERROR("Missing %%LEVE%% placeholder in url template\n");
         return false;
     }
 
     url->tilex = strstr(url->base, "%TILE_X%");
     if(!url->tilex){
-        printf("Missing %%TILE_X%% placeholder in url template\n");
+    	LOG_ERROR("Missing %%TILE_X%% placeholder in url template\n");
         return false;
     }
 
     url->tiley = strstr(url->base, "%TILE_Y%");
     if(!url->tiley){
-        printf("Missing %%TILE_Y%% placeholder in url template\n");
+    	LOG_ERROR("Missing %%TILE_Y%% placeholder in url template\n");
         return false;
     }
     return true;
@@ -286,7 +287,7 @@ static bool static_map_provider_read_config(StaticMapProvider *self)
         if(!strncmp(iter, "area:",5)) nareas++;
     }
     /*Then allocate and fill*/
-    printf("Found %zu level areas\n", nareas);
+    LOG_INFO("Found %zu level areas", nareas);
     map_provider_set_nareas(MAP_PROVIDER(self), nareas);
 
     fseek(fp, mark, SEEK_SET);

@@ -8,6 +8,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include "logger.h"
 #include "data-source.h"
 #include "fg-tape-data-source.h"
 
@@ -88,7 +89,7 @@ FGTapeDataSource *fg_tape_data_souce_init(FGTapeDataSource *self, char *filename
         "/consumables[0]/fuel[0]/tank[0]/level-gal_us[0]",
         NULL
     );
-    printf("TapeRecord: found %d out of %d signals\n",found, 16);
+    LOG_INFO("TapeRecord: found %d out of %d signals\n",found, 16);
 
     self->position = start_pos * 1000; /*Starting position in the tape*/
     self->playing= true;

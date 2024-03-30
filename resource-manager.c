@@ -15,6 +15,7 @@
 #include "resource-manager.h"
 #include "misc.h"
 #include <res-dirs.h>
+#include "logger.h"
 
 static ResourceManager *_instance = NULL;
 static void resource_manager_push_static_font(PCF_StaticFont *font, FontResource creator);
@@ -47,7 +48,7 @@ void resource_manager_shutdown(void)
     for(int i = 0; i < FONT_MAX; i++){
         if(self->fonts[i]){
             if(self->fonts[i]->xfont.refcnt > 1){
-                printf(
+            	LOG_ERROR(
                     "ResourceManager: Font %d refcount was still %d at shutdown (1 expected), leaking %p\n",
                     i,
                     self->fonts[i]->xfont.refcnt,
@@ -61,7 +62,7 @@ void resource_manager_shutdown(void)
 
     for(int i = 0; i < self->n_sfonts; i++){
         if(self->sfonts[i].font->refcnt > 1){
-            printf(
+        	LOG_ERROR(
                 "ResourceManager: StaticFont %d refcount was still %d at shutdown (1 expected), leaking %p\n",
                 i,
                 self->sfonts[i].font->refcnt,

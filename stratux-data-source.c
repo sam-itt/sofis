@@ -7,6 +7,7 @@
  */
 #include "stratux-data-source.h"
 #include "http-request.h"
+#include "logger.h"
 
 #include "misc.h"
 #include <math.h>
@@ -120,13 +121,11 @@ static bool stratux_data_source_frame(StratuxDataSource *self, uint32_t dt)
         }
     );
 
-#if 0
-    printf("lat: %f lon: %f, alt: %f\n"
+    LOG_TRACE("lat: %f lon: %f, alt: %f\n"
         "roll: %f pitch: %f heading(gyro): %f heading(mag): %f\n",
         lat, lon, alt,
         roll, pitch, heading, mheading
     );
-#endif
     self->buf->len = 0;
 
     DATA_SOURCE(self)->has_fix = true;

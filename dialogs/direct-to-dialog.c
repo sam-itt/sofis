@@ -11,7 +11,7 @@
 #include <string.h>
 
 #include "direct-to-dialog.h"
-
+#include "logger.h"
 #include "base-gauge.h"
 #include "base-widget.h"
 #include "dialogs/airports-list-model.h"
@@ -275,8 +275,7 @@ static void selection_changed(DirectToDialog *self, ListBox *sender)
     double bearing = geo_location_bearing(&me, &ap);
     text_gauge_set_value_formatn(self->bearing_value, 4, "%d\x8f", (int)round(bearing));
 
-#if 0
-    printf("Current selection: code: %s name: %s latitude: %f "
+    LOG_DEBUG("Current selection (highlighted): code: %s name: %s latitude: %f "
         "longitude: %f elevation: %d\n",
         airport->code,
         airport->name,
@@ -284,7 +283,6 @@ static void selection_changed(DirectToDialog *self, ListBox *sender)
         airport->longitude,
         airport->elevation
     );
-#endif
 }
 
 
@@ -296,7 +294,7 @@ static void button_pressed(DirectToDialog *self, Button *sender)
     DataSource *ds = data_source_get_instance();
     if(!ds) return;
 
-    printf("Current selection: code: %s name: %s latitude: %f "
+    LOG_INFO("Current selection: code: %s name: %s latitude: %f "
         "longitude: %f elevation: %d\n",
         airport->code,
         airport->name,

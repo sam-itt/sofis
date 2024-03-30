@@ -13,7 +13,7 @@
 #include <curl/curl.h>
 
 #include "misc.h"
-
+#include "logger.h"
 bool http_download_file(char *url, char *output)
 {
     CURL *curl;
@@ -30,7 +30,7 @@ bool http_download_file(char *url, char *output)
 
     fp = fopen(output,"wb");
     if(!fp){
-        printf("Couldn't open %s for writting\n",output);
+    	LOG_ERROR("Couldn't open %s for writting",output);
         return false;
     }
     curl_easy_setopt(curl, CURLOPT_URL, url);
@@ -41,7 +41,7 @@ bool http_download_file(char *url, char *output)
     curl_easy_setopt(curl, CURLOPT_WRITEDATA, fp);
     curl_easy_setopt(curl, CURLOPT_FAILONERROR, 1L);
 
-    printf("Downloading %s, please wait\t", url);
+    LOG_INFO("Downloading %s, please wait\t", url);
     fflush(stdout);
     res = curl_easy_perform(curl);
     /* always cleanup */
@@ -49,14 +49,14 @@ bool http_download_file(char *url, char *output)
     fclose(fp);
     if(res != CURLE_OK){
         unlink(output);
-        printf("[ %sFAILED%s ]\n",
+        LOG_ERROR("[ %sFAILED%s ]",
             "\033[0;31m", /*red*/
             "\033[0m" /*Reset*/
         );
         return false;
     }
 
-    printf("[ %sOK%s ]\n",
+    LOG_INFO("[ %sOK%s ]",
         "\033[0;32m", /*red*/
         "\033[0m" /*Reset*/
     );
