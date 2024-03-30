@@ -8,6 +8,7 @@
 #include <stdio.h>
 #include <stdarg.h>
 
+#include "logger.h"
 #include "data-source.h"
 #include "misc.h"
 
@@ -81,7 +82,7 @@ bool data_source_add_listener(DataSource *self, DataType type, ValueListener *li
 
 void data_source_print_listener_stats(DataSource *self)
 {
-    printf(
+    LOG_INFO(
         "Current number of listeners:\n"
         "\tlocation: %zu\n"
         "\tattitude: %zu\n"

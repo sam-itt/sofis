@@ -19,6 +19,7 @@
 #include "resource-manager.h"
 #include "sdl-colors.h"
 #include "widgets/base-widget.h"
+#include "logger.h"
 
 #if ENABLE_3D
 #include "terrain-viewer.h"
@@ -103,7 +104,7 @@ bool handle_keyboard(SDL_KeyboardEvent *event, Uint32 elapsed)
             break;
         case SDLK_p:
             if(event->state == SDL_PRESSED){
-                printf("Pitch: %f\nHeading: %f\n",
+                LOG_INFO("Pitch: %f\nHeading: %f\n",
                     g_ds->attitude.pitch,
                     g_ds->attitude.heading
                 );
@@ -263,40 +264,47 @@ const char *pretty_mode(RunningMode mode)
 #if ENABLE_3D
 void update_terrain_viewer_location(TerrainViewer *self, LocationData *newv)
 {
+	LOG_TRACE("Entering update_terrain_viewer_location");
     if(self == NULL || newv == NULL) {
-         printf("Problem with update terrain viewer location\r\n");
+    	 LOG_ERROR("update_terrain_viewer_location: Received NULL pointer (self: %p, newv: %p)", self, newv);
          return;
     }
 
     double lon = fmod(newv->super.longitude+180, 360.0) - 180;
     plane_set_position(self->plane, newv->super.latitude, lon, newv->altitude/3.281 + 2);
     self->dirty = true;
-    /*printf("Position set to: lat:%f lon:%f alt:%f\n", newv->super.latitude, lon, newv->altitude);*/
-    /*exit(0);*/
+    LOG_TRACE("Updated terrain viewer location: Lat: %f, Lon: %f, Alt: %f", newv->super.latitude, lon, newv->altitude);
+
 }
 
 void update_terrain_viewer_attitude(TerrainViewer *self, AttitudeData *newv)
 {
     if(self == NULL || newv == NULL) {
-         printf("Problem with update_terrain_viewer_attitude\r\n");
+    	 LOG_ERROR("update_terrain_viewer_attitude: Received NULL pointer (self: %p, newv: %p)", self, newv);
          return;
     }
 
     plane_set_attitude(self->plane, newv->roll, newv->pitch, newv->heading);
+    LOG_TRACE("Updated terrain viewer attitude: Roll: %f, Pitch: %f, Heading: %f", newv->roll, newv->pitch, newv->heading);
     self->dirty = true;
 }
 #endif
 
 int main(int argc, char **argv)
 {
+	/*stdout*/
+	logger_initConsoleLogger(NULL);
+	logger_setLevel(LogLevel_DEBUG);
+	LOG_DEBUG("Application start");
     Uint32 colors[N_COLORS];
     bool done;
     int i;
     float oldv[5] = {0,0,0,0,0};
     RenderTarget rtarget;
-
+    LOG_DEBUG("Default mode set to MODE_FGTAPE");
     g_mode = MODE_FGTAPE;
     if(argc > 1){
+    	LOG_DEBUG("Processing command line arguments");
         if(!strcmp(argv[1], "--sensors"))
             g_mode = MODE_SENSORS;
         else if(!strcmp(argv[1], "--fgtape"))
@@ -307,32 +315,39 @@ int main(int argc, char **argv)
             g_mode = MODE_STRATUX;
         else if(!strcmp(argv[1], "--mock"))
             g_mode = MODE_MOCK;
+        LOG_INFO("Running mode set via command line: %s", pretty_mode(g_mode));
     }
-
+    LOG_DEBUG("Initializing data source based on selected mode");
     switch(g_mode){
         case MODE_SENSORS:
             g_ds = (DataSource *)sensors_data_source_new();
+            LOG_DEBUG("MODE_SENSORS data source initialized");
             break;
         case MODE_FGREMOTE:
             g_ds = (DataSource *)fg_data_source_new(6789);
+            LOG_DEBUG("MODE_FGREMOTE data source initialized");
             break;
         case MODE_STRATUX:
             g_ds = (DataSource *)stratux_data_source_new();
+        	LOG_DEBUG("MODE_STRATUX data source initialized");
             break;
         case MODE_MOCK:
             g_ds = (DataSource*)mock_data_source_new();
+            LOG_DEBUG("MODE_MOCK data source initialized");
             break;
         case MODE_FGTAPE: //Fallthtough
         default:
             g_ds = (DataSource *)fg_tape_data_source_new("fg-io/fg-tape/dr400.fgtape", 120);
+            LOG_DEBUG("Default data source (MODE_FGTAPE) initialized");
             break;
     }
 
     if(!g_ds){
-        printf("Couldn't create DataSource (%s), bailing out\n", pretty_mode(g_mode));
+    	LOG_FATAL("Couldn't create DataSource (%s), bailing out", pretty_mode(g_mode));
         exit(EXIT_FAILURE);
     }
     data_source_set(g_ds);
+    LOG_DEBUG("Data source set successfully");
 
 #if USE_SDL_GPU
     GPU_Target* gpu_screen = NULL;
@@ -344,7 +359,7 @@ int main(int argc, char **argv)
 	gpu_screen = GPU_InitRenderer(GPU_RENDERER_OPENGL_2, SCREEN_WIDTH, SCREEN_HEIGHT, GPU_DEFAULT_INIT_FLAGS);
 #endif
 	if(gpu_screen == NULL){
-        GPU_LogError("Initialization Error: Could not create a renderer with proper feature support for this demo.\n");
+		LOG_FATAL("Initialization Error: Could not create a renderer with proper feature support for this demo.\n");
 		return 1;
     }
     rtarget.target = gpu_screen;
@@ -353,7 +368,10 @@ int main(int argc, char **argv)
     SDL_Surface* screenSurface = NULL;
 
     if (SDL_Init(SDL_INIT_VIDEO) < 0) {
+    	LOG_FATAL("SDL could not initialize! SDL_Error: %s", SDL_GetError());
         return 1;
+    } else {
+        LOG_DEBUG("SDL initialized successfully.");
     }
 
     window = SDL_CreateWindow(
@@ -363,13 +381,13 @@ int main(int argc, char **argv)
                 SDL_WINDOW_SHOWN
                 );
     if (window == NULL) {
-        fprintf(stderr, "could not create window: %s\n", SDL_GetError());
+        LOG_FATAL("could not create window: %s\n", SDL_GetError());
         return 1;
     }
 
     screenSurface = SDL_GetWindowSurface(window);
     if(!screenSurface){
-        printf("Error: %s\n",SDL_GetError());
+        LOG_FATAL("Error: %s\n",SDL_GetError());
         exit(-1);
     }
     rtarget.surface = screenSurface;
@@ -449,14 +467,11 @@ int main(int argc, char **argv)
     data_source_print_listener_stats(g_ds);
 
 
-    printf("Waiting for fix.");
+    LOG_INFO("Waiting for fix.");
     do{
         data_source_frame(DATA_SOURCE(g_ds), 0);
-        printf(".");
-        fflush(stdout);
         sleep(1); /*sleep for 1 sec*/
     }while(!DATA_SOURCE(g_ds)->has_fix);
-    printf("\n");
 
 
     last_dtms = 0;
@@ -488,7 +503,7 @@ int main(int argc, char **argv)
 #endif
 #if ENABLE_3D
         if(g_show3d){
-            GPU_FlushBlitBuffer(); /*begin 3*/
+            GPU_FlushBlitBuffer(); /*begin 3d*/
             glDisable(GL_BLEND);
             terrain_viewer_frame(viewer);
             GPU_ResetRendererState(); /*end 3d*/
@@ -523,7 +538,7 @@ int main(int argc, char **argv)
             dtms -= 60000 * m;
             s = dtms / 1000;
 
-            printf("%02d:%02d:%02d Current FPS: %03d\r",h,m,s, (1000*nframes)/elapsed);
+            LOG_INFO("%02d:%02d:%02d Current FPS: %03d\r",h,m,s, (1000*nframes)/elapsed);
             fflush(stdout);
             nframes = 0;
             acc = 0;
@@ -532,7 +547,7 @@ int main(int argc, char **argv)
         last_ticks = ticks;
     }while(!done);
 
-    printf("Average rendering time (%d samples): %f ticks\n", nrender_calls, total_render_time*1.0/nrender_calls);
+    LOG_INFO("Average rendering time (%d samples): %f ticks\n", nrender_calls, total_render_time*1.0/nrender_calls);
     base_gauge_free(BASE_GAUGE(hud));
     base_gauge_free(BASE_GAUGE(panel));
     base_gauge_free(BASE_GAUGE(map));
