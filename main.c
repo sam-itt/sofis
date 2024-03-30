@@ -263,6 +263,11 @@ const char *pretty_mode(RunningMode mode)
 #if ENABLE_3D
 void update_terrain_viewer_location(TerrainViewer *self, LocationData *newv)
 {
+    if(self == NULL || newv == NULL) {
+         printf("Problem with update terrain viewer location\r\n");
+         return;
+    }
+
     double lon = fmod(newv->super.longitude+180, 360.0) - 180;
     plane_set_position(self->plane, newv->super.latitude, lon, newv->altitude/3.281 + 2);
     self->dirty = true;
@@ -272,6 +277,11 @@ void update_terrain_viewer_location(TerrainViewer *self, LocationData *newv)
 
 void update_terrain_viewer_attitude(TerrainViewer *self, AttitudeData *newv)
 {
+    if(self == NULL || newv == NULL) {
+         printf("Problem with update_terrain_viewer_attitude\r\n");
+         return;
+    }
+
     plane_set_attitude(self->plane, newv->roll, newv->pitch, newv->heading);
     self->dirty = true;
 }
@@ -437,6 +447,7 @@ int main(int argc, char **argv)
     );
 #endif
     data_source_print_listener_stats(g_ds);
+
 
     printf("Waiting for fix.");
     do{
