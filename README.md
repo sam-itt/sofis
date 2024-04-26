@@ -112,6 +112,19 @@ that will rely only on pre-loaded data.
 You can zoom in/out the minimap using + and - keys on the keypad and move the
 minimap itself using arrow keys. Press space to toggle the synthetic vision.
 
+## Using tiles from OpenAIP
+
+The map can display tiles from openaip. To enable this feature, you need to obtain
+a (free) API key from [OpenAIP][10]. Simply create an account there and you'll be able 
+to get a key from your profile page.
+
+Then edit the `resources/maps/openaip/map.conf` file and replace YOUR-API-KEY with your key
+in the following line:
+
+```
+src: https://api.tiles.openaip.net/api/data/openaip/%LEVEL%/%TILE_X%/%TILE_Y%.png?apiKey=YOUR-API-KEY
+```
+
 ## Getting data from FlightGear
 
 SoFIS can be fed data over the network by FlightGear. You'll need to setup your
@@ -266,4 +279,4 @@ get in touch first by opening a new github issue.
 [7]: http://stratux.me/
 [8]: https://github.com/sam-itt/sofis/blob/media/sofis-bno080-rpi.png?raw=true
 [9]: https://github.com/sam-itt/sofis/blob/media/sofis-direct-to.gif?raw=true
-
+[10]: https://www.openaip.net/
