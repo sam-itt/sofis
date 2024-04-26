@@ -221,6 +221,7 @@ static bool map_config_read_area(const char *line, MapProviderArea *area)
 static bool map_config_read_url_template(uintf8_t keyword_len, const char *line, StaticMapProviderUrlTemplate *url)
 {
     char *tmp;
+    char *base;
     int len;
 
     tmp = nibble_spaces(line+keyword_len, 0);
@@ -234,21 +235,26 @@ static bool map_config_read_url_template(uintf8_t keyword_len, const char *line,
     url->lvl = strstr(url->base, "%LEVEL%");
     if(!url->lvl){
         printf("Missing %%LEVE%% placeholder in url template\n");
-        return false;
+        goto out;
     }
 
     url->tilex = strstr(url->base, "%TILE_X%");
     if(!url->tilex){
         printf("Missing %%TILE_X%% placeholder in url template\n");
-        return false;
+        goto out;
     }
 
     url->tiley = strstr(url->base, "%TILE_Y%");
     if(!url->tiley){
         printf("Missing %%TILE_Y%% placeholder in url template\n");
-        return false;
+        goto out;
     }
     return true;
+
+out: 
+    free(url->base);
+    url->base = NULL;
+    return false;
 }
 
 static bool static_map_provider_read_config(StaticMapProvider *self)
