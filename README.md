@@ -68,7 +68,7 @@ $ ./configure --with-texture=sdl_gpu
 ```
 
 Here we just need configure to generate a header for sdl_gpu to be usable.
-Do *not* type make to build sdl_gpu at this stage. Continue with:
+Do *not* type make to build sdl_pcf at this stage. Continue with:
 
 ```sh
 $ cd ..
