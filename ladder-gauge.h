@@ -43,8 +43,8 @@ typedef struct{
 }LadderGauge;
 
 
-LadderGauge *ladder_gauge_new(LadderPageDescriptor *descriptor, int rubis);
-LadderGauge *ladder_gauge_init(LadderGauge *self, LadderPageDescriptor *descriptor, int rubis);
+LadderGauge *ladder_gauge_new(int w, int h, LadderPageDescriptor *descriptor, int rubis);
+LadderGauge *ladder_gauge_init(LadderGauge *self, int w, int h, LadderPageDescriptor *descriptor, int rubis);
 
 bool ladder_gauge_set_value(LadderGauge *self, float value, bool animated);
 #endif /* LADDER_GAUGE_H */

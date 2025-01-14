@@ -24,10 +24,11 @@ typedef struct{
     OdoGauge *odo;
 }TapeGauge;
 
-TapeGauge *tape_gauge_new(LadderPageDescriptor *descriptor,
+TapeGauge *tape_gauge_new(int w, int h, LadderPageDescriptor *descriptor,
                           Alignment align, int xoffset,
                           int nbarrels, ...);
-TapeGauge *tape_gauge_vainit(TapeGauge *self, LadderPageDescriptor *descriptor,
+TapeGauge *tape_gauge_vainit(TapeGauge *self, int w, int h,
+                             LadderPageDescriptor *descriptor,
                              Alignment align, int xoffset,
                              int nbarrels, va_list ap);
 

@@ -23,22 +23,22 @@ static BaseGaugeOps ladder_gauge_ops = {
 };
 
 
-LadderGauge *ladder_gauge_new(LadderPageDescriptor *descriptor, int rubis)
+LadderGauge *ladder_gauge_new(int w, int h, LadderPageDescriptor *descriptor, int rubis)
 {
     LadderGauge *self;
 
     self = calloc(1, sizeof(LadderGauge));
     if(self){
-        if(!ladder_gauge_init(self, descriptor,rubis)){
+        if(!ladder_gauge_init(self, w, h, descriptor, rubis)){
             return base_gauge_free(BASE_GAUGE(self));
         }
     }
     return self;
 }
 
-LadderGauge *ladder_gauge_init(LadderGauge *self, LadderPageDescriptor *descriptor, int rubis)
+LadderGauge *ladder_gauge_init(LadderGauge *self, int w, int h, LadderPageDescriptor *descriptor, int rubis)
 {
-    base_gauge_init(BASE_GAUGE(self), &ladder_gauge_ops, 68, 240);
+    base_gauge_init(BASE_GAUGE(self), &ladder_gauge_ops, w, h);
 
     self->descriptor = descriptor;
     if(rubis > 0)

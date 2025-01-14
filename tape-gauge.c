@@ -21,7 +21,7 @@ static BaseGaugeOps tape_gauge_ops = {
    .dispose = (DisposeFunc)NULL
 };
 
-TapeGauge *tape_gauge_new(LadderPageDescriptor *descriptor,
+TapeGauge *tape_gauge_new(int w, int h, LadderPageDescriptor *descriptor,
                           Alignment align, int xoffset,
                           int nbarrels, ...)
 {
@@ -31,7 +31,7 @@ TapeGauge *tape_gauge_new(LadderPageDescriptor *descriptor,
     self = calloc(1, sizeof(TapeGauge));
     if(self){
         va_start(args, nbarrels);
-        rv = tape_gauge_vainit(self, descriptor, align, xoffset, nbarrels, args);
+        rv = tape_gauge_vainit(self, w, h, descriptor, align, xoffset, nbarrels, args);
         va_end(args);
         if(!rv)
             return base_gauge_free(BASE_GAUGE(self));
@@ -40,7 +40,8 @@ TapeGauge *tape_gauge_new(LadderPageDescriptor *descriptor,
 
 }
 
-TapeGauge *tape_gauge_vainit(TapeGauge *self, LadderPageDescriptor *descriptor,
+TapeGauge *tape_gauge_vainit(TapeGauge *self, int w, int h,
+                             LadderPageDescriptor *descriptor,
                              Alignment align, int xoffset,
                              int nbarrels, va_list ap)
 {
@@ -48,7 +49,7 @@ TapeGauge *tape_gauge_vainit(TapeGauge *self, LadderPageDescriptor *descriptor,
     int common_y;
     int max_x;
 
-    self->ladder = ladder_gauge_new((LadderPageDescriptor *)descriptor, -1);
+    self->ladder = ladder_gauge_new(w, h, (LadderPageDescriptor *)descriptor, -1);
     if(!self->ladder)
         return NULL;
     base_gauge_add_child(BASE_GAUGE(self), BASE_GAUGE(self->ladder), 0, 0);

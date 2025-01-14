@@ -49,6 +49,7 @@ AltIndicator *alt_indicator_init(AltIndicator *self)
     DigitBarrel *db = digit_barrel_new(fnt, 0, 9.999, 1);
     DigitBarrel *db2 = digit_barrel_new(fnt, 0, 99, 10);
     self->tape = tape_gauge_new(
+        68, 240,
         (LadderPageDescriptor*)alt_ladder_page_descriptor_new(),
         AlignRight, 0, 4,
         -1, db2,
