@@ -138,10 +138,10 @@ DirectToDialog *direct_to_dialog_init(DirectToDialog *self)
         )
     );
 
-    self->validate_button = button_flat_new(
+    self->validate_button = button_new(
         "Validate", TERMINUS_24,
         SDL_WHITE, SDL_BLACK,
-        BASE_GAUGE(self)->frame.w, 27
+        BASE_GAUGE(self)->frame.w, 24
     );
     self->validate_button->validated = (EventListener){
         .callback = (EventListenerFunc)button_pressed,
