@@ -14,6 +14,7 @@
 
 #include "base-gauge.h"
 #include "base-widget.h"
+#include "sdl-colors.h"
 #include "dialogs/airports-list-model.h"
 #include "text-box.h"
 #include "text-gauge.h"
@@ -24,7 +25,7 @@ static void direct_to_dialog_render(DirectToDialog *self, Uint32 dt, RenderConte
 static bool direct_to_dialog_handle_event(DirectToDialog *self, SDL_KeyboardEvent *event);
 static void update_list_content(TextBox *txtbx, DirectToDialog *self);
 static void selection_changed(DirectToDialog *self, ListBox *sender);
-static void button_pressed(DirectToDialog *self, Button *sender);
+static void button_pressed(DirectToDialog *self, ButtonFlat *sender);
 
 static BaseWidgetOps direct_to_dialog_ops = {
    .super.render = (RenderFunc)direct_to_dialog_render,
@@ -50,7 +51,7 @@ DirectToDialog *direct_to_dialog_init(DirectToDialog *self)
 {
     base_widget_init(BASE_WIDGET(self),
         &direct_to_dialog_ops,
-        12*20, 304
+        12*20, 304 + 3 /*+3 accomodates the growth of the button from 24 to 27*/
     );
 
     PCF_Font *fnt = resource_manager_get_font(TERMINUS_24);
@@ -135,10 +136,11 @@ DirectToDialog *direct_to_dialog_init(DirectToDialog *self)
         )
     );
 
-    self->validate_button = button_new("Validate", TERMINUS_24,
-        BASE_GAUGE(self)->frame.w, 24
+    self->validate_button = button_flat_new(
+        "Validate", TERMINUS_24,
+        SDL_WHITE, SDL_BLACK,
+        BASE_GAUGE(self)->frame.w, 27
     );
-    self->validate_button->alignment = HALIGN_CENTER | VALIGN_MIDDLE;
     self->validate_button->validated = (EventListener){
         .callback = (EventListenerFunc)button_pressed,
         .target = self
@@ -288,7 +290,7 @@ static void selection_changed(DirectToDialog *self, ListBox *sender)
 }
 
 
-static void button_pressed(DirectToDialog *self, Button *sender)
+static void button_pressed(DirectToDialog *self, ButtonFlat *sender)
 {
     ListModelRow *row = list_box_get_selected(self->list);
     Airport *airport = (Airport*)row->key;

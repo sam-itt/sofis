@@ -84,7 +84,7 @@ static void text_gauge_dispose_font(TextGauge *self)
          * of unref/free
          * */
         PCF_StaticFontUnref(self->font.static_font);
-        PCF_FreeStaticFont(self->font.static_font);
+//        PCF_FreeStaticFont(self->font.static_font);
     }
 }
 
@@ -95,6 +95,8 @@ void text_gauge_set_font(TextGauge *self, PCF_Font *font)
     self->font.font = font;
     PCF_FontRef(self->font.font);
     self->font.is_static = false;
+
+    BASE_GAUGE(self)->dirty = true;
 }
 
 void text_gauge_set_static_font(TextGauge *self, PCF_StaticFont *font)
@@ -104,6 +106,8 @@ void text_gauge_set_static_font(TextGauge *self, PCF_StaticFont *font)
     PCF_StaticFontRef(font);
     self->font.static_font = font;
     self->font.is_static = true;
+
+    BASE_GAUGE(self)->dirty = true;
 }
 
 void text_gauge_set_color(TextGauge *self, SDL_Color color, Uint8 which)
@@ -112,11 +116,16 @@ void text_gauge_set_color(TextGauge *self, SDL_Color color, Uint8 which)
         self->text_color = color;
     else
         self->bg_color = color;
+
+    BASE_GAUGE(self)->dirty = true;
 }
 
 /**
  * @brief Ensure that the TextGauge can store at least
  * @param size chars.
+ *
+ * TODO: Should be set_length or something that conveys the
+ * meaning of internal storage vs heigh/width
  *
  * @param self The TextGauge
  * @param size the number of chars that need to be stored.
@@ -148,6 +157,7 @@ bool text_gauge_set_size(TextGauge *self, size_t size)
     return true;
 }
 
+/*TODO: Check if the static font can display the new value ?*/
 bool text_gauge_set_value(TextGauge *self, const char *value)
 {
     int newlen;
