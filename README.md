@@ -1,6 +1,4 @@
-# SoFIS - Open Source EFIS for your Experimental
-
-..., Ultralight and Simulator !
+# SoFIS - Open Source EFIS for your Experimental, Ultralight and Simulator
 
 SoFIS aims at providing a full EFIS experience using off the shelf components.
 
@@ -24,7 +22,7 @@ Controls are currently mapped to keyboard keys:
 * <kbd>&#8593;</kbd>, <kbd>&#8595;</kbd>, <kbd>&#8592;</kbd>, <kbd>&#8594;</kbd>: Contextual moves in the controls (scroll, change text, etc.)
 * <kbd>Enter</kbd> Validate
 
-Those controls will be mapped to a two-ring-plus-button rotatry encodre. Think
+Those controls will be mapped to a two-ring-plus-button rotatry encoder. Think
 as the left/right arrow being one of the ring, up/down the other one and enter
 the button click.
 
@@ -42,6 +40,7 @@ Running on the very first Raspberry Pi:
 
 ### Dependencies
 
+While development has mainly been done on a Gentoo system, SoFIS is not aimed at a specific distro. Here are the generic package names required to build/run SoFIS:
 * SDL2
 * SDL2_Image
 * [SDL_gpu][3]
@@ -52,12 +51,51 @@ Running on the very first Raspberry Pi:
 If you don't want 3D synthetic vision you won't need glib and SDL_gpu. Just set
 `ENABLE_3D=0` in switches.local
 
+> [!TIP]
+> The following command should give you a comparable output:
+> ```sh
+> $ pkg-config glib-2.0 sdl2 SDL2_image libgps --cflags
+> -I/usr/include/glib-2.0 -I/usr/lib/glib-2.0/include -I/usr/include/SDL2 -D_REENTRANT
+> ```
+
 Please note that the project is still in early stages and doesn't have a
 fully-fledged build system (autotools is in the works) that can detect
 everything for you. You'll need to resort to `Makefile` (and `switches.local`)
 editing for the time being.
 
+##### Distro-specific packages
+
+Apart from the Gentoo system on which dev+testing has been done, this section will lists packages that provide the required dependencies on various distro where users have reported successful build and run.
+
+###### Debian-based (Ubuntu and derivatives)
+
+Packages to install before the build:
+* build-essential
+* cmake
+* pkg-config
+* git
+
+```sh
+$ sudo apt-get install build-essential cmake pkg-config git
+```
+
+Packages providing dependencies:
+* libcurl4-gnutls-dev
+* gpsd
+* libgps-dev
+* libsdl2-dev
+* libsdl2-image-dev
+* libglib2.0-dev
+
+```sh
+$ sudo apt-get install libcurl4-gnutls-dev gpsd libgps-dev libsdl2-dev libsdl2-image-dev libglib2.0-dev
+```
+
 ### Building
+
+> [!IMPORTANT]
+> Unless you don't want to build the 3D version, you need to build and install SDL_gpu first. Please refer to the build instructions at [SDL_gpu][3].
+
 ```sh
 $ git clone https://github.com/sam-itt/sofis
 $ cd sofis
@@ -76,8 +114,7 @@ $ wget https://github.com/sam-itt/fg-roam/archive/media.tar.gz
 $ tar -xf media.tar.gz --strip-components=1 -C fg-roam/
 ```
 
-If you are building for/on the Raspberry Pi, create a `switches.local` with the
-following content:
+If you are building for/on the Raspberry Pi, create a `switches.local` with the following content:
 
 ```
 USE_GLES=1
@@ -86,6 +123,10 @@ TINY_TEXTURES=1
 GL_LIB=brcmGLESv2
 BNO080_DEV=\"/dev/i2c-0\"
 ```
+
+If you are building for another platform adjust settings as needed by creating a `switches.local`
+file to override settings presents in `switches.defaults`. We building on a PC defaults settings should
+be fine.
 
 Then, proceed with the build:
 ```sh
@@ -115,7 +156,7 @@ minimap itself using arrow keys. Press space to toggle the synthetic vision.
 ## Using tiles from OpenAIP
 
 The map can display tiles from openaip. To enable this feature, you need to obtain
-a (free) API key from [OpenAIP][10]. Simply create an account there and you'll be able 
+a (free) API key from [OpenAIP][10]. Simply create an account there and you'll be able
 to get a key from your profile page.
 
 Then edit the `resources/maps/openaip/map.conf` file and replace YOUR-API-KEY with your key
@@ -143,11 +184,12 @@ Be sure to replace LOCAL_IP with the IP of the local machine, one of:
 	wlan0 IP Address 192.168.1.41
 ```
 
-*WARNING:* Startup times on the Raspberry Pi can be *very* long, especillay with
-big 3d tiles. In my tests running the [ksfo-loop][4] on a remote computer and
-SoFIS in fgremote mode lead to arround *10 minutes of wall-clock* loading time
-(downloading+loading the btg). If SoFIS says "Loading btg:" it's not stuck, it
-iiis loading.
+> [!WARNING]
+> Startup times on the Raspberry Pi can be *very* long, especillay with
+> big 3d tiles. In my tests running the [ksfo-loop][4] on a remote computer and
+> SoFIS in fgremote mode lead to arround *10 minutes of wall-clock* loading time
+> (downloading+loading the btg). If SoFIS says "Loading btg:" it's not stuck, it
+> is loading.
 
 ## Getting data from Stratux
 
@@ -257,6 +299,24 @@ Continue through the steps at [Building](#building)
 
 ![rpi-bno080][8]
 
+## Running on an Orange Pi
+
+SoFIS has been reported by users to run on the Orange Pi.
+
+### Alternative minimal OS RTOS installation
+
+Using Armbian:
+
+Download the "Armbian 25.2.x bookworm Minimal" from [11]:
+* Launch and setup the installation following Armbian's instructions.
+* Install additional packages required for building and the "glu"
+```sh
+$ sudo apt install mesa-utils libgl1-mesa-dev libglu1-mesa-dev automake autoconf libtool
+```
+* Follow the identical build steps above
+
+Once complete, SoFIS will run full screen.
+
 ## Contributing
 
 SoFIS is still in very early stages of development. If you are willing to help
@@ -280,3 +340,4 @@ get in touch first by opening a new github issue.
 [8]: https://github.com/sam-itt/sofis/blob/media/sofis-bno080-rpi.png?raw=true
 [9]: https://github.com/sam-itt/sofis/blob/media/sofis-direct-to.gif?raw=true
 [10]: https://www.openaip.net/
+[11]: https://www.armbian.com/orangepi-5/
