@@ -465,12 +465,12 @@ static SDL_Surface *attitude_indicator_draw_ruler(AttitudeIndicator *self, int s
 			if(current_grad > 0){
                 PCF_FontWriteNumberAt(font,
                     &current_grad, TypeInt, 2,
-                    tcol, rv,
+                    tcol, false, rv,
                     middle_x - (57-1)/2 - 4, y, LeftToCol | CenterOnRow
                 );
                 PCF_FontWriteNumberAt(font,
                     &current_grad, TypeInt, 2,
-                    tcol, rv,
+                    tcol, false, rv,
                     middle_x + (57-1)/2 + 4, y, RightToCol | CenterOnRow
                 );
 			}
@@ -485,12 +485,12 @@ static SDL_Surface *attitude_indicator_draw_ruler(AttitudeIndicator *self, int s
 			if(current_grad > 0){
                 PCF_FontWriteNumberAt(font,
                     &current_grad, TypeInt, 2,
-                    tcol, rv,
+                    tcol, false, rv,
                     middle_x - (57-1)/2 - 4, y, LeftToCol | CenterOnRow
                 );
                 PCF_FontWriteNumberAt(font,
                     &current_grad, TypeInt, 2,
-                    tcol, rv,
+                    tcol, false, rv,
                     middle_x + (57-1)/2 + 4, y, RightToCol | CenterOnRow
                 );
 			}

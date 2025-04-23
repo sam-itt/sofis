@@ -124,7 +124,7 @@ void ladder_page_etch_markings(LadderPage *self, PCF_Font *font)
         y = ladder_page_resolve_value(self, i);
         PCF_FontWriteNumberAt(font,
             &i, TypeInt, 0,
-            white, layer->canvas,
+            white, false, layer->canvas,
             (generic_layer_w(layer)-1) - 10 - 5, y, LeftToCol | CenterOnRow);
     }
 }

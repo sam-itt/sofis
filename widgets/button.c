@@ -87,12 +87,13 @@ static void button_update(Button *self)
     SDL_Rect tarea = BASE_GAUGE(self)->frame;
     tarea.x = 0;
     tarea.y = 0;
-    PCF_StaticFontGetSizeRequestRect(self->sfont, self->caption, &cursor);
+    PCF_StaticFontGetSizeRequestRect(self->sfont, self->caption, false, &cursor);
     SDLExt_RectAlign(&cursor, &tarea, self->alignment);
 
     state->npatches = PCF_StaticFontPreWriteString(self->sfont,
         self->clen,
         self->caption,
+        false,
         &cursor,
         self->clen,
         state->patches);

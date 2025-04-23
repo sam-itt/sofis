@@ -66,7 +66,7 @@ DigitBarrel *digit_barrel_init(DigitBarrel *self, PCF_Font *font, float start, f
     number = alloca(sizeof(char)*(ndigits+1)); /*There shouldn't be that much digits*/
     snprintf(fmt, 10, "%%0%dd", ndigits);
 
-    PCF_FontGetSizeRequest(font, "0", &advance, &font_height);
+    PCF_FontGetSizeRequest(font, "0", false, &advance, &font_height);
     vheight = round((fabs(end-start)) / step)*font_height; /*end should be .9999 so there is no need for the +1*/
     vwidth = advance * ndigits;
 
@@ -79,7 +79,7 @@ DigitBarrel *digit_barrel_init(DigitBarrel *self, PCF_Font *font, float start, f
     Uint32 white = SDL_UWHITE(layer->canvas);
     for(float i = minv; i < maxv; i += step){
         snprintf(number, 6, fmt, (int)round(i));
-        PCF_FontWrite(font, number, white, layer->canvas, &cursor);
+        PCF_FontWrite(font, number, white, false, layer->canvas, &cursor);
         cursor.y += cursor.h;
         cursor.x = 0; /*PCF_FontWrite advances the cursor*/
     }

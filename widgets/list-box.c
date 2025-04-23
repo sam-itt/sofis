@@ -70,7 +70,7 @@ ListBox *list_box_init(ListBox *self, FontResource font_id, int width, int heigh
      * 1 char partly, 3 chars and 1 more char partly with
      * first width + last width = 1 full char width*/
     self->state.apatches = (nhchars+1) * (nvchars+1);
-    self->state.patches = malloc(sizeof(PCF_StaticFontRectPatch)
+    self->state.patches = malloc(sizeof(PCF_StaticFontPatch)
             * self->state.apatches
         );
         printf("allocated %zu patches\n", self->state.apatches);
@@ -207,6 +207,7 @@ static void list_box_update(ListBox *self, Uint32 dt)
             self->sfont,
             self->model->row_lenghts[y],
             self->model->rows[y].label,
+            false,
             &tarea,
             state->offset.x * -1, lyoffset * -1,
             state->apatches - state->npatches,

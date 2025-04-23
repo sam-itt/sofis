@@ -20,7 +20,7 @@ typedef struct _TextBox TextBox;
 typedef void (*TextBoxTextChanged)(TextBox *self, void *userdata);
 
 typedef struct{
-    PCF_StaticFontRectPatch *patches;
+    PCF_StaticFontPatch *patches;
     size_t npatches;
     size_t apatches;
     size_t first_index;

@@ -110,7 +110,7 @@ void base_gauge_draw_static_font_patch(BaseGauge *self, RenderContext *ctx,
                                        PCF_StaticFontPatch *patch);
 void base_gauge_draw_static_font_rect_patch(BaseGauge *self, RenderContext *ctx,
                                             PCF_StaticFont *font,
-                                            PCF_StaticFontRectPatch *patch);
+                                            PCF_StaticFontPatch *patch);
 
 int base_gauge_blit_rotated_texture(BaseGauge *self, RenderContext *ctx,
                                     GPU_Image *src, SDL_Rect *srcrect,

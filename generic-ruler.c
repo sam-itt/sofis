@@ -171,19 +171,19 @@ bool generic_ruler_get_size_request(GenericRuler *self, int8_t precision, PCF_Fo
     if(self->orientation == RulerHorizontal){
         if(self->direction == RulerGrowAlongAxis){
             snprintf(vbuffer, 10, "%*g", precision, self->start);
-            PCF_FontGetSizeRequestRect(font, vbuffer, &m_rect);
+            PCF_FontGetSizeRequestRect(font, vbuffer, false, &m_rect);
             left = SDLExt_RectMidX(&m_rect) - m_rect.x; //We need 'left' more pixels on the left
 
             snprintf(vbuffer, 10, "%*g", precision, self->end);
-            PCF_FontGetSizeRequestRect(font, vbuffer, &m_rect);
+            PCF_FontGetSizeRequestRect(font, vbuffer, false, &m_rect);
             right = SDLExt_RectLastX(&m_rect) - SDLExt_RectMidX(&m_rect);//We need 'right' more pixels on the right
         }else{
             snprintf(vbuffer, 10, "%*g", precision, self->end);
-            PCF_FontGetSizeRequestRect(font, vbuffer, &m_rect);
+            PCF_FontGetSizeRequestRect(font, vbuffer, false, &m_rect);
             left = SDLExt_RectMidX(&m_rect) - m_rect.x; //We need 'left' more pixels on the left
 
             snprintf(vbuffer, 10, "%*g", precision, self->start);
-            PCF_FontGetSizeRequestRect(font, vbuffer, &m_rect);
+            PCF_FontGetSizeRequestRect(font, vbuffer, false, &m_rect);
             right = SDLExt_RectLastX(&m_rect) - SDLExt_RectMidX(&m_rect);//We need 'right' more pixels on the right
         }
 
@@ -198,19 +198,19 @@ bool generic_ruler_get_size_request(GenericRuler *self, int8_t precision, PCF_Fo
     }else if(self->orientation == RulerVertical){
         if(self->direction == RulerGrowAlongAxis){
             snprintf(vbuffer, 10, "%*g", precision, self->start);
-            PCF_FontGetSizeRequestRect(font, vbuffer, &m_rect);
+            PCF_FontGetSizeRequestRect(font, vbuffer, false, &m_rect);
             top = SDLExt_RectMidY(&m_rect) - m_rect.y;
 
             snprintf(vbuffer, 10, "%*g", precision, self->end);
-            PCF_FontGetSizeRequestRect(font, vbuffer, &m_rect);
+            PCF_FontGetSizeRequestRect(font, vbuffer, false, &m_rect);
             bottom = SDLExt_RectLastY(&m_rect) - SDLExt_RectMidY(&m_rect);
         }else{
             snprintf(vbuffer, 10, "%*g", precision, self->start);
-            PCF_FontGetSizeRequestRect(font, vbuffer, &m_rect);
+            PCF_FontGetSizeRequestRect(font, vbuffer, false, &m_rect);
             bottom = SDLExt_RectLastY(&m_rect) - SDLExt_RectMidY(&m_rect);
 
             snprintf(vbuffer, 10, "%*g", precision, self->end);
-            PCF_FontGetSizeRequestRect(font, vbuffer, &m_rect);
+            PCF_FontGetSizeRequestRect(font, vbuffer, false, &m_rect);
             top = SDLExt_RectMidY(&m_rect) - m_rect.y;
         }
 
@@ -520,16 +520,16 @@ bool generic_ruler_etch_markings(GenericRuler *self, Location markings_location,
             if(markings_location == Bottom)
                 PCF_FontWriteNumberAt(font,
                     &i, TypeFloat, precision,
-                    color, GENERIC_LAYER(self)->canvas,
-                    pcursor,
+                    color, false,
+                    GENERIC_LAYER(self)->canvas, pcursor,
                     self->ruler_area.h + TEXT_SPACE,
                     CenterOnCol | BelowRow
                 );
             else if(markings_location == Top)
                 PCF_FontWriteNumberAt(font,
                     &i, TypeFloat, precision,
-                    color, GENERIC_LAYER(self)->canvas,
-                    pcursor,
+                    color, false,
+                    GENERIC_LAYER(self)->canvas, pcursor,
                     self->ruler_area.y - TEXT_SPACE,
                     CenterOnCol | AboveRow
                 );
@@ -548,7 +548,8 @@ bool generic_ruler_etch_markings(GenericRuler *self, Location markings_location,
             if(markings_location == Right)
                 PCF_FontWriteNumberAt(font,
                     &i, TypeFloat, precision,
-                    color, GENERIC_LAYER(self)->canvas,
+                    color, false,
+                    GENERIC_LAYER(self)->canvas,
                     self->ruler_area.w + TEXT_SPACE,
                     pcursor,
                     RightToCol | CenterOnRow
@@ -556,7 +557,8 @@ bool generic_ruler_etch_markings(GenericRuler *self, Location markings_location,
             else if(markings_location == Left)
                 PCF_FontWriteNumberAt(font,
                     &i, TypeFloat, precision,
-                    color, GENERIC_LAYER(self)->canvas,
+                    color, false,
+                    GENERIC_LAYER(self)->canvas,
                     self->ruler_area.x - TEXT_SPACE,
                     pcursor,
                     LeftToCol | CenterOnRow

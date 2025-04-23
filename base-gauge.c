@@ -429,7 +429,7 @@ void base_gauge_draw_static_font_patch(BaseGauge *self, RenderContext *ctx,
 
 void base_gauge_draw_static_font_rect_patch(BaseGauge *self, RenderContext *ctx,
                                             PCF_StaticFont *font,
-                                            PCF_StaticFontRectPatch *patch)
+                                            PCF_StaticFontPatch *patch)
 {
     SDL_Rect dst_rect; /*final destination*/
     SDL_Rect src_rect;

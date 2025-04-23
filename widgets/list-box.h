@@ -22,7 +22,7 @@ typedef struct{
 #endif
 
 typedef struct{
-    PCF_StaticFontRectPatch *patches;
+    PCF_StaticFontPatch *patches;
     size_t apatches;
     size_t npatches;
     Uint32 selected_y;

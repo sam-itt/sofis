@@ -73,7 +73,7 @@ TextBox *text_box_init(TextBox *self, FontResource font_id, int width, int heigh
      * 1 char partly, 3 chars and 1 more char partly with first width + last width
      * = 1 full char width*/
     self->state.apatches = nchars+1;
-    self->state.patches = malloc(sizeof(PCF_StaticFontRectPatch)*self->state.apatches);
+    self->state.patches = malloc(sizeof(PCF_StaticFontPatch)*self->state.apatches);
     BASE_GAUGE(self)->dirty = true;
     return self;
 }
@@ -165,7 +165,7 @@ bool text_box_set_text(TextBox *self, const char *text)
 
     if(!text_box_validate_font(self))
         return false;
-    PCF_StaticFontGetSizeRequestRect(self->sfont, self->text, &(self->text_size));
+    PCF_StaticFontGetSizeRequestRect(self->sfont, self->text, false, &(self->text_size));
 
     return true;
 }
@@ -195,7 +195,7 @@ bool text_box_move_cursor(TextBox *self, int_fast8_t direction)
                                             : 32;
             self->text[self->current_index+1] = '\0';
             self->tlen++;
-            PCF_StaticFontGetSizeRequestRect(self->sfont, self->text, &(self->text_size));
+            PCF_StaticFontGetSizeRequestRect(self->sfont, self->text, false, &(self->text_size));
         }else{
             self->current_index++;
         }
@@ -280,6 +280,7 @@ static void text_box_update(TextBox *self)
         self->sfont,
         self->tlen-1,
         self->text+ibegin,
+        false,
         &tarea,
         state->startx * -1, 0,
         state->apatches, state->patches

@@ -107,7 +107,7 @@ static void vertical_stair_update_state(VerticalStair *self, Uint32 dt)
         generic_layer_h(&self->cursor)
     };
 
-    PCF_StaticFontGetSizeRequestRect(self->font, number, &self->state.tloc);
+    PCF_StaticFontGetSizeRequestRect(self->font, number, false, &self->state.tloc);
     SDLExt_RectAlign(&self->state.tloc,
         &self->state.cloc,
         HALIGN_LEFT | VALIGN_MIDDLE
@@ -118,7 +118,7 @@ static void vertical_stair_update_state(VerticalStair *self, Uint32 dt)
     cursor = self->state.tloc;
     self->state.nchars = PCF_StaticFontPreWriteString(self->font,
         len, number,
-        &cursor,
+        false, &cursor,
         VS_VALUE_MAX_LEN-1, self->state.chars
     );
 }
