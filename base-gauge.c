@@ -103,6 +103,50 @@ bool base_gauge_add_child(BaseGauge *self, BaseGauge *child, int x, int y)
 }
 
 /**
+ * @brief Moves a child gauge relative to @self.
+ * Same as @see base_gauge_move but first checks if @child is a child of @self.
+ *
+ */
+bool base_gauge_move_child(BaseGauge *self, BaseGauge *child, int new_x, int new_y)
+{
+    self->frame.x = new_x;
+    self->frame.y = new_y;
+    BaseGauge *found = NULL;
+    for(int i = 0; i < self->nchildren && !found; i++){
+        found = self->children[i] == child ? child : NULL;
+    }
+    if(!found) return false;
+
+    return true;
+}
+
+/**
+ * @brief Moves the gauge relative to (within) its parent.
+ * Does no checks, use @see base_gauge_move_child for a parent-child
+ * checking version.
+ *
+ * TODO: inline ?
+ */
+void base_gauge_move(BaseGauge *self, int new_x, int new_y)
+{
+    self->frame.x = new_x;
+    self->frame.y = new_y;
+}
+
+/**
+ * @brief Moves the gauge relative to (within) its parent by @xinc and @yinc incremebnts.
+ * Does no checks, use @see base_gauge_move_child for a parent-child checking version.
+ *
+ * TODO: inline ?
+ */
+void base_gauge_move_by(BaseGauge *self, int xinc, int yinc)
+{
+    self->frame.x += xinc;
+    self->frame.y += yinc;
+}
+
+
+/**
  * @brief Adds an animation to the gauge.
  *
  * Takes ownership of the animation, you must unref it after calling the function?

@@ -85,6 +85,9 @@ static inline void *base_gauge_free(BaseGauge *self)
 bool base_gauge_add_child(BaseGauge *self, BaseGauge *child, int x, int y);
 bool base_gauge_add_animation(BaseGauge *self, BaseAnimation *animation);
 
+void base_gauge_move(BaseGauge *self, int new_x, int new_y);
+void base_gauge_move_by(BaseGauge *self, int xinc, int yinc);
+bool base_gauge_move_child(BaseGauge *self, BaseGauge *child, int new_x, int new_y);
 
 void base_gauge_render(BaseGauge *self, Uint32 dt, RenderContext *ctx);
 
