@@ -33,7 +33,7 @@ BaseGauge *base_gauge_init(BaseGauge *self, BaseGaugeOps *ops, int w, int h)
 /**
  * @brief Release all resources held by @param self
  *
- * This function will free any children and animations that @ßelf holds.
+ * This function will free any children and animations that @self holds.
  *
  * Subclasses of BaseGauge *can* provide a hook through base_gauge_ops
  * .dispose *if* they need to free specific resources (SDL_Surfaces,
@@ -45,7 +45,11 @@ BaseGauge *base_gauge_init(BaseGauge *self, BaseGaugeOps *ops, int w, int h)
  * dispose op.
  *
  * If you derive a type that have already provided a hook, you are supposed
- * to chain-up using self->super.ops->dispose in your own dispose hook.
+ * to chain-up (call the parent type dispose function) in your own dispose hook.
+ * You can either:
+ * a) Call the function if super's dispose do have a symbol, i.e. is not static
+ * b) Copy the function pointer from super's BaseGaugeOps after super's init.
+ *    see softkey_init function for an example of that.
  *
  * @param self a BaseGauge
  * @return always self (convenience)
@@ -82,7 +86,7 @@ bool base_gauge_add_child(BaseGauge *self, BaseGauge *child, int x, int y)
     if(self->nchildren == self->children_size){
         void *tmp;
         self->children_size += ALLOC_CHUNK;
-        tmp = realloc(self->children, sizeof(BaseAnimation*)*self->children_size);
+        tmp = realloc(self->children, sizeof(BaseGauge*)*self->children_size);
         if(!tmp){
             self->children_size -= ALLOC_CHUNK;
             return false;
@@ -277,6 +281,9 @@ int base_gauge_blit(BaseGauge *self, RenderContext *ctx,
     return SDL_BlitSurface(src, srcrect, ctx->target.surface, &fdst);
 }
 
+/**
+ * TODO: color should be a union of possible types
+ */
 void base_gauge_fill(BaseGauge *self, RenderContext *ctx,
                      SDL_Rect *area, void *color, bool packed)
 {

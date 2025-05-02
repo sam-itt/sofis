@@ -23,7 +23,7 @@ ListModel *list_model_init(ListModel *self, ListModelOps *ops, int arows)
 
     self->row_lenghts = malloc(sizeof(size_t)*arows);
     if(!self->row_lenghts)
-        return NULL;
+        return NULL; /*TODO: leaks self->rows*/
 
     self->arows = arows;
 
@@ -36,6 +36,6 @@ ListModel *list_model_dispose(ListModel *self)
         free(self->rows);
     if(self->arows)
         free(self->row_lenghts);
-
+    /*TODO: Use ops->dispose ?*/
     return self;
 }

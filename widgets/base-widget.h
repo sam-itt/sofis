@@ -28,6 +28,17 @@ typedef struct _BaseWidget{
 
 /*events emitted by the widget: selection changed, etc.*/
 typedef void (*EventListenerFunc)(void *self, BaseWidget *sender);
+
+/**
+ * struct EventListener - Represents a listener
+ * @callback: The function that will be called when the event fires
+ * @target: The target of the event, i.e. the object to pass as self
+ * to the callback. This is *NOT* the widget that fired the event.
+ *
+ * Represents a listener as a "method", i.e. a function linked to an object.
+ * The function is assumed to take a pointer to its object as its first
+ * parameter. @see EventListenerFunc.
+ */
 typedef struct{
     EventListenerFunc callback;
     void *target;
