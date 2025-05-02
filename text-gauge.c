@@ -220,11 +220,11 @@ static inline void text_gauge_static_font_update_state(TextGauge *self, Uint32 d
         .h = base_gauge_h(BASE_GAUGE(self))
     };
 
-    PCF_StaticFontGetSizeRequestRect(sfont, self->value, false, &cursor);
+    PCF_StaticFontGetSizeRequestRect(sfont, self->value, true, &cursor);
     SDLExt_RectAlign(&cursor, &farea, self->alignment);
     self->state.nchars = PCF_StaticFontPreWriteString(sfont,
         self->len, self->value,
-        false, &cursor,
+        true, &cursor,
         self->state.achars, self->state.chars
     );
 }

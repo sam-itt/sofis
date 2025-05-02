@@ -85,9 +85,10 @@ DirectToDialog *direct_to_dialog_init(DirectToDialog *self)
             1, PCF_ALPHA
         )
     );
+    self->bearing_lbl->alignment = VALIGN_MIDDLE | HALIGN_LEFT;
     self->bearing_value = text_gauge_new(NULL, true, 52, 24);
     text_gauge_set_size(self->bearing_lbl, 4);
-    self->bearing_value->alignment = VALIGN_BOTTOM | HALIGN_LEFT;
+    self->bearing_value->alignment = VALIGN_MIDDLE | HALIGN_LEFT;
     text_gauge_set_static_font(self->bearing_value,
         resource_manager_get_static_font(TERMINUS_24,
             &SDL_CYAN,
@@ -103,9 +104,10 @@ DirectToDialog *direct_to_dialog_init(DirectToDialog *self)
             1, PCF_ALPHA
         )
     );
+    self->distance_lbl->alignment = VALIGN_MIDDLE | HALIGN_LEFT;
     self->distance_value = text_gauge_new(NULL, true, 60, 24);
     text_gauge_set_size(self->distance_value, 4);
-    self->distance_value->alignment = VALIGN_BOTTOM | HALIGN_LEFT;
+    self->distance_value->alignment = VALIGN_MIDDLE | HALIGN_LEFT;
     text_gauge_set_static_font(self->distance_value,
         resource_manager_get_static_font(TERMINUS_24,
             &SDL_CYAN,
@@ -116,7 +118,7 @@ DirectToDialog *direct_to_dialog_init(DirectToDialog *self)
 
     self->latitude = text_gauge_new(NULL, true, 135, 24);
     text_gauge_set_size(self->latitude, 14);
-    self->latitude->alignment = VALIGN_BOTTOM | HALIGN_RIGHT;
+    self->latitude->alignment = VALIGN_MIDDLE | HALIGN_RIGHT;
     text_gauge_set_static_font(self->latitude,
         resource_manager_get_static_font(TERMINUS_24,
             &SDL_CYAN,
@@ -127,7 +129,7 @@ DirectToDialog *direct_to_dialog_init(DirectToDialog *self)
 
     self->longitude = text_gauge_new(NULL, true, 135, 24);
     text_gauge_set_size(self->longitude, 14);
-    self->longitude->alignment = VALIGN_BOTTOM | HALIGN_RIGHT;
+    self->longitude->alignment = VALIGN_MIDDLE | HALIGN_RIGHT;
     text_gauge_set_static_font(self->longitude,
         resource_manager_get_static_font(TERMINUS_24,
             &SDL_CYAN,

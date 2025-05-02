@@ -120,9 +120,9 @@ void view_font_draw_text(SDL_Surface *destination, SDL_Rect *location, uint8_t a
     if(bg_color != ckey)
         SDL_FillRect(destination, location, bg_color);
 
-    PCF_FontGetSizeRequestRect(font, string, false, &aligned);
+    PCF_FontGetSizeRequestRect(font, string, true, &aligned);
     SDLExt_RectAlign(&aligned, location, alignment);
-    PCF_FontWrite(font, string, text_color, false, destination, &aligned);
+    PCF_FontWrite(font, string, text_color, true, destination, &aligned);
 }
 
 
