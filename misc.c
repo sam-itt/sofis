@@ -233,8 +233,8 @@ bool create_path(const char *filename)
  */
 void SDLExt_RectCenter(SDL_Rect *self, SDL_Rect *reference)
 {
-    self->y = reference->y + round(reference->h/2.0) - round(self->h/2.0) -1;
-    self->x = reference->x + round(reference->w/2.0) - round(self->w/2.0) -1;
+    self->y = reference->y + round(reference->h/2.0 - self->h/2.0) -1;
+    self->x = reference->x + round(reference->w/2.0 - self->w/2.0) -1;
 }
 
 /**
