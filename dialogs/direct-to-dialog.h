@@ -8,7 +8,7 @@
 #ifndef DIRECT_TO_H
 #define DIRECT_TO_H
 #include "base-widget.h"
-#include "button-flat.h"
+#include "button.h"
 #include "list-box.h"
 #include "text-box.h"
 #include "text-gauge.h"
@@ -30,7 +30,7 @@ typedef struct{
     TextGauge *latitude;
     TextGauge *longitude;
 
-    ButtonFlat *validate_button;
+    Button *validate_button;
 
     BaseWidget *focused;
 }DirectToDialog;

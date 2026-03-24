@@ -25,7 +25,7 @@ static void direct_to_dialog_render(DirectToDialog *self, Uint32 dt, RenderConte
 static bool direct_to_dialog_handle_event(DirectToDialog *self, SDL_KeyboardEvent *event);
 static void update_list_content(TextBox *txtbx, DirectToDialog *self);
 static void selection_changed(DirectToDialog *self, ListBox *sender);
-static void button_pressed(DirectToDialog *self, ButtonFlat *sender);
+static void button_pressed(DirectToDialog *self, Button *sender);
 
 static BaseWidgetOps direct_to_dialog_ops = {
    .super.render = (RenderFunc)direct_to_dialog_render,
@@ -51,7 +51,7 @@ DirectToDialog *direct_to_dialog_init(DirectToDialog *self)
 {
     base_widget_init(BASE_WIDGET(self),
         &direct_to_dialog_ops,
-        12*20, 304 + 3 /*+3 accomodates the growth of the button from 24 to 27*/
+        12*20, 304
     );
 
     PCF_Font *fnt = resource_manager_get_font(TERMINUS_24);
@@ -292,7 +292,7 @@ static void selection_changed(DirectToDialog *self, ListBox *sender)
 }
 
 
-static void button_pressed(DirectToDialog *self, ButtonFlat *sender)
+static void button_pressed(DirectToDialog *self, Button *sender)
 {
     ListModelRow *row = list_box_get_selected(self->list);
     Airport *airport = (Airport*)row->key;
