@@ -26,7 +26,7 @@ static DataSourceOps stratux_data_source_ops = {
 };
 
 
-StratuxDataSource *stratux_data_source_new(int port)
+StratuxDataSource *stratux_data_source_new()
 {
     StratuxDataSource *self;
 
