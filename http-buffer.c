@@ -59,7 +59,7 @@ bool http_buffer_set_content(HttpBuffer *self, const void *content, size_t len)
     if(!rv) return 0;
 
     memcpy(self->buffer, content, len);
-    self->buffer[len+1] = '\0';
+    self->buffer[len] = '\0';
     self->len = len;
 
     return true;
@@ -79,7 +79,7 @@ bool http_buffer_add_content(HttpBuffer *self, const void *content, size_t len)
 
     memcpy(self->buffer+self->len, content, len);
     self->len += len;
-    self->buffer[self->len+1] = '\0';
+    self->buffer[self->len] = '\0';
 
     return true;
 }
