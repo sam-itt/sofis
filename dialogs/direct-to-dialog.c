@@ -247,12 +247,23 @@ static void update_list_content(TextBox *txtbx, DirectToDialog *self)
     airport_list_model_filter((AirportListModel*)self->list->model, txtbx->text);
 }
 
+static void clear_values(DirectToDialog *self)
+{
+    text_gauge_set_value(self->latitude, "");
+    text_gauge_set_value(self->longitude, "");
+    text_gauge_set_value(self->bearing_value, "");
+    text_gauge_set_value(self->distance_value, "");
+}
+
 static void selection_changed(DirectToDialog *self, ListBox *sender)
 {
     DataSource *ds;
     GeoLocation me, ap;
 
     ListModelRow *row = list_box_get_selected(sender);
+    if(!row){
+        return clear_values(self);
+    }
     Airport *airport = (Airport*)row->key;
 
     geo_location_latitude_to_dms(airport->latitude, self->latitude->value);
@@ -295,6 +306,9 @@ static void selection_changed(DirectToDialog *self, ListBox *sender)
 static void button_pressed(DirectToDialog *self, Button *sender)
 {
     ListModelRow *row = list_box_get_selected(self->list);
+    if(!row){
+        return clear_values(self);
+    }
     Airport *airport = (Airport*)row->key;
 
     DataSource *ds = data_source_get_instance();

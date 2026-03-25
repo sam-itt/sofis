@@ -59,6 +59,9 @@ bool list_box_horizontal_scroll(ListBox *self, int_fast8_t direction);
 
 static inline ListModelRow *list_box_get_selected(ListBox *self)
 {
+    if(!self->model || self->selected_row >= self->model->nrows)
+        return NULL;
+
     return &self->model->rows[self->selected_row];
 }
 
