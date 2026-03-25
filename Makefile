@@ -62,15 +62,20 @@ SRC+= $(filter-out $(FG_ROAM)/src/view-gl.c, $(wildcard $(FG_ROAM)/src/*.c))
 endif
 OBJ= $(SRC:.c=.o)
 MAIN_OBJ=main.o
-TEST_OBJ=testbench.o
+
+TB_SRC := $(wildcard test-bench/*.c)
+TB_BIN := $(TB_SRC:.c=)
 
 all: $(EXEC)
 
 $(EXEC): $(OBJ) $(MAIN_OBJ)
 	$(CC) -o $@ $^ $(LDFLAGS)
 
-testbench: $(OBJ) $(TEST_OBJ)
-	$(CC) -o $@ $^ $(LDFLAGS)
+# Build each test bench executable
+$(TB_BIN): %: %.c $(OBJ)
+	$(CC) $(CFLAGS) $< $(OBJ) $(LDFLAGS) $(LDLIBS) -o $@
+
+test-bench: $(TB_BIN)
 
 %.o: %.c
 	$(CC) -o $@ -c $< $(CFLAGS)
@@ -78,7 +83,7 @@ testbench: $(OBJ) $(TEST_OBJ)
 .PHONY: clean mrproper
 
 clean:
-	rm -rf *.o sdl-pcf/src/*.o fg-roam/src/*.o fg-io/fg-tape/*.o sensors/*.o widgets/*.o dialogs/*.o
+	rm -rf *.o sdl-pcf/src/*.o fg-roam/src/*.o fg-io/fg-tape/*.o sensors/*.o widgets/*.o dialogs/*.o test-bench/*.o
 
 mrproper: clean
 	rm -rf $(EXEC)
