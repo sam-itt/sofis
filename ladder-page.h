@@ -20,7 +20,7 @@ typedef LadderPage *(*LPInitFunc) (LadderPage *self);
 /**
  * LadderPageDescriptor helps define how the inifinite
  * strip is made out of pages, or how pages are put together
- * into the inifinte strip.
+ * into the infinite strip.
  *
  * The strip is defined by a page dimension {@value page_size}
  * and a step between values {@value vstep} that tells the
