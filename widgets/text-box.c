@@ -120,7 +120,7 @@ bool text_box_set_allowed_chars(TextBox *self, bool keep_order, int nsets, ...)
     if(!keep_order){
         qsort(self->allowed_chars,
             self->nallowed_chars, sizeof(char),
-            (__compar_fn_t) strcmp
+            charcmp
         );
         filter_dedup(self->allowed_chars, self->nallowed_chars);
     }else{

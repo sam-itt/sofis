@@ -141,7 +141,7 @@ PCF_StaticFont *resource_manager_get_static_font(FontResource font, SDL_Color *c
     }
     va_end(ap);
 
-    qsort(str, strlen(str), sizeof(char), (__compar_fn_t) strcmp);
+    qsort(str, strlen(str), sizeof(char), charcmp);
     filter_dedup(str, tlen);
 //    printf("ResourceManager: looking for a (r:%d,g:%d,b:%d,a:%d) font of type %d with the following charset: %s\n",color->r,color->g,color->b,color->a, font, str);
     for(int i = 0; i < self->n_sfonts; i++){

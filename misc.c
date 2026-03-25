@@ -276,3 +276,11 @@ void SDLExt_RectDump(SDL_Rect *self)
 {
     printf("SDL_Rect(%p): x:%d, y:%d, w:%d, h:%d\n",self,self->x,self->y,self->w,self->h);
 }
+
+/**
+ * @brief Comparison function for qsort() to sort chars in a string.
+ */
+int charcmp(const void *a, const void *b)
+{
+    return *(const char*)a - *(const char*)b;
+}

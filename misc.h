@@ -53,6 +53,9 @@ bool create_path(const char *filename);
 void SDLExt_RectCenter(SDL_Rect *self, SDL_Rect *reference);
 void SDLExt_RectAlign(SDL_Rect *self, SDL_Rect *reference, uint8_t alignment);
 void SDLExt_RectDump(SDL_Rect *self);
+
+int charcmp(const void *a, const void *b);
+
 #define SDLExt_RectLastX(rect) ((rect)->x + (rect)->w - 1)
 #define SDLExt_RectLastY(rect) ((rect)->y + (rect)->h - 1)
 #define SDLExt_RectMidY(rect) ((rect)->y + roundf(((rect)->h-1)/2.0f))
