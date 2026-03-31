@@ -6,10 +6,10 @@ local-data
 .cache/
 .gdb_history
 compile_commands.json
-testbench
 switches.local
 TODO
 bench-debug
 debug
 sofis
-
+testbench/*
+!testbench/*.c

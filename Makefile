@@ -6,6 +6,7 @@ FGR_HOME=\"./fg-roam/src\"
 SFS_HOME=\".\"
 
 SRCDIR=.
+TBDIR=$(SRCDIR)/testbench
 FG_IO=$(SRCDIR)/fg-io
 FGCONN=$(FG_IO)/flightgear-connector
 FGTAPE=$(FG_IO)/fg-tape
@@ -49,7 +50,7 @@ CFLAGS=$(OPT_CFLAGS) `pkg-config glib-2.0 sdl2 SDL2_image libgps --cflags` \
 	   -DHAVE_IGN_OACI_MAP=$(HAVE_IGN_OACI_MAP)
 LDFLAGS=-lz -lm `pkg-config glib-2.0 sdl2 SDL2_image libgps --libs` -Wl,--as-needed -lSDL2_gpu -l$(GL_LIB) -lpthread -lcurl
 EXEC=sofis
-SRC= $(filter-out $(SRCDIR)/main.c $(SRCDIR)/testbench.c, $(wildcard $(SRCDIR)/*.c))
+SRC= $(filter-out $(SRCDIR)/main.c, $(wildcard $(SRCDIR)/*.c))
 SRC+= $(wildcard $(SRCDIR)/widgets/*.c)
 SRC+= $(wildcard $(SRCDIR)/dialogs/*.c)
 SRC+= $(wildcard $(SRCDIR)/sdl-pcf/src/*.c)
@@ -63,7 +64,7 @@ endif
 OBJ= $(SRC:.c=.o)
 MAIN_OBJ=main.o
 
-TB_SRC := $(wildcard test-bench/*.c)
+TB_SRC := $(wildcard $(TBDIR)/*.c)
 TB_BIN := $(TB_SRC:.c=)
 
 all: $(EXEC)
@@ -75,7 +76,7 @@ $(EXEC): $(OBJ) $(MAIN_OBJ)
 $(TB_BIN): %: %.c $(OBJ)
 	$(CC) $(CFLAGS) $< $(OBJ) $(LDFLAGS) $(LDLIBS) -o $@
 
-test-bench: $(TB_BIN)
+testbench: $(TB_BIN)
 
 %.o: %.c
 	$(CC) -o $@ -c $< $(CFLAGS)
@@ -83,7 +84,7 @@ test-bench: $(TB_BIN)
 .PHONY: clean mrproper
 
 clean:
-	rm -rf *.o sdl-pcf/src/*.o fg-roam/src/*.o fg-io/fg-tape/*.o sensors/*.o widgets/*.o dialogs/*.o test-bench/*.o
+	rm -rf *.o sdl-pcf/src/*.o fg-roam/src/*.o fg-io/fg-tape/*.o sensors/*.o widgets/*.o dialogs/*.o testbench/*.o
 
 mrproper: clean
 	rm -rf $(EXEC)
