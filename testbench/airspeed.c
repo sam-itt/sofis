@@ -19,7 +19,6 @@
 #include "mock-data-source.h"
 #include "resource-manager.h"
 #include "airspeed-indicator.h"
-#include "direct-to-dialog.h"
 
 
 #include "sdl-colors.h"
@@ -57,11 +56,11 @@ bool handle_keyboard(SDL_KeyboardEvent *event, Uint32 elapsed)
         case SDLK_ESCAPE:
             return true;
             break;
-        case SDLK_a:
+        case SDLK_UP:
             ias += IAS_INC;
             airspeed_indicator_set_value(asi, ias);
             break;
-        case SDLK_z:
+        case SDLK_DOWN:
             ias -= IAS_INC;
             airspeed_indicator_set_value(asi, ias);
             break;
