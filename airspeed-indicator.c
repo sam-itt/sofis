@@ -47,7 +47,12 @@ AirspeedIndicator *airspeed_indicator_init(AirspeedIndicator *self, speed_t v_so
     db = digit_barrel_new(fnt, 0, 9.999, 1);
     self->tape = tape_gauge_new(
         68, 240,
-        (LadderPageDescriptor*)airspeed_page_descriptor_new(v_so,  v_s1,  v_fe,  v_no,  v_ne),
+        (LadderPageDescriptor*)airspeed_page_descriptor_new(
+            68, 240,
+            18,
+            5, 10,
+            v_so,  v_s1,  v_fe,  v_no,  v_ne
+        ),
         AlignRight, -12, 3,
         -1, db,
         -2, db,

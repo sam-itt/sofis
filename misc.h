@@ -70,4 +70,11 @@ static inline float clampf(float x, float low, float high)
 {
     return (x > high) ? high : ((x < low) ? low : x);
 }
+
+/* returns the next multiple of m that is at least x*/
+static inline int round_up(int x, int m)
+{
+    return x % m ? ((x / m) + 1) * m : x;
+}
+
 #endif /* MISC_H */

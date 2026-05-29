@@ -8,27 +8,27 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include <SDL2/SDL_image.h>
 
-#include "SDL_render.h"
 #include "airspeed-page-descriptor.h"
 #include "generic-layer.h"
-#include "resource-manager.h"
+#include "ladder-page.h"
 #include "sdl-colors.h"
-#include "misc.h"
 #include "vertical-strip.h"
-#include "res-dirs.h"
 
-#define PAGE_SIZE 70
 
 
 LadderPage *airspeed_ladder_page_init(LadderPage *self);
 static void airspeed_ladder_page_draw_arc(LadderPage *self, float start, float end, uintf8_t width, Uint32 color);
 static void airspeed_ladder_page_draw_arcs(LadderPage *self);
 
-AirspeedPageDescriptor *airspeed_page_descriptor_new(speed_t v_so, speed_t v_s1, speed_t v_fe, speed_t v_no, speed_t v_ne)
+
+AirspeedPageDescriptor *airspeed_page_descriptor_new(int page_w, int page_h_min, uintf8_t unit_px_sz,
+                                                     int small_step_width, int big_step_width,
+                                                     speed_t v_so, speed_t v_s1, speed_t v_fe,
+                                                     speed_t v_no, speed_t v_ne)
 {
     AirspeedPageDescriptor *self;
+    int pattern_h;
 
     self = calloc(1, sizeof(AirspeedPageDescriptor));
     if(!self)
@@ -40,9 +40,14 @@ AirspeedPageDescriptor *airspeed_page_descriptor_new(speed_t v_so, speed_t v_s1,
     self->v_no = v_no;
     self->v_ne = v_ne;
 
-    fb_page_descriptor_init((FBPageDescriptor *)self, IMG_DIR"/speed-ladder.png", BOTTUM_UP, PAGE_SIZE, 10, 5);
-    self->super.super.init_page = airspeed_ladder_page_init;
-    self->super.super.fei = 234;
+    vruler_page_descriptor_init(
+        VRULER_PAGE_DESCRIPTOR(self),
+        page_w, page_h_min,
+        unit_px_sz,
+        small_step_width, big_step_width,
+        10, 5,
+        BOTTUM_UP, airspeed_ladder_page_init
+    );
 
     return self;
 }
@@ -50,9 +55,7 @@ AirspeedPageDescriptor *airspeed_page_descriptor_new(speed_t v_so, speed_t v_s1,
 
 LadderPage *airspeed_ladder_page_init(LadderPage *self)
 {
-
-    fb_ladder_page_init(self);
-    ladder_page_etch_markings(self, resource_manager_get_font(TERMINUS_16));
+    vruler_ladder_page_init(self);
 
     airspeed_ladder_page_draw_arcs(self);
     generic_layer_build_texture(GENERIC_LAYER(self));

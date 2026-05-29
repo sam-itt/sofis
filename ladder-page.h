@@ -16,6 +16,7 @@ typedef struct _LadderPage LadderPage;
 typedef enum {TOP_DOWN, BOTTUM_UP} ScrollType;
 typedef LadderPage *(*LPInitFunc) (LadderPage *self);
 
+typedef enum {LocationLeft, LocationRight} LadderPageRulerLocation;
 
 /**
  * LadderPageDescriptor helps define how the inifinite
@@ -61,6 +62,9 @@ typedef LadderPage *(*LPInitFunc) (LadderPage *self);
  *
  */
 typedef struct{
+    int width; /*page width in pixels*/
+    int height; /*page height in pixels*/
+
     ScrollType direction;
     size_t page_size; /*number of values per page*/
 
@@ -98,16 +102,20 @@ struct _LadderPage{
 #define LADDER_PAGE(self) ((LadderPage*)(self))
 #define LADDER_PAGE_DESCRIPTOR(self) ((LadderPageDescriptor*)(self))
 
-LadderPageDescriptor *ladder_page_descriptor_init(LadderPageDescriptor *self, ScrollType direction, float page_size, float vstep, float vsubstep, LPInitFunc func);
+LadderPageDescriptor *ladder_page_descriptor_init(LadderPageDescriptor *self, int width, int height,
+                                                  ScrollType direction, float page_size, float vstep,
+                                                  float vsubstep, LPInitFunc func);
 void ladder_page_descriptor_compute_offset(LadderPageDescriptor *self, float ppv);
 LadderPage *ladder_page_descriptor_create_page(LadderPageDescriptor *self, int index);
 
 
 LadderPage *ladder_page_new(float start, LadderPageDescriptor *descriptor);
-//LadderPage *ladder_page_init(LadderPage *self);
+LadderPage *ladder_page_init(LadderPage *self);
 void ladder_page_free(LadderPage *self);
 
 int ladder_page_get_index(LadderPage *self);
 float ladder_page_resolve_value(LadderPage *self, float value);
-void ladder_page_etch_markings(LadderPage *self, PCF_Font *font);
+void ladder_page_draw_ruler(LadderPage *self, uint8_t base_unit_px,
+                            LadderPageRulerLocation location, uint8_t small_step_width, uint8_t big_step_width);
+void ladder_page_etch_markings(LadderPage *self, PCF_Font *font, uint halign, int offset);
 #endif /* LADDER_PAGE_H */

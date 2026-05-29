@@ -10,7 +10,7 @@
 
 #include "alt-indicator.h"
 
-#include "alt-ladder-page-descriptor.h"
+#include "altitude-page-descriptor.h"
 #include "resource-manager.h"
 #include "sdl-colors.h"
 #include "misc.h"
@@ -50,7 +50,11 @@ AltIndicator *alt_indicator_init(AltIndicator *self)
     DigitBarrel *db2 = digit_barrel_new(fnt, 0, 99, 10);
     self->tape = tape_gauge_new(
         68, 240,
-        (LadderPageDescriptor*)alt_ladder_page_descriptor_new(),
+        (LadderPageDescriptor*)altitude_page_descriptor_new(
+            68, 240,
+            7,
+            5, 10
+        ),
         AlignRight, 0, 4,
         -1, db2,
         -2, db,
