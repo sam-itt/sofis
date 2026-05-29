@@ -47,6 +47,18 @@ void ladder_page_descriptor_compute_offset(LadderPageDescriptor *self, float ppv
     }
 }
 
+LadderPage *ladder_page_descriptor_create_page(LadderPageDescriptor *self, int index)
+{
+    LadderPage *rv;
+    float start;
+
+    start = index * self->page_size; /*'nominal' start, will be offsted by the init func */
+
+    rv = ladder_page_new(start, self);
+
+    return self->init_page(rv);
+}
+
 LadderPage *ladder_page_new(float start, LadderPageDescriptor *descriptor)
 {
     LadderPage *self;

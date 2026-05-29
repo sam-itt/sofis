@@ -9,7 +9,6 @@
 #include <stdlib.h>
 
 #include "ladder-gauge.h"
-#include "ladder-page-factory.h"
 #include "generic-layer.h"
 #include "sdl-colors.h"
 
@@ -116,7 +115,7 @@ LadderPage *ladder_gauge_get_page(LadderGauge *self, uintf8_t idx)
 
     a_idx = idx - self->base;
     if(!self->pages[a_idx])
-        self->pages[a_idx] = ladder_page_factory_create(idx, self->descriptor);
+        self->pages[a_idx] = ladder_page_descriptor_create_page(self->descriptor, idx);
 
     return self->pages[a_idx];
 }

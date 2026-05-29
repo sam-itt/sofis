@@ -100,7 +100,7 @@ struct _LadderPage{
 
 LadderPageDescriptor *ladder_page_descriptor_init(LadderPageDescriptor *self, ScrollType direction, float page_size, float vstep, float vsubstep, LPInitFunc func);
 void ladder_page_descriptor_compute_offset(LadderPageDescriptor *self, float ppv);
-
+LadderPage *ladder_page_descriptor_create_page(LadderPageDescriptor *self, int index);
 
 
 LadderPage *ladder_page_new(float start, LadderPageDescriptor *descriptor);
