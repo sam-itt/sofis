@@ -11,6 +11,7 @@
 #include "ladder-gauge.h"
 #include "generic-layer.h"
 #include "sdl-colors.h"
+#include "misc.h"
 
 static void ladder_gauge_update_state(LadderGauge *self, Uint32 dt);
 static void ladder_gauge_render(LadderGauge *self, Uint32 dt, RenderContext *ctx);
@@ -174,6 +175,7 @@ static void ladder_gauge_update_state(LadderGauge *self, Uint32 dt)
                 self->state.patches[self->state.npatches].layer = GENERIC_LAYER(page2);
                 self->state.patches[self->state.npatches].src = patch;
                 self->state.patches[self->state.npatches].dst = dst_region;
+                self->state.patches[self->state.npatches].dst.h = patch.h;
                 self->state.npatches++;
             }
         }else{
@@ -184,26 +186,30 @@ static void ladder_gauge_update_state(LadderGauge *self, Uint32 dt)
             self->state.patches[self->state.npatches].layer = GENERIC_LAYER(page2);
             self->state.patches[self->state.npatches].src = patch;
             self->state.patches[self->state.npatches].dst = dst_region;
+            self->state.patches[self->state.npatches].dst.h = patch.h;
             self->state.npatches++;
         }
         dst_region.y = patch.h;
+        dst_region.h -= patch.h;
         portion.y = 0;
         portion.h -= patch.h;
     }
     self->state.patches[self->state.npatches].layer = GENERIC_LAYER(page);
     self->state.patches[self->state.npatches].src = portion;
+    self->state.patches[self->state.npatches].src.h = MIN(portion.h, generic_layer_h(GENERIC_LAYER(page)));
     self->state.patches[self->state.npatches].dst = dst_region;
+    self->state.patches[self->state.npatches].dst.h = MIN(portion.h, generic_layer_h(GENERIC_LAYER(page)));
     self->state.npatches++;
 
-    if(portion.y + base_gauge_h(BASE_GAUGE(self)) > generic_layer_h(GENERIC_LAYER(page))){// fill bottom
-        float taken = generic_layer_h(GENERIC_LAYER(page)) - portion.y; //number of pixels taken from the bottom of values pict
-        float delta = base_gauge_h(BASE_GAUGE(self)) - taken;
-        dst_region.y += taken;
+    dst_region.y += portion.h;
+    dst_region.h -= portion.h;
+
+    if(dst_region.h > 0){// fill bottom
         SDL_Rect patch = {
             .x = 0,
             .y = 0,
             .w = generic_layer_w(GENERIC_LAYER(page)),
-            .h = delta
+            .h = MIN(dst_region.h, generic_layer_h(GENERIC_LAYER(page)))
         };
         if(self->descriptor->direction == TOP_DOWN){
             /* 0 is on top, 100 is downwards. We need to fill the bottom with values that are after the end
@@ -213,6 +219,7 @@ static void ladder_gauge_update_state(LadderGauge *self, Uint32 dt)
             self->state.patches[self->state.npatches].layer = GENERIC_LAYER(page2);
             self->state.patches[self->state.npatches].src = patch;
             self->state.patches[self->state.npatches].dst = dst_region;
+            self->state.patches[self->state.npatches].dst.h = patch.h;
             self->state.npatches++;
         }else{
             /* 0 at the bottom, 100 is upwards. We need to fill the bottom with values that are before the begining
@@ -223,6 +230,7 @@ static void ladder_gauge_update_state(LadderGauge *self, Uint32 dt)
                 self->state.patches[self->state.npatches].layer = GENERIC_LAYER(page2);
                 self->state.patches[self->state.npatches].src = patch;
                 self->state.patches[self->state.npatches].dst = dst_region;
+                self->state.patches[self->state.npatches].dst.h = patch.h;
                 self->state.npatches++;
             }
         }

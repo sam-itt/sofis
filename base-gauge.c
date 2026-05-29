@@ -292,10 +292,10 @@ int base_gauge_blit_texture(BaseGauge *self, RenderContext *ctx,
     }
 #if 0
     printf(
-        "GPU_Blit from %p {.x:%0.2f, .y:%0.2f, .w:%0.2f, .h:%0.2f} to %p x:%0.2f y:%0.2f\n",
+        "GPU_Blit from %p {.x:%d, .y:%d, .w:%d, .h:%d} to %p x:%0.2f y:%0.2f\n",
         src,
-        src_rectf->x,src_rectf->y,
-        src_rectf->w,src_rectf->h,
+        srcrect->x,srcrect->y,
+        srcrect->w,srcrect->h,
         ctx->target.target, x, y
     );
 #endif
