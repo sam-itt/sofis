@@ -55,7 +55,7 @@ AirspeedPageDescriptor *airspeed_page_descriptor_new(int page_w, int page_h_min,
 
 LadderPage *airspeed_ladder_page_init(LadderPage *self)
 {
-    vruler_ladder_page_init(self);
+    vruler_ladder_page_init(self, LocationRight);
 
     airspeed_ladder_page_draw_arcs(self);
     generic_layer_build_texture(GENERIC_LAYER(self));

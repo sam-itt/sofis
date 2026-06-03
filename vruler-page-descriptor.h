@@ -18,6 +18,6 @@ VRulerPageDescriptor *vruler_page_descriptor_init(VRulerPageDescriptor *self, in
                                                   float vstep, float vsubstep,
                                                   ScrollType direction, LPInitFunc func);
 
-LadderPage *vruler_ladder_page_init(LadderPage *self);
+LadderPage *vruler_ladder_page_init(LadderPage *self, LadderPageRulerLocation location);
 #define VRULER_PAGE_DESCRIPTOR_H
 #endif /* VRULER_PAGE_DESCRIPTOR_H */

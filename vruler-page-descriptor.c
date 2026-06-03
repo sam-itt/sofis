@@ -3,6 +3,7 @@
 #include <assert.h>
 
 #include "vruler-page-descriptor.h"
+#include "misc.h"
 #include "resource-manager.h"
 #include "sizes.h"
 
@@ -85,11 +86,18 @@ VRulerPageDescriptor *vruler_page_descriptor_init(VRulerPageDescriptor *self, in
         func
     );
 
-    /* First big tick mark is at the end of the first pattern, which is page_h - unit_px_sz
-     * page_h - 2 unit - ceil(1/2 unit) from the bottom (0)
+    /* We start the page pretending that we have already etched half a big unit. When the big unit
+     * is an odd number of pixels we draw the "bigger half" first and finish the page with the smaller
+     * half so that the pages ca be stiched together nicely.
      *
-     * */
-    LADDER_PAGE_DESCRIPTOR(self)->fei = page_h - 2 * unit_px_sz - ceil(unit_px_sz/2.0);
+     * Therefore the first big tick mark is at the end of the page minus the half (or big half) the big
+     * unit pixel size.
+     */
+    int n_steps; /*number of small steps to make a big step*/
+    int step_px;
+    n_steps = LADDER_PAGE_DESCRIPTOR(self)->vstep/LADDER_PAGE_DESCRIPTOR(self)->vsubstep;
+    step_px = unit_px_sz* n_steps;
+    LADDER_PAGE_DESCRIPTOR(self)->fei = page_h - ceil(step_px/2.0);
     printf("Ruler ladder page first etch mark index: %f\n", LADDER_PAGE_DESCRIPTOR(self)->fei);
 
     return self;
@@ -102,19 +110,20 @@ VRulerPageDescriptor *vruler_page_descriptor_init(VRulerPageDescriptor *self, in
  * your subclass (@see airspeed_ladder_page_init, altitude_ladder_page_init)
  *
  * @param self The LadderPage to initialize.
+ * @param location The location of the ruler, either LocationLeft or LocationRight.
  *
  * @return The initialized LadderPage with the ruler and markings drawn.
  */
-LadderPage *vruler_ladder_page_init(LadderPage *self)
+LadderPage *vruler_ladder_page_init(LadderPage *self, LadderPageRulerLocation location)
 {
     VRulerPageDescriptor *descriptor;
 
     descriptor = (VRulerPageDescriptor *)self->descriptor;
 
     ladder_page_init(self);
-    ladder_page_draw_ruler(self, descriptor->unit_px_sz, LocationRight,
+    ladder_page_draw_ruler(self, descriptor->unit_px_sz, location,
                            descriptor->small_step_width, descriptor->big_step_width);
-    ladder_page_etch_markings(self, resource_manager_get_font(FONT_BIG), HALIGN_RIGHT, descriptor->big_step_width + 5);
+    ladder_page_etch_markings(self, resource_manager_get_font(FONT_BIG), location == LocationRight ? HALIGN_RIGHT : HALIGN_LEFT, descriptor->big_step_width + 5);
 
     return self;
 }

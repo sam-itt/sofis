@@ -37,7 +37,7 @@ AltitudePageDescriptor *altitude_page_descriptor_new(int page_w, int page_h_min,
 
 LadderPage *altitude_ladder_page_init(LadderPage *self)
 {
-    vruler_ladder_page_init(self);
+    vruler_ladder_page_init(self, LocationLeft);
     generic_layer_build_texture(GENERIC_LAYER(self));
 
     return self;
