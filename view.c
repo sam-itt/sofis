@@ -175,3 +175,41 @@ void view_draw_rubis(SDL_Surface *surface, int y, SDL_Color *color, int pskip, S
     }
     SDL_UnlockSurface(surface);
 }
+
+
+void view_draw_line(SDL_Surface *surface, int x0, int y0, int x1, int y1, SDL_Color *color)
+{
+    Uint32 *pixels;
+    Uint32 col;
+    int ybase;
+
+    col = SDL_MapRGBA(surface->format, color->r, color->g, color->b, color->a);
+    SDL_LockSurface(surface);
+    pixels = surface->pixels;
+
+    /* Bresenham's line algorithm */
+    int dx = abs(x1 - x0);
+    int dy = abs(y1 - y0);
+    int sx = (x0 < x1) ? 1 : -1;
+    int sy = (y0 < y1) ? 1 : -1;
+    int err = dx - dy;
+
+    ybase = y0;
+    for(;;) {
+        pixels[y0 * surface->w + x0] = col;
+
+        if (x0 == x1 && y0 == y1)
+            break;
+        int err2 = 2 * err;
+        if (err2 > -dy) {
+            err -= dy;
+            x0 += sx;
+        }
+        if (err2 < dx) {
+            err += dx;
+            y0 += sy;
+        }
+    }
+
+    SDL_UnlockSurface(surface);
+}

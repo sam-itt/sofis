@@ -38,10 +38,7 @@ AltGroup *alt_group_new(void)
 AltGroup *alt_group_init(AltGroup *self)
 {
     self->altimeter = alt_indicator_new();
-    self->vsi = vertical_stair_new(IMG_DIR"/vs-bg.png",IMG_DIR"/vs-cursor.png",
-        resource_manager_get_static_font(TERMINUS_16, &SDL_WHITE, 2, PCF_DIGITS, "+-")
-    );
-
+    self->vsi = vertical_stair_new(29, 191, TERMINUS_16);
     if(!self->vsi || !self->altimeter)
         goto bail;
 

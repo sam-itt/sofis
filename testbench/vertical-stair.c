@@ -8,48 +8,22 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
-#include <string.h>
 
 #include <SDL2/SDL.h>
 #include <SDL_gpu.h>
 
 #include "base-gauge.h"
 #include "base-widget.h"
-#include "basic-hud.h"
-#include "button.h"
 #include "softkey.h"
-#include "compass-gauge.h"
 #include "data-source.h"
-#include "elevator-gauge.h"
-#include "fishbone-gauge.h"
-#include "ladder-gauge.h"
-#include "alt-ladder-page-descriptor.h"
 
-#include "ladder-page.h"
 #include "mock-data-source.h"
-#include "odo-gauge.h"
-#include "alt-indicator.h"
-#include "pfd-toplevel-softkey-model.h"
 #include "resource-manager.h"
-#include "SDL_pcf.h"
-#include "side-panel.h"
-#include "text-gauge.h"
 #include "vertical-stair.h"
-#include "alt-group.h"
-#include "airspeed-indicator.h"
-#include "attitude-indicator.h"
-#include "roll-slip-gauge.h"
-#include "tape-gauge.h"
-#include "map-gauge.h"
-#include "route-map-provider.h"
-#include "direct-to-dialog.h"
-#include "softkey-bar.h"
 
-
-#include "sdl-colors.h"
-#include "res-dirs.h"
-
+#ifndef SCREEN_WIDTH
 #define SCREEN_WIDTH 640
+#endif
 #define SCREEN_HEIGHT 480
 
 //#define SCREEN_WIDTH 800
@@ -83,12 +57,12 @@ bool handle_keyboard(SDL_KeyboardEvent *event, Uint32 elapsed)
         case SDLK_ESCAPE:
             return true;
             break;
-        case SDLK_p:
+        case SDLK_UP:
             if(vs < stair->scale.end)
                 vs += VARIO_INC;
             vertical_stair_set_value(stair, vs, true);
             break;
-        case SDLK_m:
+        case SDLK_DOWN:
             if(vs > stair->scale.start)
                 vs -= VARIO_INC;
             vertical_stair_set_value(stair, vs, true);
@@ -175,11 +149,11 @@ int main(int argc, char **argv)
 #endif
     data_source_set((DataSource*)mock_data_source_new());
 
-    stair = vertical_stair_new(
-        IMG_DIR"/vs-bg.png",
-        IMG_DIR"/vs-cursor.png",
-        resource_manager_get_static_font(TERMINUS_16, &SDL_WHITE, 2, PCF_DIGITS, "+-")
-    );
+#if SCREEN_WIDTH == 640
+    stair = vertical_stair_new(29, 191, TERMINUS_16);
+#else
+    stair = vertical_stair_new(46, 317, TERMINUS_22);
+#endif
     vertical_stair_set_value(stair, vs, true);
 
     SDL_Rect vrect = {96,68,0,0};

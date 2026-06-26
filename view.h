@@ -22,6 +22,7 @@ typedef struct{
 
 void view_clear(SDL_Surface *self, SDL_Rect *area);
 void view_draw_outline(SDL_Surface *self, SDL_Color *rgba, SDL_Rect *area);
+void view_draw_line(SDL_Surface *surface, int x0, int y0, int x1, int y1, SDL_Color *color);
 
 void view_font_draw_text(SDL_Surface *destination, SDL_Rect *location, uint8_t alignment, const char *string, PCF_Font *font, Uint32 text_color, Uint32 bg_color);
 

@@ -7,9 +7,9 @@
  */
 #ifndef VERTICAL_STAIR_H
 #define VERTICAL_STAIR_H
-#include "SDL_render.h"
 #include "SDL_pcf.h"
 
+#include "resource-manager.h"
 #include "sfv-gauge.h"
 #include "generic-layer.h"
 #include "vertical-strip.h"
@@ -37,8 +37,8 @@ typedef struct{
     VerticalStairState state;
 }VerticalStair;
 
-VerticalStair *vertical_stair_new(const char *bg_img, const char *cursor_img, PCF_StaticFont *font);
-VerticalStair *vertical_stair_init(VerticalStair *self, const char *bg_img, const char *cursor_img, PCF_StaticFont *font);
+VerticalStair *vertical_stair_new(int width, int height, FontResource font);
+VerticalStair *vertical_stair_init(VerticalStair *self, int width, int height, FontResource font);
 
 bool vertical_stair_set_value(VerticalStair *self, float value, bool animated);
 #endif /* VERTICAL_STAIR_H */
