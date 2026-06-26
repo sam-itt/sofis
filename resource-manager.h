@@ -16,7 +16,10 @@ typedef enum{
     TERMINUS_14,
     TERMINUS_16,
     TERMINUS_18,
+    TERMINUS_20,
+    TERMINUS_22,
     TERMINUS_24,
+    TERMINUS_28,
     TERMINUS_32,
 
     FONT_MAX

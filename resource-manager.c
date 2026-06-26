@@ -88,8 +88,14 @@ static const char *resource_manager_get_font_filename(FontResource font)
             return FONT_DIR"/ter-x16n.pcf.gz";
         case TERMINUS_18:
             return FONT_DIR"/ter-x18n.pcf.gz";
+        case TERMINUS_20:
+            return FONT_DIR"/ter-x20n.pcf.gz";
+        case TERMINUS_22:
+            return FONT_DIR"/ter-x22n.pcf.gz";
         case TERMINUS_24:
             return FONT_DIR"/ter-x24n.pcf.gz";
+        case TERMINUS_28:
+            return FONT_DIR"/ter-x28n.pcf.gz";
         case TERMINUS_32:
             return FONT_DIR"/ter-x32n.pcf.gz";
         case FONT_MAX:
