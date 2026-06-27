@@ -49,8 +49,8 @@ AirspeedIndicator *airspeed_indicator_init(AirspeedIndicator *self, speed_t v_so
         68, 240,
         (LadderPageDescriptor*)airspeed_page_descriptor_new(
             68, 240,
-            18,
-            5, 10,
+            roundf(240*0.0835f),
+            roundf(0.55f*(68*0.20f)), roundf(68*0.20f),
             v_so,  v_s1,  v_fe,  v_no,  v_ne
         ),
         AlignRight, -12, 3,

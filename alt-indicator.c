@@ -52,8 +52,8 @@ AltIndicator *alt_indicator_init(AltIndicator *self)
         68, 240,
         (LadderPageDescriptor*)altitude_page_descriptor_new(
             68, 240,
-            7,
-            5, 10
+            roundf(240*0.032f),
+            roundf(0.55f*(68*0.15f)), roundf(68*0.15f)
         ),
         AlignRight, 0, 4,
         -1, db2,
