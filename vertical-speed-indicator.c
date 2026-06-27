@@ -16,40 +16,40 @@
 #include "SDL_surface.h"
 #include "base-gauge.h"
 #include "generic-layer.h"
-#include "vertical-stair.h"
+#include "vertical-speed-indicator.h"
 #include "resource-manager.h"
 #include "sdl-colors.h"
 #include "misc.h"
 #include "view.h"
 
-static void vertical_stair_render(VerticalStair *self, Uint32 dt, RenderContext *ctx);
-static void vertical_stair_update_state(VerticalStair *self, Uint32 dt);
-static void *vertical_stair_dispose(VerticalStair *self);
-static void vertical_stair_draw_background(VerticalStair *self, int width, int height,
-                                           uint8_t base_unit_px, uint8_t small_step_width,
-                                           uint8_t big_step_width, FontResource font);
-static void vertical_stair_draw_cursor(VerticalStair *self);
-static BaseGaugeOps vertical_stair_ops = {
-   .render = (RenderFunc)vertical_stair_render,
-   .update_state = (StateUpdateFunc)vertical_stair_update_state,
-   .dispose = (DisposeFunc)vertical_stair_dispose
+static void vertical_speed_indicator_render(VerticalSpeedIndicator *self, Uint32 dt, RenderContext *ctx);
+static void vertical_speed_indicator_update_state(VerticalSpeedIndicator *self, Uint32 dt);
+static void *vertical_speed_indicator_dispose(VerticalSpeedIndicator *self);
+static BaseGaugeOps vertical_speed_indicator_ops = {
+   .render = (RenderFunc)vertical_speed_indicator_render,
+   .update_state = (StateUpdateFunc)vertical_speed_indicator_update_state,
+   .dispose = (DisposeFunc)vertical_speed_indicator_dispose
 };
 
+static void vertical_speed_indicator_draw_background(VerticalSpeedIndicator *self, int width, int height,
+                                           uint8_t base_unit_px, uint8_t small_step_width,
+                                           uint8_t big_step_width, FontResource font);
+static void vertical_speed_indicator_draw_cursor(VerticalSpeedIndicator *self);
 
-VerticalStair *vertical_stair_new(int width, int height, FontResource font)
+VerticalSpeedIndicator *vertical_speed_indicator_new(int width, int height, FontResource font)
 {
-    VerticalStair *self;
+    VerticalSpeedIndicator *self;
 
-    self = calloc(1, sizeof(VerticalStair));
+    self = calloc(1, sizeof(VerticalSpeedIndicator));
     if(self){
-        if(!vertical_stair_init(self, width, height, font)){
+        if(!vertical_speed_indicator_init(self, width, height, font)){
             return base_gauge_free(BASE_GAUGE(self));
         }
     }
     return self;
 }
 
-VerticalStair *vertical_stair_init(VerticalStair *self, int width, int height, FontResource font)
+VerticalSpeedIndicator *vertical_speed_indicator_init(VerticalSpeedIndicator *self, int width, int height, FontResource font)
 {
     bool rv;
 
@@ -59,12 +59,12 @@ VerticalStair *vertical_stair_init(VerticalStair *self, int width, int height, F
         return NULL;
     PCF_StaticFontRef(self->font);
 
-    vertical_stair_draw_background(
+    vertical_speed_indicator_draw_background(
         self, width, height,
         roundf(height*0.11f), roundf(width*0.24f),
         roundf(width*0.33f), font
     );
-    vertical_stair_draw_cursor(self);
+    vertical_speed_indicator_draw_cursor(self);
     /*TODO: Check if drawing worked*/
 
     generic_layer_build_texture(GENERIC_LAYER(&self->scale));
@@ -74,7 +74,7 @@ VerticalStair *vertical_stair_init(VerticalStair *self, int width, int height, F
      * set when we return NULL so that base_gauge_dispose (called by
      * base_gauge_free) can properly dispose any gauge-allocated resources*/
     base_gauge_init(BASE_GAUGE(self),
-        &vertical_stair_ops,
+        &vertical_speed_indicator_ops,
         generic_layer_w(&self->cursor),
         generic_layer_h(GENERIC_LAYER(&self->scale))
     );
@@ -82,7 +82,7 @@ VerticalStair *vertical_stair_init(VerticalStair *self, int width, int height, F
     return self;
 }
 
-static void *vertical_stair_dispose(VerticalStair *self)
+static void *vertical_speed_indicator_dispose(VerticalSpeedIndicator *self)
 {
     vertical_strip_dispose(&self->scale);
     generic_layer_dispose(&self->cursor);
@@ -91,13 +91,13 @@ static void *vertical_stair_dispose(VerticalStair *self)
     return self;
 }
 
-bool vertical_stair_set_value(VerticalStair *self, float value, bool animated)
+bool vertical_speed_indicator_set_value(VerticalSpeedIndicator *self, float value, bool animated)
 {
     return sfv_gauge_set_value(SFV_GAUGE(self), value, animated);
 }
 
 
-static void vertical_stair_update_state(VerticalStair *self, Uint32 dt)
+static void vertical_speed_indicator_update_state(VerticalSpeedIndicator *self, Uint32 dt)
 {
     float y;
     char number[VS_VALUE_MAX_LEN];
@@ -147,7 +147,7 @@ static void vertical_stair_update_state(VerticalStair *self, Uint32 dt)
     );
 }
 
-static void vertical_stair_render(VerticalStair *self, Uint32 dt, RenderContext *ctx)
+static void vertical_speed_indicator_render(VerticalSpeedIndicator *self, Uint32 dt, RenderContext *ctx)
 {
     base_gauge_blit_layer(BASE_GAUGE(self), ctx,
         GENERIC_LAYER(&self->scale), NULL,
@@ -172,7 +172,7 @@ static void vertical_stair_render(VerticalStair *self, Uint32 dt, RenderContext 
 }
 
 
-static void vertical_stair_draw_background(VerticalStair *self, int width, int height,
+static void vertical_speed_indicator_draw_background(VerticalSpeedIndicator *self, int width, int height,
                                            uint8_t base_unit_px, uint8_t small_step_width,
                                            uint8_t big_step_width, FontResource font)
 {
@@ -271,7 +271,7 @@ static void vertical_stair_draw_background(VerticalStair *self, int width, int h
     }
 }
 
-static void vertical_stair_draw_cursor(VerticalStair *self)
+static void vertical_speed_indicator_draw_cursor(VerticalSpeedIndicator *self)
 {
     Uint32 c_h, c_w;
 

@@ -5,8 +5,8 @@
  *
  * SPDX-License-Identifier: GPL-2.0-only
  */
-#ifndef VERTICAL_STAIR_H
-#define VERTICAL_STAIR_H
+#ifndef VERTICAL_SPEED_INDICATOR_H
+#define VERTICAL_SPEED_INDICATOR_H
 #include "SDL_pcf.h"
 
 #include "resource-manager.h"
@@ -23,7 +23,7 @@ typedef struct{
     /* -1 because we don't need to render the \0*/
     PCF_StaticFontPatch chars[VS_VALUE_MAX_LEN-1];
     int nchars;
-}VerticalStairState;
+}VerticalSpeedIndicatorState;
 
 typedef struct{
     SfvGauge super;
@@ -34,11 +34,11 @@ typedef struct{
 
     VerticalStrip scale;
 
-    VerticalStairState state;
-}VerticalStair;
+    VerticalSpeedIndicatorState state;
+}VerticalSpeedIndicator;
 
-VerticalStair *vertical_stair_new(int width, int height, FontResource font);
-VerticalStair *vertical_stair_init(VerticalStair *self, int width, int height, FontResource font);
+VerticalSpeedIndicator *vertical_speed_indicator_new(int width, int height, FontResource font);
+VerticalSpeedIndicator *vertical_speed_indicator_init(VerticalSpeedIndicator *self, int width, int height, FontResource font);
 
-bool vertical_stair_set_value(VerticalStair *self, float value, bool animated);
-#endif /* VERTICAL_STAIR_H */
+bool vertical_speed_indicator_set_value(VerticalSpeedIndicator *self, float value, bool animated);
+#endif /* VERTICAL_SPEED_INDICATOR_H */

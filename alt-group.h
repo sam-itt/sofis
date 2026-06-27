@@ -10,13 +10,13 @@
 
 #include "base-gauge.h"
 #include "alt-indicator.h"
-#include "vertical-stair.h"
+#include "vertical-speed-indicator.h"
 
 typedef struct{
     BaseGauge super;
 
     AltIndicator *altimeter;
-    VerticalStair *vsi;
+    VerticalSpeedIndicator *vsi;
 }AltGroup;
 
 AltGroup *alt_group_new(void);

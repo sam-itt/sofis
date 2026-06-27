@@ -13,7 +13,7 @@
 #include "resource-manager.h"
 #include "sdl-colors.h"
 #include "SDL_pcf.h"
-#include "vertical-stair.h"
+#include "vertical-speed-indicator.h"
 #include "res-dirs.h"
 
 static BaseGaugeOps alt_group_ops = {
@@ -38,7 +38,7 @@ AltGroup *alt_group_new(void)
 AltGroup *alt_group_init(AltGroup *self)
 {
     self->altimeter = alt_indicator_new();
-    self->vsi = vertical_stair_new(29, 191, TERMINUS_16);
+    self->vsi = vertical_speed_indicator_new(29, 191, TERMINUS_16);
     if(!self->vsi || !self->altimeter)
         goto bail;
 
@@ -74,7 +74,7 @@ void alt_group_set_altitude(AltGroup *self, float value)
 
 void alt_group_set_vertical_speed(AltGroup *self, float value)
 {
-    vertical_stair_set_value(self->vsi, value, true);
+    vertical_speed_indicator_set_value(self->vsi, value, true);
 }
 
 void alt_group_set_values(AltGroup *self, float alt, float vs)

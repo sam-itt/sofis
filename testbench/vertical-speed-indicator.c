@@ -19,7 +19,7 @@
 
 #include "mock-data-source.h"
 #include "resource-manager.h"
-#include "vertical-stair.h"
+#include "vertical-speed-indicator.h"
 
 #ifndef SCREEN_WIDTH
 #define SCREEN_WIDTH 640
@@ -30,7 +30,7 @@
 //#define SCREEN_HEIGHT 480
 
 
-VerticalStair *stair = NULL;
+VerticalSpeedIndicator *vsi = NULL;
 
 //float vs = 2000.0;
 float vs = 0.0;
@@ -58,14 +58,14 @@ bool handle_keyboard(SDL_KeyboardEvent *event, Uint32 elapsed)
             return true;
             break;
         case SDLK_UP:
-            if(vs < stair->scale.end)
+            if(vs < vsi->scale.end)
                 vs += VARIO_INC;
-            vertical_stair_set_value(stair, vs, true);
+            vertical_speed_indicator_set_value(vsi, vs, true);
             break;
         case SDLK_DOWN:
-            if(vs > stair->scale.start)
+            if(vs > vsi->scale.start)
                 vs -= VARIO_INC;
-            vertical_stair_set_value(stair, vs, true);
+            vertical_speed_indicator_set_value(vsi, vs, true);
             break;
         case SDLK_SPACE:
             printf("VS is: %f\n", vs);
@@ -150,11 +150,11 @@ int main(int argc, char **argv)
     data_source_set((DataSource*)mock_data_source_new());
 
 #if SCREEN_WIDTH == 640
-    stair = vertical_stair_new(29, 191, TERMINUS_16);
+    vsi = vertical_speed_indicator_new(29, 191, TERMINUS_16);
 #else
-    stair = vertical_stair_new(46, 317, TERMINUS_22);
+    vsi = vertical_speed_indicator_new(46, 317, TERMINUS_22);
 #endif
-    vertical_stair_set_value(stair, vs, true);
+    vertical_speed_indicator_set_value(vsi, vs, true);
 
     SDL_Rect vrect = {96,68,0,0};
 
@@ -187,7 +187,7 @@ int main(int argc, char **argv)
         SDL_FillRect(screenSurface, NULL, SDL_UFBLUE(screenSurface));
 #endif
 
-        base_gauge_render(BASE_GAUGE(stair), elapsed, &(RenderContext){rtarget, &vrect, NULL});
+        base_gauge_render(BASE_GAUGE(vsi), elapsed, &(RenderContext){rtarget, &vrect, NULL});
 
 #if USE_SDL_GPU
 		GPU_Flip(gpu_screen);
@@ -206,7 +206,7 @@ int main(int argc, char **argv)
         last_ticks = ticks;
     }while(!done);
 
-    base_gauge_free(BASE_GAUGE(stair));
+    base_gauge_free(BASE_GAUGE(vsi));
     resource_manager_shutdown();
     data_source_free(data_source_get_instance());
 #if USE_SDL_GPU
