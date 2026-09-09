@@ -12,7 +12,7 @@
 #include "resource-manager.h"
 #include "sfv-gauge.h"
 #include "generic-layer.h"
-#include "vertical-strip.h"
+#include "generic-strip.h"
 
 #define VS_VALUE_MAX_LEN 6 /*5 digits plus \0*/
 
@@ -32,7 +32,7 @@ typedef struct{
 
     PCF_StaticFont *font;
 
-    VerticalStrip scale;
+    GenericStrip scale;
 
     VerticalSpeedIndicatorState state;
 }VerticalSpeedIndicator;

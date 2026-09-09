@@ -70,8 +70,8 @@ LadderPage *ladder_page_new(float start, LadderPageDescriptor *descriptor)
 
     self = calloc(1, sizeof(LadderPage));
     if(self){
-        VERTICAL_STRIP(self)->start = start;
-        VERTICAL_STRIP(self)->end = NAN;
+        GENERIC_STRIP(self)->start = start;
+        GENERIC_STRIP(self)->end = NAN;
         self->descriptor = descriptor;
     }
     return self;
@@ -80,11 +80,11 @@ LadderPage *ladder_page_new(float start, LadderPageDescriptor *descriptor)
 
 LadderPage *ladder_page_init(LadderPage *self)
 {
-    VerticalStrip *strip;
+    GenericStrip *strip;
     GenericLayer *layer;
     LadderPageDescriptor *descriptor;
 
-    strip = VERTICAL_STRIP(self);
+    strip = GENERIC_STRIP(self);
     layer = GENERIC_LAYER(self);
     descriptor = LADDER_PAGE(self)->descriptor;
 
@@ -96,6 +96,7 @@ LadderPage *ladder_page_init(LadderPage *self)
         return NULL;
     }
 
+    strip->orientation = ORIENTATION_VERTICAL;
     strip->ppv = generic_layer_h(layer)/(descriptor->page_size*1.0);
 //    printf("LadderPageDescriptor ppv is %f\n",strip->ppv);
 //    printf("Page marking range is [%f, %f]\n", strip->start, strip->end);
@@ -117,21 +118,21 @@ LadderPage *ladder_page_init(LadderPage *self)
 
 void ladder_page_free(LadderPage *self)
 {
-    vertical_strip_dispose(VERTICAL_STRIP(self));
+    generic_strip_dispose(GENERIC_STRIP(self));
     free(self);
 }
 
 int ladder_page_get_index(LadderPage *self)
 {
-    return ceil(VERTICAL_STRIP(self)->start/(self->descriptor->page_size));
+    return ceil(GENERIC_STRIP(self)->start/(self->descriptor->page_size));
 }
 
 float ladder_page_resolve_value(LadderPage *self, float value)
 {
-    VerticalStrip *strip;
+    GenericStrip *strip;
     bool reverse;
 
-    strip = VERTICAL_STRIP(self);
+    strip = GENERIC_STRIP(self);
     reverse = (self->descriptor->direction == BOTTUM_UP);
 
     if(fmod(value, self->descriptor->vstep) == 0){ /*Value is a big graduation*/
@@ -153,7 +154,7 @@ float ladder_page_resolve_value(LadderPage *self, float value)
             y = self->descriptor->fei - ngrads * strip->ppv * self->descriptor->vsubstep;
         return y;
     }else{
-        return vertical_strip_resolve_value(strip, value, reverse);
+        return generic_strip_resolve_value(strip, value, reverse);
     }
 }
 
@@ -241,13 +242,13 @@ void ladder_page_etch_markings(LadderPage *self, PCF_Font *font, uint halign, in
 {
     float y;
 
-    VerticalStrip *strip;
+    GenericStrip *strip;
     GenericLayer *layer;
     int page_index;
 
     assert((halign & HALIGN_RIGHT || halign & HALIGN_LEFT));
 
-    strip = VERTICAL_STRIP(self);
+    strip = GENERIC_STRIP(self);
     layer = GENERIC_LAYER(self);
 
     page_index = ladder_page_get_index(self);
@@ -258,7 +259,6 @@ void ladder_page_etch_markings(LadderPage *self, PCF_Font *font, uint halign, in
 //    printf("Going from %zu to %f with step %f\n", page_index*self->descriptor->page_size, strip->end, self->descriptor->vstep);
     for(int i = page_index*self->descriptor->page_size; i <= strip->end; i += self->descriptor->vstep){
         y = ladder_page_resolve_value(self, i);
-//        printf("Writing index %d at y = %f\n", i, y);
         int x;
         PCF_TextPlacement placement;
         if(halign & HALIGN_RIGHT){

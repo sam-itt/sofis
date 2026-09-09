@@ -9,14 +9,14 @@
 #include <stdlib.h>
 
 #include "generic-layer.h"
-#include "vertical-strip.h"
+#include "generic-strip.h"
 
-void vertical_strip_dispose(VerticalStrip *self)
+void generic_strip_dispose(GenericStrip *self)
 {
     generic_layer_dispose(GENERIC_LAYER(self));
 }
 
-bool vertical_strip_has_value(VerticalStrip *self, float value)
+bool generic_strip_has_value(GenericStrip *self, float value)
 {
     float min, max;
 
@@ -27,7 +27,7 @@ bool vertical_strip_has_value(VerticalStrip *self, float value)
 }
 
 /**
- * Returns image pixel index (i.e y for vertical gauges, x for horizontal)
+ * Returns image pixel index (i.e y for vertical strips, x for horizontal)
  * from a given value. This function does a crude approximation that might fail
  * to align with etch marks, if any. If there are any etch marks on the strip,
  * derivative classes should handle them and call this function only to resolve
@@ -39,7 +39,7 @@ bool vertical_strip_has_value(VerticalStrip *self, float value)
  * @return the pixel index in {@link #ruler} that maps to @value, or -1 if value can't
  * be mapped (outside of the [{@link #start}, {@link #end}] range)
  */
-float vertical_strip_resolve_value(VerticalStrip *self, float value, bool reverse)
+float generic_strip_resolve_value(GenericStrip *self, float value, bool reverse)
 {
     float rv;
     /* To map [A, B] --> [a, b]
@@ -48,17 +48,20 @@ float vertical_strip_resolve_value(VerticalStrip *self, float value, bool revers
      *
      */
 /*    first interval is start,end, second interval is 0,surface->h-1*/
+    int axis_max = self->orientation == ORIENTATION_VERTICAL
+                   ? generic_layer_h(GENERIC_LAYER(self)) - 1
+                   : generic_layer_w(GENERIC_LAYER(self)) - 1;
     if(!reverse){
-        rv = (value - self->start)*((generic_layer_h(GENERIC_LAYER(self))-1) - 0)/(self->end - self->start) + 0;
-//        printf("Forward: New resolve: mapping value %f from [%f %f] to [%d %d]: %f\n",value, self->start,self->end,0,self->ruler->h-1,rv);
+        rv = (value - self->start)*(axis_max - 0)/(self->end - self->start) + 0;
+//        printf("Forward: New resolve: mapping value %f from [%f %f] to [%d %d]: %f\n",value, self->start,self->end,0,axis_max,rv);
     }else{
-        rv = (value - self->start)*(0 - (generic_layer_h(GENERIC_LAYER(self))-1))/(self->end - self->start) + (generic_layer_h(GENERIC_LAYER(self))-1);
-//        printf("Reverse: New resolve: mapping value %f from [%f %f] to [%d %d]: %f\n",value, self->start,self->end,self->ruler->h-1,0,rv);
+        rv = (value - self->start)*(0 - axis_max)/(self->end - self->start) + axis_max;
+//        printf("Reverse: New resolve: mapping value %f from [%f %f] to [%d %d]: %f\n",value, self->start,self->end,axis_max,0,rv);
     }
     return rv;
 }
 
-void vertical_strip_clip_value(VerticalStrip *self, float *value)
+void generic_strip_clip_value(GenericStrip *self, float *value)
 {
     if(*value > self->end)
         *value = self->end;

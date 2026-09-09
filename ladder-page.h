@@ -9,7 +9,7 @@
 #define LADDER_PAGE_H
 
 #include "SDL_pcf.h"
-#include "vertical-strip.h"
+#include "generic-strip.h"
 
 typedef struct _LadderPage LadderPage;
 
@@ -79,7 +79,7 @@ typedef struct{
 
 
 /**
- * Abstract struct that represent a VerticalStrip that will
+ * Abstract struct that represent a vertical GenericStrip that will
  * be used as a page in a LadderGauge. The LadderGauge displays
  * a tape-like widget that scrolls an infinite slider. The
  * 'infinite' slider is made out of pages.
@@ -93,7 +93,7 @@ typedef struct{
  *
  */
 struct _LadderPage{
-    VerticalStrip super;
+    GenericStrip super;
 
 //    const LadderPageDescriptor *descriptor;
     LadderPageDescriptor *descriptor;

@@ -17,6 +17,7 @@
 #include "base-gauge.h"
 #include "generic-layer.h"
 #include "vertical-speed-indicator.h"
+#include "generic-strip.h"
 #include "resource-manager.h"
 #include "sdl-colors.h"
 #include "misc.h"
@@ -67,6 +68,7 @@ VerticalSpeedIndicator *vertical_speed_indicator_init(VerticalSpeedIndicator *se
     vertical_speed_indicator_draw_cursor(self);
     /*TODO: Check if drawing worked*/
 
+    self->scale.orientation = ORIENTATION_VERTICAL;
     generic_layer_build_texture(GENERIC_LAYER(&self->scale));
     generic_layer_build_texture(&self->cursor);
 
@@ -84,7 +86,7 @@ VerticalSpeedIndicator *vertical_speed_indicator_init(VerticalSpeedIndicator *se
 
 static void *vertical_speed_indicator_dispose(VerticalSpeedIndicator *self)
 {
-    vertical_strip_dispose(&self->scale);
+    generic_strip_dispose(&self->scale);
     generic_layer_dispose(&self->cursor);
     if(self->font)
         PCF_FreeStaticFont(self->font);
@@ -112,9 +114,9 @@ static void vertical_speed_indicator_update_state(VerticalSpeedIndicator *self, 
 //    printf("%s %p value: %f\n", __FUNCTION__, self, SFV_GAUGE(self)->value);
     ivalue = round(SFV_GAUGE(self)->value);
     len = snprintf(number, VS_VALUE_MAX_LEN, "% -d", ivalue);
-    vertical_strip_clip_value(&self->scale, &SFV_GAUGE(self)->value);
+    generic_strip_clip_value(&self->scale, &SFV_GAUGE(self)->value);
 
-    y = vertical_strip_resolve_value(&self->scale, SFV_GAUGE(self)->value, true);
+    y = generic_strip_resolve_value(&self->scale, SFV_GAUGE(self)->value, true);
     y = round(round(y) - generic_layer_h(&self->cursor)/2.0);
     self->state.cloc = (SDL_Rect){
         1, y,
@@ -262,7 +264,7 @@ static void vertical_speed_indicator_draw_background(VerticalSpeedIndicator *sel
         if(i == 0) continue; /* skip zero */
         if(i % 1000) continue; /* only draw big ticks*/
 
-        int y = vertical_strip_resolve_value(&self->scale, i, true);
+        int y = generic_strip_resolve_value(&self->scale, i, true);
         int val = abs(i / 1000);
         PCF_FontWriteNumberAt(font_handle,
             &val, TypeInt, 0,

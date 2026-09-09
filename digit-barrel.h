@@ -12,7 +12,7 @@
 #include "SDL_pcf.h"
 
 #include "generic-layer.h"
-#include "vertical-strip.h"
+#include "generic-strip.h"
 #include "misc.h"
 
 typedef struct{
@@ -29,7 +29,7 @@ typedef struct{
 }DigitBarrelState;
 
 typedef struct{
-    VerticalStrip super;
+    GenericStrip super;
 
     float symbol_h;
     float fei;

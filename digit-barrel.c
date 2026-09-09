@@ -47,15 +47,16 @@ DigitBarrel *digit_barrel_init(DigitBarrel *self, PCF_Font *font, float start, f
     float minv, maxv;
     SDL_Surface *tmp;
     char *number;
-    SDL_Rect cursor; /*write cursor (into VERTICAL_SPLIT(self)->ruler)*/
+    SDL_Rect cursor; /*write cursor (into GENERIC_STRIP(self)->ruler)*/
     SDL_Rect fcursor; /*font read cursor*/
     char fmt[10];
-    VerticalStrip *strip;
+    GenericStrip *strip;
     GenericLayer *layer;
 
-    strip = VERTICAL_STRIP(self);
+    strip = GENERIC_STRIP(self);
     layer = GENERIC_LAYER(self);
 
+    strip->orientation = ORIENTATION_VERTICAL;
     strip->start = start;
     strip->end = end;
 
@@ -105,7 +106,7 @@ void digit_barrel_free(DigitBarrel *self)
         self->refcount--;
     if(!self->refcount){
 //        printf("DigitBarrel %p free\n",self);
-        vertical_strip_dispose(VERTICAL_STRIP(self));
+        generic_strip_dispose(GENERIC_STRIP(self));
         free(self);
     }
 }
@@ -125,11 +126,11 @@ void digit_barrel_free(DigitBarrel *self)
  */
 float digit_barrel_resolve_value(DigitBarrel *self, float value)
 {
-    VerticalStrip *strip;
+    GenericStrip *strip;
     float y;
 
-    strip = VERTICAL_STRIP(self);
-    if(!vertical_strip_has_value(strip, value))
+    strip = GENERIC_STRIP(self);
+    if(!generic_strip_has_value(strip, value))
         return -1;
 
     value = fmod(value, fabs(strip->end - strip->start) + 1);
@@ -148,10 +149,10 @@ void digit_barrel_state_value(DigitBarrel *self, float value, SDL_Rect *region, 
 {
     float y;
     SDL_Rect dst_region = {region->x,region->y,region->w,region->h};
-    VerticalStrip *strip;
+    GenericStrip *strip;
     GenericLayer *layer;
 
-    strip = VERTICAL_STRIP(self);
+    strip = GENERIC_STRIP(self);
     layer = GENERIC_LAYER(self);
 
     /*translate @param value to an index in the spinner texture*/
@@ -210,10 +211,10 @@ void digit_barrel_state_value(DigitBarrel *self, float value, SDL_Rect *region, 
 void digit_barrel_draw_etch_marks(DigitBarrel *self)
 {
     int iy;
-    VerticalStrip *strip;
+    GenericStrip *strip;
     GenericLayer *layer;
 
-    strip = VERTICAL_STRIP(self);
+    strip = GENERIC_STRIP(self);
     layer = GENERIC_LAYER(self);
 
     generic_layer_lock(layer);

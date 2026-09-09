@@ -13,8 +13,8 @@
 #include "generic-layer.h"
 #include "ladder-page.h"
 #include "sdl-colors.h"
-#include "vertical-strip.h"
 
+#include "generic-strip.h"
 
 
 LadderPage *airspeed_ladder_page_init(LadderPage *self);
@@ -101,7 +101,7 @@ static void airspeed_ladder_page_draw_arc(LadderPage *self, float start, float e
     int x;
     Uint32 white;
 
-    if(interval_intersect(start, end, VERTICAL_STRIP(self)->start, VERTICAL_STRIP(self)->end, &istart, &iend)){
+    if(interval_intersect(start, end, GENERIC_STRIP(self)->start, GENERIC_STRIP(self)->end, &istart, &iend)){
         surface = GENERIC_LAYER(self)->canvas;
         white = SDL_UWHITE(surface);
 
@@ -115,7 +115,7 @@ static void airspeed_ladder_page_draw_arc(LadderPage *self, float start, float e
         if(lasty > (surface->h-1)) lasty = surface->h-1;
 /*
         printf("Intersection between arc from %f to %f and current page from %f to %f is %f,%f and will be starting at Y:%d to Y:%d\n",
-                start, end, VERTICAL_STRIP(self)->start, VERTICAL_STRIP(self)->end,
+                start, end, GENERIC_STRIP(self)->start, GENERIC_STRIP(self)->end,
                 istart, iend,
                 firsty, lasty
                 );*/
@@ -133,7 +133,7 @@ static void airspeed_ladder_page_draw_arc(LadderPage *self, float start, float e
         SDL_UnlockSurface(surface);
     }else{/*
         printf("No intersection between arc from %f to %f and current page from %f to %f\n",
-                start, end, VERTICAL_STRIP(self)->start, VERTICAL_STRIP(self)->end
+                start, end, GENERIC_STRIP(self)->start, GENERIC_STRIP(self)->end
                 );*/
 
     }

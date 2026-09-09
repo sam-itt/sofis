@@ -118,9 +118,9 @@ OdoGauge *odo_gauge_vainit(OdoGauge *self, int rubis, int nbarrels, va_list ap)
             self->heights[i] = self->barrels[i]->symbol_h;
         max_height = (self->heights[i] > max_height) ? self->heights[i] : max_height;
 
-        float val = floor(VERTICAL_STRIP(self->barrels[i])->end) * powf(10.0,pwr);
+        float val = floor(GENERIC_STRIP(self->barrels[i])->end) * powf(10.0,pwr);
         self->max_value += val;
-        pwr += number_digits(VERTICAL_STRIP(self->barrels[i])->end);
+        pwr += number_digits(GENERIC_STRIP(self->barrels[i])->end);
     }
 
     self->state.barrel_states = calloc(self->nbarrels, sizeof(DigitBarrelState));
@@ -222,7 +222,7 @@ static void odo_gauge_update_state(OdoGauge *self, Uint32 dt)
 //    printf("doing value %f, splitted in to %d parts\n",value,nparts);
     do{
 //        current_rotor_rank = current_rotor;
-        current_rotor_rank += floor(log10(VERTICAL_STRIP(self->barrels[current_rotor])->end));
+        current_rotor_rank += floor(log10(GENERIC_STRIP(self->barrels[current_rotor])->end));
 //        printf("current_part: %d, current_rotor_rank: %d\n",current_part,current_rotor_rank);
         if(current_part == current_rotor_rank){
             current_val = vparts[current_part];
