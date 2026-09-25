@@ -34,12 +34,11 @@ bool generic_strip_has_value(GenericStrip *self, float value)
  * values between marks
  *
  * @param value the value to look for
- * @param reverse if true, assumes that 0 is a the bottom of the strip instead of
- * at the top
+ *
  * @return the pixel index in {@link #ruler} that maps to @value, or -1 if value can't
  * be mapped (outside of the [{@link #start}, {@link #end}] range)
  */
-float generic_strip_resolve_value(GenericStrip *self, float value, bool reverse)
+float generic_strip_resolve_value(GenericStrip *self, float value)
 {
     float rv;
     /* To map [A, B] --> [a, b]
@@ -48,9 +47,10 @@ float generic_strip_resolve_value(GenericStrip *self, float value, bool reverse)
      *
      */
 /*    first interval is start,end, second interval is 0,surface->h-1*/
-    int axis_max = self->orientation == ORIENTATION_VERTICAL
+    int axis_max = (self->flags & ORIENTATION_MASK) == ORIENTATION_VERTICAL
                    ? generic_layer_h(GENERIC_LAYER(self)) - 1
                    : generic_layer_w(GENERIC_LAYER(self)) - 1;
+    bool reverse = (self->flags & DIRECTION_MASK) == GROW_AGAINST_AXIS;
     if(!reverse){
         rv = (value - self->start)*(axis_max - 0)/(self->end - self->start) + 0;
 //        printf("Forward: New resolve: mapping value %f from [%f %f] to [%d %d]: %f\n",value, self->start,self->end,0,axis_max,rv);

@@ -68,7 +68,7 @@ VerticalSpeedIndicator *vertical_speed_indicator_init(VerticalSpeedIndicator *se
     vertical_speed_indicator_draw_cursor(self);
     /*TODO: Check if drawing worked*/
 
-    self->scale.orientation = ORIENTATION_VERTICAL;
+    self->scale.flags = ORIENTATION_VERTICAL | GROW_AGAINST_AXIS;
     generic_layer_build_texture(GENERIC_LAYER(&self->scale));
     generic_layer_build_texture(&self->cursor);
 
@@ -116,7 +116,7 @@ static void vertical_speed_indicator_update_state(VerticalSpeedIndicator *self, 
     len = snprintf(number, VS_VALUE_MAX_LEN, "% -d", ivalue);
     generic_strip_clip_value(&self->scale, &SFV_GAUGE(self)->value);
 
-    y = generic_strip_resolve_value(&self->scale, SFV_GAUGE(self)->value, true);
+    y = generic_strip_resolve_value(&self->scale, SFV_GAUGE(self)->value);
     y = round(round(y) - generic_layer_h(&self->cursor)/2.0);
     self->state.cloc = (SDL_Rect){
         1, y,
@@ -264,7 +264,7 @@ static void vertical_speed_indicator_draw_background(VerticalSpeedIndicator *sel
         if(i == 0) continue; /* skip zero */
         if(i % 1000) continue; /* only draw big ticks*/
 
-        int y = generic_strip_resolve_value(&self->scale, i, true);
+        int y = generic_strip_resolve_value(&self->scale, i);
         int val = abs(i / 1000);
         PCF_FontWriteNumberAt(font_handle,
             &val, TypeInt, 0,

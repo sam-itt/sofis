@@ -5,6 +5,7 @@
  *
  * SPDX-License-Identifier: GPL-2.0-only
  */
+#include "generic-strip.h"
 #define _GNU_SOURCE
 #include <stdio.h>
 #include <stdlib.h>
@@ -56,7 +57,7 @@ DigitBarrel *digit_barrel_init(DigitBarrel *self, PCF_Font *font, float start, f
     strip = GENERIC_STRIP(self);
     layer = GENERIC_LAYER(self);
 
-    strip->orientation = ORIENTATION_VERTICAL;
+    strip->flags = ORIENTATION_VERTICAL;
     strip->start = start;
     strip->end = end;
 

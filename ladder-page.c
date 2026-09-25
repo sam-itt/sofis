@@ -12,6 +12,7 @@
 
 #include "generic-layer.h"
 #include "ladder-page.h"
+#include "generic-strip.h"
 #include "sdl-colors.h"
 #include "SDL_pcf.h"
 
@@ -96,7 +97,9 @@ LadderPage *ladder_page_init(LadderPage *self)
         return NULL;
     }
 
-    strip->orientation = ORIENTATION_VERTICAL;
+    strip->flags = ORIENTATION_VERTICAL;
+    if(descriptor->direction == BOTTUM_UP)
+        strip->flags |= GROW_AGAINST_AXIS;
     strip->ppv = generic_layer_h(layer)/(descriptor->page_size*1.0);
 //    printf("LadderPageDescriptor ppv is %f\n",strip->ppv);
 //    printf("Page marking range is [%f, %f]\n", strip->start, strip->end);
@@ -154,7 +157,7 @@ float ladder_page_resolve_value(LadderPage *self, float value)
             y = self->descriptor->fei - ngrads * strip->ppv * self->descriptor->vsubstep;
         return y;
     }else{
-        return generic_strip_resolve_value(strip, value, reverse);
+        return generic_strip_resolve_value(strip, value);
     }
 }
 
