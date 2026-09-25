@@ -5,7 +5,6 @@
  *
  * SPDX-License-Identifier: GPL-2.0-only
  */
-#include <math.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -13,13 +12,10 @@
 #include <SDL2/SDL.h>
 #include <SDL_gpu.h>
 
-#include "SDL_rect.h"
 #include "base-gauge.h"
 #include "fishbone-gauge.h"
 
 #include "generic-ruler.h"
-#include "resource-manager.h"
-#include "sdl-colors.h"
 #include "SDL_pcf.h"
 #include "misc.h"
 #include "res-dirs.h"
@@ -76,8 +72,8 @@ FishboneGauge *fishbone_gauge_new(bool marked,
  * @param to end of the value range
  * @param step increment in value units (meters, degrees, etc.) of hatch
  * marks. Passing in a negative value will create only hatch marks at the
- * begining/end of the range. See generic_ruler_init for a discussion of
- * valid @p step values.
+ * begining/end of the range. See generic_ruler_init_from_size for a
+ * discussion of valid @p step values.
  * @param bar_max_w Maximum width of the bar itself. It can be shrinked to
  * accomodate the needed number of hatch marks.
  * @param bar_max_h Maximum height of the bar itself. The gauge will be
@@ -89,7 +85,7 @@ FishboneGauge *fishbone_gauge_new(bool marked,
  *
  * @note Array is copied, caller can pass in a temporary local array.
  *
- * @see generic_ruler_init
+ * @see generic_ruler_init_from_size
  * @see fishbone_gauge_new
  */
 FishboneGauge *fishbone_gauge_init(FishboneGauge *self,
@@ -100,10 +96,12 @@ FishboneGauge *fishbone_gauge_init(FishboneGauge *self,
                                    int nzones, ColorZone *zones)
 {
 
-    generic_ruler_init(&(self->ruler),
+    generic_ruler_init_from_size(&(self->ruler),
         RulerHorizontal, RulerGrowAlongAxis,
         from, to, step,
-        font, Bottom, 0,
+        bar_max_h / 2,
+        font, Bottom,
+        GENERIC_RULER_DEFAULT_TEXT_MARGIN, 0,
         bar_max_w, bar_max_h
     );
 
@@ -126,9 +124,9 @@ FishboneGauge *fishbone_gauge_init(FishboneGauge *self,
     if(self->nzones > 0){
         generic_ruler_draw_zones(&self->ruler, Center, self->nzones, self->zones, 0.7);
     }
-    generic_ruler_etch_hatches(&(self->ruler), fcolor, false, true, Center);
+    generic_ruler_etch_hatches(&(self->ruler), fcolor, false, Center);
     if(marked && font) /*Font will also be used to tag the cursors (itf)*/
-        generic_ruler_etch_markings(&(self->ruler), Bottom, font, fcolor, 0);
+        generic_ruler_etch_markings(&(self->ruler), Bottom, GENERIC_RULER_DEFAULT_TEXT_MARGIN, font, fcolor, 0);
     generic_layer_build_texture(GENERIC_LAYER(&self->ruler));
 
     /* Loads the cursor.
@@ -146,8 +144,10 @@ FishboneGauge *fishbone_gauge_init(FishboneGauge *self,
     extra_h = (extra_h < 0) ? abs(extra_h) : 0;
     /* Check if the cursor goes outside of the ruler area when at it's leftmost
      * position.
-     * TODO: Support GrowAgainstAxis*/
-    int first_etch = generic_ruler_get_pixel_increment_for(&self->ruler, self->ruler.start);
+     */
+    int first_etch = generic_ruler_direction(&self->ruler, RulerGrowAlongAxis)
+                     ? generic_ruler_get_pixel_increment_for(&self->ruler, GENERIC_STRIP(&self->ruler)->start)
+                     : generic_ruler_get_pixel_increment_for(&self->ruler, GENERIC_STRIP(&self->ruler)->end);
     int delta = self->ruler.ruler_area.x - first_etch - generic_layer_w(self->cursor)/2;
     delta = (delta < 0) ? abs(delta) : 0;
     self->ruler_rect = (SDL_Rect){
@@ -162,7 +162,6 @@ FishboneGauge *fishbone_gauge_init(FishboneGauge *self,
         .w = self->cursor->canvas->w,
         .h = self->cursor->canvas->h
     };
-
     /* TODO: Move me as first operation to ensure that Ops are always
      * set when we return NULL so that base_gauge_dispose (called by
      * base_gauge_free) can properly dispose any gauge-allocated resources*/
@@ -196,7 +195,7 @@ bool fishbone_gauge_set_value(FishboneGauge *self, float value, bool animated)
     bool rv = true;
     BaseAnimation *animation;
 
-    generic_ruler_clip_value(&self->ruler, &value);
+    generic_strip_clip_value(GENERIC_STRIP(&self->ruler), &value);
 
     return sfv_gauge_set_value(SFV_GAUGE(self), value, animated);
 }

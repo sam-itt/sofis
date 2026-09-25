@@ -43,14 +43,16 @@ bool handle_keyboard(SDL_KeyboardEvent *event, Uint32 elapsed)
         case SDLK_ESCAPE:
             return true;
             break;
-        case SDLK_j:
-            if(eleval < elevator->ruler.end){
+        case SDLK_PLUS:
+        case SDLK_KP_PLUS:
+            if(eleval < GENERIC_STRIP(&elevator->ruler)->end){
                 eleval += ELEVAL_INC;
                 elevator_gauge_set_value(elevator, eleval, true);
             }
             break;
-        case SDLK_k:
-            if(eleval > elevator->ruler.start){
+        case SDLK_MINUS:
+        case SDLK_KP_MINUS:
+            if(eleval > GENERIC_STRIP(&elevator->ruler)->start){
                 eleval -= ELEVAL_INC;
                 elevator_gauge_set_value(elevator, eleval, true);
             }

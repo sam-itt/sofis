@@ -15,6 +15,8 @@
 #include "data-source.h"
 #include "fishbone-gauge.h"
 
+#include "generic-ruler.h"
+#include "misc.h"
 #include "mock-data-source.h"
 #include "resource-manager.h"
 
@@ -45,14 +47,16 @@ bool handle_keyboard(SDL_KeyboardEvent *event, Uint32 elapsed)
         case SDLK_ESCAPE:
             return true;
             break;
-        case SDLK_y:
-            if(fishval < fish->ruler.end){
+        case SDLK_PLUS:
+        case SDLK_KP_PLUS:
+            if(fishval < GENERIC_STRIP(&fish->ruler)->end){
                 fishval += FISHVAL_INC;
                 fishbone_gauge_set_value(fish, fishval, true);
             }
             break;
-        case SDLK_h:
-            if(fishval > fish->ruler.start){
+        case SDLK_MINUS:
+        case SDLK_KP_MINUS:
+            if(fishval > GENERIC_STRIP(&fish->ruler)->start){
                 fishval -= FISHVAL_INC;
                 fishbone_gauge_set_value(fish, fishval, true);
             }
@@ -164,8 +168,15 @@ int main(int argc, char **argv)
         }}
     );
 
-
+    float v = 0.0f;
+    printf("Pixel increment for %0.2f: %d\n", v, generic_ruler_get_pixel_increment_for(&fish->ruler, v));
+    v = 5.0f;
+    printf("Pixel increment for %0.2f: %d\n", v, generic_ruler_get_pixel_increment_for(&fish->ruler, v));
     SDL_Rect center_rect = {(640-1)/2,(480-1)/2,0,0};
+    SDLExt_RectDump(&center_rect);
+    printf("Gauge frame is:\n");
+    SDLExt_RectDump(&(BASE_GAUGE(fish)->frame));
+
 
 #if USE_SDL_GPU
     GPU_ClearRGB(gpu_screen, 0x11, 0x56, 0xFF);

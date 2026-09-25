@@ -77,4 +77,23 @@ static inline int round_up(int x, int m)
     return x % m ? ((x / m) + 1) * m : x;
 }
 
+/* returns the *nearest* odd number, e.g. this function
+ * will return 1 for 1.6.
+ * I will round up or down accordingly.
+ * */
+static inline int nearest_oddf(float value)
+{
+    return floorf(value * 0.5f) * 2 + 1;
+}
+
+
+static inline int max_int(int a, int b)
+{
+    return (a > b) ? a : b;
+}
+
+static inline int min_int(int a, int b)
+{
+    return (a < b) ? a : b;
+}
 #endif /* MISC_H */

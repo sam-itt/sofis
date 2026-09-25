@@ -7,7 +7,6 @@
  */
 #include <stdio.h>
 #include <stdlib.h>
-#include <math.h>
 #include <stdint.h>
 
 #include <SDL2/SDL.h>
@@ -15,6 +14,7 @@
 #include <SDL_gpu.h>
 
 #include "elevator-gauge.h"
+#include "generic-ruler.h"
 #include "misc.h"
 #include "res-dirs.h"
 
@@ -28,6 +28,7 @@ static BaseGaugeOps elevator_gauge_ops = {
 };
 
 static bool elevator_gauge_build_elevator(ElevatorGauge *self, Uint32 color);
+
 
 /**
  * @brief Creates a new ElevatorGauge. Calling code is responsible
@@ -72,8 +73,8 @@ ElevatorGauge *elevator_gauge_new(bool marked, Location elevator_location,
  * @param to end of the value range
  * @param step increment in value units (meters, degrees, etc.) of hatch
  * marks. Passing in a negative value will create only hatch marks at the
- * begining/end of the range. See generic_ruler_init for a discussion of
- * valid @p step values.
+ * begining/end of the range. See generic_ruler_init_from_size for a
+ * discussion of valid @p step values.
  * @param bar_max_w Maximum width of the bar itself. It can be shrinked to
  * accomodate the needed number of hatch marks.
  * @param bar_max_h Maximum height of the bar itself. The gauge will be
@@ -85,7 +86,7 @@ ElevatorGauge *elevator_gauge_new(bool marked, Location elevator_location,
  *
  * @note Array is copied, caller can pass in a temporary local array.
  *
- * @see generic_ruler_init
+ * @see generic_ruler_init_from_size
  * @see elevator_gauge_new
  */
 ElevatorGauge *elevator_gauge_init(ElevatorGauge *self,
@@ -101,14 +102,17 @@ ElevatorGauge *elevator_gauge_init(ElevatorGauge *self,
     self->elevator_location = elevator_location;
     marks_location = (self->elevator_location == Left) ? Right : Left;
     spine_location = elevator_location;
-
-    generic_ruler_init(&(self->ruler),
+    generic_ruler_init_from_size(&(self->ruler),
         RulerVertical, RulerGrowAgainstAxis,
         from, to, step,
-        font, marks_location, 0,
+        bar_max_w,
+        font, marks_location,
+        GENERIC_RULER_DEFAULT_TEXT_MARGIN, 0,
         bar_max_w, bar_max_h
     );
+    self->ruler.ticks[0].size = self->ruler.ruler_area.w;
     SFV_GAUGE(self)->value = from;
+
 
     self->nzones = nzones;
     self->zones = calloc(self->nzones, sizeof(ColorZone));
@@ -132,12 +136,12 @@ ElevatorGauge *elevator_gauge_init(ElevatorGauge *self,
         if(!rv)
             printf("Draw zones failed!\n");
     }
-    rv = generic_ruler_etch_hatches(&(self->ruler), fcolor, false, true, marks_location);
+    rv = generic_ruler_etch_hatches(&(self->ruler), fcolor, false, spine_location);
     if(!rv)
         printf("Draw etches failed!\n");
 
     if(marked && font){ /*Font will also be used to tag the cursors (itf)*/
-        rv = generic_ruler_etch_markings(&(self->ruler), marks_location, font, fcolor, 0);
+        rv = generic_ruler_etch_markings(&(self->ruler), marks_location, GENERIC_RULER_DEFAULT_TEXT_MARGIN, font, fcolor, 0);
         if(!rv)
             printf("Draw markings failed!\n");
     }
@@ -187,7 +191,7 @@ bool elevator_gauge_set_value(ElevatorGauge *self, float value, bool animated)
     bool rv = true;
     BaseAnimation *animation;
 
-    generic_ruler_clip_value(&self->ruler, &value);
+    generic_strip_clip_value(GENERIC_STRIP(&self->ruler), &value);
 
     return sfv_gauge_set_value(SFV_GAUGE(self), value, animated);
 }
@@ -256,14 +260,14 @@ static void elevator_gauge_update_state(ElevatorGauge *self, Uint32 dt)
         .x = 0,
         .y = 0,
         .w = self->elevator->canvas->w,
-        .h = yinc + 1
+        .h = self->ruler.ruler_area.h - yinc
     };
     /*Where to put it*/
     self->state.elevator_dst = (SDL_Rect){
         .x = (self->elevator_location == Left)
              ? 0
              : SDLExt_RectLastX(&self->ruler_rect) + 1,
-        .y = self->ruler_rect.y + elevator_top,
+        .y = self->ruler_rect.y + (self->ruler.ruler_area.y + yinc),
         .w = self->state.elevator_src.w,
         .h = self->state.elevator_src.h
     };
