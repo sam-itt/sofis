@@ -23,7 +23,6 @@
 #include "elevator-gauge.h"
 #include "fishbone-gauge.h"
 #include "ladder-gauge.h"
-#include "alt-ladder-page-descriptor.h"
 
 #include "ladder-page.h"
 #include "mock-data-source.h"
@@ -34,7 +33,6 @@
 #include "SDL_pcf.h"
 #include "side-panel.h"
 #include "text-gauge.h"
-#include "vertical-stair.h"
 #include "alt-group.h"
 #include "airspeed-indicator.h"
 #include "attitude-indicator.h"

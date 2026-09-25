@@ -23,7 +23,6 @@
 #include "elevator-gauge.h"
 #include "fishbone-gauge.h"
 #include "ladder-gauge.h"
-#include "alt-ladder-page-descriptor.h"
 
 #include "ladder-page.h"
 #include "mock-data-source.h"
@@ -32,9 +31,9 @@
 #include "pfd-toplevel-softkey-model.h"
 #include "resource-manager.h"
 #include "SDL_pcf.h"
+#include "altitude-page-descriptor.h"
 #include "side-panel.h"
 #include "text-gauge.h"
-#include "vertical-stair.h"
 #include "alt-group.h"
 #include "airspeed-indicator.h"
 #include "attitude-indicator.h"
@@ -190,9 +189,15 @@ int main(int argc, char **argv)
     PCF_Font *fnt = resource_manager_get_font(TERMINUS_18);
     DigitBarrel *db = digit_barrel_new(fnt, 0, 9.999, 1);
     DigitBarrel *db2 = digit_barrel_new(fnt, 0, 99, 10);
+    AltitudePageDescriptor *desc = altitude_page_descriptor_new(
+            68, 220,
+            roundf(215*0.032f),
+            roundf(0.55f*(68*0.15f)), roundf(68*0.15f)
+    );
+
     tape_gauge = tape_gauge_new(
         68, 240,
-        (LadderPageDescriptor*)alt_ladder_page_descriptor_new(),
+        (LadderPageDescriptor*)desc,
         AlignRight, 0, 4,
         -1, db2,
         -2, db,

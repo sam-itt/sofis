@@ -15,8 +15,7 @@
 #include "base-widget.h"
 #include "softkey.h"
 #include "ladder-gauge.h"
-#include "alt-ladder-page-descriptor.h"
-
+#include "altitude-page-descriptor.h"
 
 #define SCREEN_WIDTH 640
 #define SCREEN_HEIGHT 480
@@ -134,8 +133,13 @@ int main(int argc, char **argv)
     }
     rtarget.surface = screenSurface;
 #endif
+    AltitudePageDescriptor *desc = altitude_page_descriptor_new(
+            68, 220,
+            roundf(215*0.032f),
+            roundf(0.55f*(68*0.15f)), roundf(68*0.15f)
+    );
 
-    ladder = ladder_gauge_new(68, 240, (LadderPageDescriptor *)alt_ladder_page_descriptor_new(), -1);
+    ladder = ladder_gauge_new(68, 240, (LadderPageDescriptor *)desc, -1);
     ladder_gauge_set_value(ladder, alt, true);
 
     SDL_Rect lrect = {150,20,0,0};
