@@ -14,6 +14,7 @@
 
 #include "base-gauge.h"
 #include "base-widget.h"
+#include "generic-strip.h"
 #include "softkey.h"
 #include "data-source.h"
 
@@ -58,12 +59,12 @@ bool handle_keyboard(SDL_KeyboardEvent *event, Uint32 elapsed)
             return true;
             break;
         case SDLK_UP:
-            if(vs < vsi->scale.end)
+            if(vs < GENERIC_STRIP(&vsi->scale)->end)
                 vs += VARIO_INC;
             vertical_speed_indicator_set_value(vsi, vs, true);
             break;
         case SDLK_DOWN:
-            if(vs > vsi->scale.start)
+            if(vs > GENERIC_STRIP(&vsi->scale)->start)
                 vs -= VARIO_INC;
             vertical_speed_indicator_set_value(vsi, vs, true);
             break;
@@ -207,6 +208,7 @@ int main(int argc, char **argv)
     }while(!done);
 
     base_gauge_free(BASE_GAUGE(vsi));
+    printf("Shutting down...\n");
     resource_manager_shutdown();
     data_source_free(data_source_get_instance());
 #if USE_SDL_GPU
