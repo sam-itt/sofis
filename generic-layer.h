@@ -46,4 +46,10 @@ void generic_layer_unref(GenericLayer *self);
 
 bool generic_layer_build_texture(GenericLayer *self);
 void generic_layer_update_texture(GenericLayer *self);
+
+static inline bool generic_layer_save_bmp(GenericLayer *self, const char *filename)
+{
+    return SDL_SaveBMP(self->canvas, filename) == 0;
+}
+
 #endif /* GENERIC_LAYER_H */

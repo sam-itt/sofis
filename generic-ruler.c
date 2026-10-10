@@ -509,8 +509,7 @@ bool generic_ruler_etch_markings(GenericRuler *self, Location markings_location,
            ? generic_ruler_etch_markings_horizontal(self, markings_location, text_margin, font, color, precision)
            : generic_ruler_etch_markings_vertical(self, markings_location, text_margin, font, color, precision);
 #if DEBUG_GENERIC_RULER
-    SDL_Surface *canvas = GENERIC_LAYER(self)->canvas;
-    SDL_SaveBMP(canvas, "/tmp/ruler-try-hatches.bmp");
+    generic_layer_save_bmp(GENERIC_LAYER(self), "/tmp/ruler-try-hatches.bmp");
 #endif
 }
 
@@ -949,7 +948,7 @@ static bool generic_ruler_draw_hatches_vertical(GenericRuler *self, Uint32 color
     }
     generic_layer_unlock(GENERIC_LAYER(self));
 #if DEBUG_GENERIC_RULER
-    SDL_SaveBMP(canvas, "/tmp/ruler-try-vertical.bmp");
+    generic_layer_save_bmp(GENERIC_LAYER(self), "/tmp/ruler-try-vertical.bmp");
 #endif
     return true;
 }
@@ -1028,7 +1027,7 @@ static bool generic_ruler_draw_hatches_horizontal(GenericRuler *self, Uint32 col
 
     generic_layer_unlock(GENERIC_LAYER(self));
 #if DEBUG_GENERIC_RULER
-    SDL_SaveBMP(canvas, "/tmp/ruler-try-horizontal.bmp");
+    generic_layer_save_bmp(GENERIC_LAYER(self), "/tmp/ruler-try-horizontal.bmp");
 #endif
     return true;
 }
@@ -1090,8 +1089,7 @@ static bool generic_ruler_etch_markings_vertical(GenericRuler *self, Location ma
         }
     }
 #if DEBUG_GENERIC_RULER
-    SDL_Surface *canvas = GENERIC_LAYER(self)->canvas;
-    SDL_SaveBMP(canvas, "/tmp/ruler-try-hatches.bmp");
+    generic_layer_save_bmp(GENERIC_LAYER(self), "/tmp/ruler-try-hatches.bmp");
 #endif
     return true;
 }

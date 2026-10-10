@@ -152,8 +152,7 @@ int main(int argc, char **argv)
 
     generic_ruler_etch_hatches(ruler, SDL_UWHITE(GENERIC_LAYER(ruler)->canvas), true, Left);
     generic_ruler_etch_markings(ruler, Right, resource_manager_get_font(TERMINUS_12), SDL_UWHITE(GENERIC_LAYER(ruler)->canvas), 1);
-    SDL_Surface *canvas = GENERIC_LAYER(ruler)->canvas;
-    SDL_SaveBMP(canvas, "/tmp/ruler.bmp");
+    generic_layer_save_bmp(GENERIC_LAYER(ruler), "/tmp/ruler.bmp");
     exit(0);
 #elif TEST_3
 
