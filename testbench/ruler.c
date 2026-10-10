@@ -25,7 +25,7 @@
 //#define SCREEN_WIDTH 800
 //#define SCREEN_HEIGHT 480
 
-#define TEST_2 1
+#define TEST_4 1
 
 
 
@@ -125,18 +125,6 @@ int main(int argc, char **argv)
     GenericRuler *ruler;
 
     ruler = calloc(1, sizeof(GenericRuler));
-#if OLD_IMPL
-    generic_ruler_init(ruler, RulerVertical, RulerGrowAgainstAxis, 300, 2700, 300, resource_manager_get_font(TERMINUS_12), Left, 0, 20, 120);
-    Uint32 white = SDL_UWHITE(GENERIC_LAYER(ruler)->canvas);
-    generic_ruler_etch_hatches(ruler, white, false, true, Left);
-    generic_ruler_etch_markings(ruler, Left, resource_manager_get_font(TERMINUS_12), white, 0);
-
-    SDL_Surface *canvas = GENERIC_LAYER(ruler)->canvas;
-    SDL_SaveBMP(canvas, "/tmp/ruler.bmp");
-    printf("Ruler area is:\n");
-    SDLExt_RectDump(&ruler->ruler_area);
-    exit(0);
-#else
 #if TEST_1
     generic_ruler_init(ruler, 59/*29*/, 191 /*165*/, RulerVertical, RulerGrowAgainstAxis,
                         /*500*/ 2.5, 21, 5, true,
@@ -166,11 +154,23 @@ int main(int argc, char **argv)
     generic_ruler_etch_markings(ruler, Top|Bottom, resource_manager_get_font(TERMINUS_12), SDL_UWHITE(GENERIC_LAYER(ruler)->canvas));
     exit(0);
 #elif TEST_4
+    generic_ruler_init(
+        ruler, 68, 245, RulerVertical, RulerGrowAgainstAxis,
+        Right,
+        20, 7, 6, false,
+        1, (RulerUnitMultiple[]){{.value=5, .size=10, .labeled=true}},
+        (Anchor){.value=0,.position=227}
+    );
+
+    generic_ruler_etch_hatches(ruler, SDL_UWHITE(GENERIC_LAYER(ruler)->canvas), true, Right);
+    generic_ruler_etch_markings(ruler, Left, 5, resource_manager_get_font(TERMINUS_16), SDL_UWHITE(GENERIC_LAYER(ruler)->canvas), 0);
+    generic_layer_save_bmp(GENERIC_LAYER(ruler), "/tmp/ruler-new.bmp");
+    exit(0);
+
 #else
     printf("No test defined, exiting\n");
     exit(0);
 #endif
-#endif //OLD_IMPL
     SDL_Rect center_rect = {(640-1)/2,(480-1)/2,0,0};
 
 #if USE_SDL_GPU
