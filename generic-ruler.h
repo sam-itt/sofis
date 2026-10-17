@@ -9,108 +9,10 @@
 #define GENERIC_RULER_H
 
 #include "generic-strip.h"
+#include "ruler-core.h"
 
 #include "SDL_pcf.h"
 #include <stdint.h>
-
-/**
- * @brief Ruler orientation.
- *
- * These values are used to specify the orientation of a GenericRuler.
- */
-typedef enum __attribute__ ((__packed__)){
-    RulerVertical =  ORIENTATION_VERTICAL, /**< The ruler is vertical. */
-    RulerHorizontal = ORIENTATION_HORIZONTAL, /**< The ruler is horizontal. */
-}RulerOrientation;
-
-/**
- * @brief Ruler direction.
- *
- * These values are used to specify the direction of a GenericRuler.
- */
-typedef enum __attribute__ ((__packed__)){
-    RulerGrowAlongAxis = GROW_ALONG_AXIS,    /**< Grows left to right, top to bottom. */
-    RulerGrowAgainstAxis = GROW_AGAINST_AXIS,  /**< Values grow in reverse with respect to the axis*/
-}RulerDirection;
-
-
-
-typedef enum __attribute__ ((__packed__)){
-    LocationNone = 0,
-    Top,
-    Center,
-    Bottom,
-    Left,
-    Right,
-    NLocations
-}Location;
-
-/**
- * @brief Bound flags for color zones.
- *
- * These flags are used to indicate whether the from/to bounds of a ColorZone
- * are included or excluded in the range.
- *
- * @see ColorZone
- * TODO: Consider using only 2 bits so that mutually exclusive flags cannot be
- * set as it is now.
- */
-typedef enum __attribute__ ((__packed__)){
-    FromIncluded = 1 << 0, /*00000001*/
-    FromExcluded = 1 << 1, /*00000010*/
-    ToIncluded =   1 << 2, /*00000100*/
-    ToExcluded =   1 << 3  /*00001000*/
-}BoundFlags;
-
-/**
- * @brief Color zone structure.
- *
- * This structure is used as arguments to generic_ruler_draw_zones to define
- * colored extents on a GenericRuler.
- */
-typedef struct{
-    float from; /**< The value at which the color zone starts. */
-    float to; /**< The value at which the color zone ends. */
-    BoundFlags flags; /**< Flags to indicate whether the from/to bounds are included or excluded in the range */
-    SDL_Color color; /**< The color of the zone. */
-}ColorZone;
-
-/**
- * @brief Structure that holds params relative to unit multiples
- *
- * This type is used to as arguments of generic_ruler_init to represent the
- * multiples of the base_unit of that call. The values given here will be usedstorestore
- * to compute the actual TickMarkSpecs of the inited GenericRuler
- */
-typedef struct{
-    uint8_t value; /**< One mark every X base_unit. */
-    uint8_t size; /**< how tall/wide the tick should be, in pixels.*/
-    bool labeled; /**< Whether the tick will have a marking or not. */
-}RulerUnitMultiple;
-
-/**
- * @brief Structure that describe tick marks "levels" on the ruler.
- *
- * This structure is used to store the properties of a tick mark on a
- * GenericRuler (each X unit, e.g. each 1/4", each 1/2", ...). Tick marks are
- * always multiples of the base unit, which is specified in the GenericRuler.
- */
-typedef struct{
-    float value; /**< This tick mark will be drawn each TickMarkSpec#value units, e.g. (each 1/4", each 1/2", ...). */
-    uint8_t stride; /**< increment in pixels from on tick to another. */
-    uint8_t size; /**< how tall/wide the tick should be, in pixels. */
-    bool labeled; /**< Whether the tick will have a marking or not. */
-}TickMark;
-
-
-/**
- * @brief Anchor point structure. Maps a value to a pixel position on the ruler.
- *
- */
-typedef struct{
-    float value; /**< Numeric value on the ruler. */
-    unsigned int position; /**< Pixel position of the value on the vertical/horizontal axis (ruler coordinates). */
-}Anchor;
 
 typedef struct _GenericRuler GenericRuler;
 
@@ -125,29 +27,33 @@ typedef struct _GenericRuler GenericRuler;
 typedef struct{
     /** @brief The function used to draw a label(numeric value on the ruler).
      *
-     *  GenericRuler provides a default implementation of that,
-     *  generic_ruler_etch_tick_label_impl that will just write the value
-     *  verbatim. Subclasses can chain call it as needed. Callers will invoke
-     *  generic_ruler_etch_tick_label which will trampoline to the
+     *  GenericRuler provides a default implementation of that, through
+     *  ruler_core_draw_tick_label_impl, that will just write the value verbatim.
+     *  Subclasses can chain call it as needed. Callers will invoke
+     *  ruler_core_draw_tick_label_impl which will trampoline to the
      *  implementation provided through that structure during init.
      *
-     *  @see generic_ruler_etch_tick_label_impl
-     *  @see generic_ruler_etch_tick_label
+     *  You can find an example on how to use that in vertical-speed-indicator.c
+     *
+     *  @see ruler_core_draw_tick_label_impl
      *  @see generic_ruler_init
+     *  @see vertical_speed_indicator_will_draw_tick
+     *  @see vertical_speed_indicator_draw_tick_label
+     *  @see vertical_speed_indicator_init
+     *  @see vertical_speed_indicator_ruler_ops
      */
-    bool (*etch_tick_label)(GenericRuler *self, float value, uint8_t precision,
+    bool (*draw_tick_label)(GenericRuler *self, float value, uint8_t precision,
                             PCF_Font *font, Uint32 color,
                             int x, int y, PCF_TextPlacement placement);
     /**
-     * @brief Pre-etch callback to let subclasses change parameters
+     * @brief Pre-draw callback to let subclasses change parameters
      *
-     * This function is called before etching a tick mark on the ruler. It
+     * This function is called before drawing a tick mark on the ruler. It
      * allows subclasses to change the tick size and color based on the value of
      * the tick.
      */
-    bool (*will_etch_tick)(GenericRuler *self, float value, int *tick_size, Uint32 *color);
+    bool (*will_draw_tick)(GenericRuler *self, float value, int *tick_size, Uint32 *color);
 }GenericRulerOps;
-
 /**
  * @brief The main GenericRuler struct/object. See generic-ruler.c for a
  * discussion on how it works
@@ -160,34 +66,10 @@ typedef struct _GenericRuler{
     GenericStrip super;
     GenericRulerOps *ops; /**< Customizable operations, @see GenericRulerOps. */
 
-    /**
-     * @brief The area of the ruler within the canvas.
-     *
-     * If we need to have the canvas bigger than the ruler to hold markings that
-     * are out of bounds of the actual ruler, this will define the area of the
-     * ruler within the canvas. It'll be the base for ruler coordinate that are
-     * expressed in increments from its start.
-     */
-    SDL_Rect ruler_area;
-
-    /** @brief Number of tick marks, including the base unit.
-     *
-     * The first tick is always the base unit, and the rest are multiples of it.
-     */
-    uint8_t nticks;
-    /**
-     * @brief The tick marks, including the base unit (first one).
-     */
-    TickMark ticks[4]; /*That should be enough for anybody :)*/
-    /**
-     * @brief Location of the first value that bears a tick mark.
-     */
-    Anchor first_tick;
-    uint32_t spine_coord;
+    RulerCore core; /**< The core that provides the mapping between a range of values and a range of pixels. */
 }GenericRuler;
 
 #define GENERIC_RULER(obj) ((GenericRuler *)(obj))
-#define GENERIC_RULER_DEFAULT_TEXT_MARGIN 4
 
 /**
  * @brief Helper function to determine the orientation of a GenericRuler.
@@ -199,7 +81,7 @@ typedef struct _GenericRuler{
  */
 static inline bool generic_ruler_orientation(GenericRuler *self, RulerOrientation orientation)
 {
-    return ((GENERIC_STRIP(self)->flags & ORIENTATION_MASK) == orientation);
+    return generic_strip_orientation(GENERIC_STRIP(self), (StripFlags)orientation);
 }
 
 /**
@@ -212,7 +94,7 @@ static inline bool generic_ruler_orientation(GenericRuler *self, RulerOrientatio
  */
 static inline bool generic_ruler_direction(GenericRuler *self, RulerDirection direction)
 {
-    return ((GENERIC_STRIP(self)->flags & DIRECTION_MASK) == direction);
+    return generic_strip_direction(GENERIC_STRIP(self), (StripFlags)direction);
 }
 
 /**
@@ -226,9 +108,7 @@ static inline bool generic_ruler_direction(GenericRuler *self, RulerDirection di
  */
 static inline int generic_ruler_axis_min(GenericRuler *self)
 {
-    return generic_ruler_orientation(self, RulerHorizontal)
-         ? self->ruler_area.x
-         : self->ruler_area.y;
+    return ruler_core_axis_min(&(self->core), GENERIC_STRIP(self));
 }
 
 /**
@@ -242,9 +122,7 @@ static inline int generic_ruler_axis_min(GenericRuler *self)
  */
 static inline int generic_ruler_axis_max(GenericRuler *self)
 {
-    return generic_ruler_orientation(self, RulerHorizontal)
-         ? SDLExt_RectLastX(&(self->ruler_area))
-         : SDLExt_RectLastY(&(self->ruler_area));
+    return ruler_core_axis_max(&(self->core), GENERIC_STRIP(self));
 }
 
 GenericRuler *generic_ruler_init_from_size(GenericRuler *self,
@@ -258,62 +136,121 @@ GenericRuler *generic_ruler_init_from_size(GenericRuler *self,
                                            int8_t markings_precision,
                                            int ruler_w, int ruler_h);
 
-
 GenericRuler *generic_ruler_init(GenericRuler *self,
                                   int width, int height,
                                   RulerOrientation orientation,
                                   RulerDirection direction,
+                                  Location spine_location,
                                   float base_unit, uint16_t base_unit_px,
                                   uint8_t base_unit_size, bool base_unit_labeled,
                                   uint8_t nmultiples, RulerUnitMultiple *multiples,
                                   Anchor anchor);
 
-float generic_ruler_position_to_value(GenericRuler *self, unsigned int px_position);
-float generic_ruler_increment_to_value(GenericRuler *self, unsigned int px_increment);
-
-bool generic_ruler_etch_hatches(GenericRuler *self, Uint32 color, bool etch_spine, Location spine_location);
-bool generic_ruler_etch_markings(GenericRuler *self, Location markings_location, int text_margin, PCF_Font *font, Uint32 color, uint8_t precision);
-
-bool generic_ruler_draw_hatches(GenericRuler *self, Uint32 color, bool etch_spine, Location spine_location, int preload_px);
-bool generic_ruler_draw_zones(GenericRuler *self, Location spine_location, int nzones, ColorZone *zones, float fill_ratio);
-
-/**
- * @brief Function wrapper to draw a tick label (text) on the ruler.
- *
- * This "trampoline" function will call the implementation provided by the
- * specific GenericRuler subclass, if any. If no implementation is provided,
- * it will return false. GenericRuler comes with a default implementation that
- * will just write the value verbatim. Subclasses can change the params and
- * chain call to that.
- *
- * @param self a GenericRuler
- * @param value The value to write.
- * @param precision How many digital places to write. 0 for integral part only.
- * @param font The PCF_Font to use.
- * @param color The color to use, in the underlying surface format
- * @param x The x coordinate of the text placement (in image coordinates)
- * @param y The y coordinate of the text placement (in image coordinates)
- * @param placement @see PCF_TextPlacement
- *
- * @return true on success, false otherwise.
- *
- * @see generic_ruler_etch_tick_label_impl
- */
-static inline bool generic_ruler_etch_tick_label(GenericRuler *self, float value, uint8_t precision,
-                                                 PCF_Font *font, Uint32 color,
-                                                 int x, int y, PCF_TextPlacement placement)
-{
-    return self->ops->etch_tick_label ? self->ops->etch_tick_label(self, value, precision, font, color, x, y, placement) : false;
-}
-
-bool generic_ruler_etch_tick_label_impl(GenericRuler *self, float value, uint8_t precision,
-                                        PCF_Font *font, Uint32 color,
-                                        int x, int y, PCF_TextPlacement placement);
-
-
-int generic_ruler_get_pixel_increment_for(GenericRuler *self, float value);
-bool generic_ruler_get_size_request(GenericRuler *self, int8_t precision, PCF_Font *font, Location markings_location, int text_margin, int *w, int *h);
+bool generic_ruler_get_size_request(GenericRuler *self, int8_t precision,
+                                    PCF_Font *font, Location markings_location,
+                                    int text_margin, int *w, int *h);
 
 void generic_ruler_dispose(GenericRuler *self);
+
+/**
+ * @brief Convert a pixel position within the GenericRuler canvas to a value
+ * within the ruler's range. This function accepts a pixel position from 0 to
+ * the canvas width/height (depending on the orientation) and returns the
+ * corresponding value within the ruler's range. If the pixel position is
+ * outside the actual ruler_rect portion of the canvas, the function
+ * will return NAN.
+ *
+ * Contrary to generic_ruler_increment_to_value, this function accepts a pixel
+ * absolute position within the canvas, not a pixel increment relative to the
+ * ruler's start.
+ *
+ * @param self a GenericRuler
+ * @param px_position The pixel position to convert.
+ *
+ * @return The corresponding value within the ruler's range, or NAN if the pixel
+ * position is on the canvas but outside the ruler.
+ *
+ * @see generic_ruler_increment_to_value
+ */
+static inline float generic_ruler_position_to_value(GenericRuler *self, unsigned int px_position)
+{
+    return ruler_core_position_to_value(&(self->core), GENERIC_STRIP(self), px_position);
+}
+
+/**
+ * @brief Convert a pixel increment (relative to the ruler's start) to a value
+ * within the ruler's range.
+ *
+ * @param self a GenericRuler
+ * @param px_increment The pixel increment to convert.
+ *
+ * @return The corresponding value within the ruler's range, or NAN if the pixel
+ * increment is out of bounds.
+ *
+ * @see generic_ruler_position_to_value
+ */
+static inline float generic_ruler_increment_to_value(GenericRuler *self, unsigned int px_increment)
+{
+    return ruler_core_increment_to_value(&(self->core), GENERIC_STRIP(self), px_increment);
+}
+
+bool generic_ruler_draw_ticks(GenericRuler *self, Uint32 color,
+                              bool etch_spine, Location spine_location);
+
+bool generic_ruler_draw_labels(GenericRuler *self, Location markings_location,
+                               int text_margin, PCF_Font *font,
+                               Uint32 color, uint8_t precision);
+
+/**
+ * @brief Draw the give color zones on the ruler
+ *
+ * If you want to have a spine line and/or hatch marks on top of said zones
+ * you have to draw the zones first, and other etches on top of that.
+ *
+ * @param self a GenericRuler
+ * @param spine_location Location of the spine line of the ruler. Even if you
+ * don't etch lines on the ruler at all, this function needs to know from where
+ * to start filling the ruler with color, especially if @p fill_ratio is not
+ * 1.0. The filling will start on the given location and grow to the opposite
+ * e.g. Left->Right, Bottom->Top, etc. The center location will grow as evenly
+ * as possible towards both opposite sides.
+ * @param nzones Number of zones in the @p zones array
+ * @param zones Address to the first of @p nzones zones. These zones *must* have
+ * been preprocessed by generic_ruler_preprocess_color_zones.
+ * @param fill_ratio amount of the ruler to fill with colors, from 0 (0%)
+ * to 1.0 (100%). 100% is as high as the longest tick mark, 0% is no fill at all.
+ * @return true on success, false otherwise.
+ *
+ * @see ruler_core_preprocess_color_zones
+ */
+static inline bool generic_ruler_draw_zones(GenericRuler *self, Location spine_location,
+                                            int nzones, ColorZone *zones,
+                                            float fill_ratio)
+{
+    return ruler_core_draw_zones(
+        &(self->core), GENERIC_STRIP(self), spine_location, nzones,
+        zones, fill_ratio
+    );
+}
+
+/**
+ * @brief Given a value, return the pixel increment (relative to the ruler's
+ * start coordinate) that represents it on the ruler.
+ *
+ * Warning: This function does not check if the value is within the range of
+ * the ruler. If the value is outside the ruler's range, it will return a
+ * mathematically correct pixel increment that will be outside of the canvas
+ *
+ * @param self a GenericRuler
+ * @param value The value to translate, assumed to be between
+ * GENERIC_STRIP(self)->begin and GENERIC_STRIP(self)->begin.
+ *
+ * @return The corresponding pixel increment.
+ */
+static inline int generic_ruler_get_pixel_increment_for(GenericRuler *self, float value)
+{
+    return ruler_core_get_pixel_increment_for(&self->core, GENERIC_STRIP(self), value);
+}
+
 
 #endif /* GENERIC_RULER_H */

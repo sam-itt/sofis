@@ -15,6 +15,7 @@
 #include "SDL_pcf.h"
 #include "generic-strip.h"
 #include "misc.h"
+#include "ruler-core.h"
 
 /**
  * GenericRuler builds on GenericStrip to provide reusable features for handling
@@ -37,8 +38,8 @@
  *
  *
  * Either way, the approximate total size of the final GenericRuler must be
- * passed-in. It will be adjusted to accomodate for the markings thati can be
- * etched around the ruler itself.
+ * passed-in. It will be adjusted to accomodate for the markings that can be
+ * drawn around the ruler itself.
  *
  * GenericRuler provides the features needed to resolve a value to a pixel
  * position and vice-versa.
@@ -62,27 +63,26 @@
  *
  *
  * TODO: Add a discussion on the Ops structure and how it allows for
- * customization of the etching behavior.
+ * customization of the drawing behavior.
  */
-
 
 
 #define DEBUG_GENERIC_RULER 0
 
 static GenericRulerOps generic_ruler_ops = {
-    .etch_tick_label = generic_ruler_etch_tick_label_impl,
-    .will_etch_tick = NULL,
+    .draw_tick_label = NULL, /* will call ruler_core_draw_tick_label_impl by default */
+    .will_draw_tick = NULL,
 };
 
-
-
-static void generic_ruler_set_anchor(GenericRuler *self, Anchor anchor);
-static bool generic_ruler_draw_hatches_vertical(GenericRuler *self, Uint32 color, bool etch_spine, Location spine_location, int preload_px);
-static bool generic_ruler_draw_hatches_horizontal(GenericRuler *self, Uint32 color, bool etch_spine, Location spine_location, int preload_px);
-
-static bool generic_ruler_etch_markings_vertical(GenericRuler *self, Location markings_location, int text_margin, PCF_Font *font, Uint32 color, uint8_t precision);
-static bool generic_ruler_etch_markings_horizontal(GenericRuler *self, Location markings_location, int text_margin, PCF_Font *font, Uint32 color, uint8_t precision);
-
+/* private forward declarations */
+static bool generic_ruler_will_draw_tick(RulerCore *self, GenericStrip *strip,
+                                         float value, int *tick_size, Uint32 *color);
+static bool generic_ruler_draw_tick_label(RulerCore *self, GenericStrip *strip,
+                                          float value, uint8_t precision,
+                                          PCF_Font *font, Uint32 color,
+                                          int x, int y, PCF_TextPlacement placement);
+static int generic_ruler_color_zone_location_cmp(const void *a, const void *b);
+static int generic_ruler_color_zone_divider_cmp(const void *a, const void *b);
 
 /**
  * @brief Init a ruler that maps a range that goes from @p start (included) to
@@ -119,7 +119,7 @@ static bool generic_ruler_etch_markings_horizontal(GenericRuler *self, Location 
  * markings are to be drawn.
  * @param markings_location Where the markings will be drawn, used to compute the
  * full dimensions needed by the ruler itself plus its eventual markings. Pass
- * LocationNone if you aren't goint to use the markings-etching features of GenericRuler.
+ * LocationNone if you aren't goint to use the labels-drawing features of GenericRuler.
  * @param text_margin How many pixels to leave between the ruler and the markings.
  * When unsure, use GENERIC_RULER_DEFAULT_TEXT_MARGIN.
  * @param markings_precision How many digital places will be written for
@@ -133,12 +133,12 @@ static bool generic_ruler_etch_markings_horizontal(GenericRuler *self, Location 
  * itself (that can be shrinked to match the number of pixels available for
  * the range), not the dimensions of the whole GenericRuler. The whole
  * GenericRuler will be bigger as it will accomodate for the markings that can
- * be etched around the ruler itself (if any). The final size of the object canvas
+ * be drawn around the ruler itself (if any). The final size of the object canvas
  * can be read from GENERIC_LAYER(self)->canvas->w and
  * GENERIC_LAYER(self)->canvas->h
  *
- * @see generic_ruler_etch_hatches
- * @see generic_ruler_etch_markings
+ * @see generic_ruler_draw_ticks
+ * @see generic_ruler_draw_labels
  * @see generic_ruler_init_from_size
  *
  * TODO: Consider splitting out Sophie's algorithm. Use that plus the call to
@@ -160,8 +160,8 @@ GenericRuler *generic_ruler_init_from_size(GenericRuler *self,
     self->ops = &generic_ruler_ops;
 
     GENERIC_STRIP(self)->flags = (StripFlags)(orientation | direction);
-    self->ruler_area.w = ruler_w;
-    self->ruler_area.h = ruler_h;
+    self->core.ruler_area.w = ruler_w;
+    self->core.ruler_area.h = ruler_h;
 
     GENERIC_STRIP(self)->start = start;
     GENERIC_STRIP(self)->end = end;
@@ -172,46 +172,46 @@ GenericRuler *generic_ruler_init_from_size(GenericRuler *self,
         return NULL;
     }
 
-    self->nticks = 1;
-    self->ticks[0].value = (step > 0) ? step : GENERIC_STRIP(self)->end;
+    self->core.nticks = 1;
+    self->core.ticks[0].value = (step > 0) ? step : GENERIC_STRIP(self)->end;
 
-    if(fmodf(GENERIC_STRIP(self)->end, self->ticks[0].value) != 0){
+    if(fmodf(GENERIC_STRIP(self)->end, self->core.ticks[0].value) != 0){
         printf("GenericRuler: Warning: range end (%f) is not a multiple of self->ticks[0].value(%f), rendering will break\n",
            GENERIC_STRIP(self)->end,
-           self->ticks[0].value
+           self->core.ticks[0].value
         );
     }
 
     /*Sophie's algorithm*/
-    int nintervals = (GENERIC_STRIP(self)->end - GENERIC_STRIP(self)->start) / self->ticks[0].value;
+    int nintervals = (GENERIC_STRIP(self)->end - GENERIC_STRIP(self)->start) / self->core.ticks[0].value;
     int nbars = nintervals + 1;
     int pix_available = (generic_ruler_orientation(self, RulerHorizontal)) ?
                           ruler_w - (nbars*1) // each bar is 1px wide/tall
                         : ruler_h - (nbars*1);
-    int interval_pix_size = pix_available/nintervals; //This is the best interval(number of pixels BETWEEN two etches) size in px.
-    self->ticks[0].stride = interval_pix_size + 1; //The stride is the increment in pixels that lands on the next ticks, hence +1
+    int interval_pix_size = pix_available/nintervals; //This is the best interval(number of pixels BETWEEN two ticks) size in px.
+    self->core.ticks[0].stride = interval_pix_size + 1; //The stride is the increment in pixels that lands on the next ticks, hence +1
 
     /* interval pix size is the number of pixels between bars,
      * +1 includes the closing bar */
-    GENERIC_STRIP(self)->ppv = (self->ticks[0].stride) / self->ticks[0].value;
+    GENERIC_STRIP(self)->ppv = (self->core.ticks[0].stride) / self->core.ticks[0].value;
     if(generic_ruler_orientation(self, RulerHorizontal))
-        self->ruler_area.w = interval_pix_size * nintervals + (nbars*1); //Each bar is 1px wide
+        self->core.ruler_area.w = interval_pix_size * nintervals + (nbars*1); //Each bar is 1px wide
     else
-        self->ruler_area.h = interval_pix_size * nintervals + (nbars*1);
+        self->core.ruler_area.h = interval_pix_size * nintervals + (nbars*1);
 
     if(markings_font != NULL && markings_location != LocationNone){
         generic_ruler_get_size_request(self, markings_precision, markings_font, markings_location, text_margin, &fullw, &fullh);
     }else{
-        fullw = self->ruler_area.w;
-        fullh = self->ruler_area.h;
+        fullw = self->core.ruler_area.w;
+        fullh = self->core.ruler_area.h;
     }
 
-    self->ticks[0].size = tick_size;
-    self->ticks[0].labeled = true;
+    self->core.ticks[0].size = tick_size;
+    self->core.ticks[0].labeled = true;
 
-    //That needs ruler_area to be set before calling generic_ruler_set_anchor
-    generic_ruler_set_anchor(self, (Anchor){
-        .position=0,
+    //That needs ruler_area to be set before calling ruler_core_set_anchor
+    ruler_core_set_anchor(&(self->core), GENERIC_STRIP(self), (Anchor){
+        .position = 0,
         .value = generic_ruler_direction(self, RulerGrowAlongAxis)
                  ? GENERIC_STRIP(self)->start
                  : GENERIC_STRIP(self)->end
@@ -252,356 +252,62 @@ GenericRuler *generic_ruler_init_from_size(GenericRuler *self,
  * @param anchor The anchor point, where a value is mapped to a pixel position,
  * relative to the ruler area. The anchor value must be a multiple of the base unit.
  *
- * @see generic_ruler_etch_hatches
- * @see generic_ruler_etch_markings
+ * @see generic_ruler_draw_ticks
+ * @see generic_ruler_draw_labels
  * @see generic_ruler_init_from_size
  */
-
 GenericRuler *generic_ruler_init(GenericRuler *self,
                                   int width, int height,
                                   RulerOrientation orientation,
                                   RulerDirection direction,
+                                  Location spine_location,
                                   float base_unit, uint16_t base_unit_px,
                                   uint8_t base_unit_size, bool base_unit_labeled,
                                   uint8_t nmultiples, RulerUnitMultiple *multiples,
                                   Anchor anchor)
 {
+    int axis_max;
     if(orientation == RulerVertical)
         assert(anchor.position < height);
     else
         assert(anchor.position < width);
     assert(fmodf(anchor.value,base_unit) == 0); //Anchor must be a multiple of the base unit
-                                                //
+
+    axis_max = orientation == RulerVertical ? height-1 : width-1;
     generic_layer_init(GENERIC_LAYER(self), width, height);
     self->ops = &generic_ruler_ops;
 
     GENERIC_STRIP(self)->flags = (StripFlags)(orientation | direction);
     GENERIC_STRIP(self)->ppv = base_unit_px/base_unit;
     /*regardless of the orientation, start/end will always be the lower/higher value*/
-    GENERIC_STRIP(self)->start = anchor.value - anchor.position/GENERIC_STRIP(self)->ppv;
-    GENERIC_STRIP(self)->end = anchor.value + (height-1-anchor.position)/GENERIC_STRIP(self)->ppv;
-    self->ruler_area = (SDL_Rect){
+    if(direction == RulerGrowAlongAxis){
+        GENERIC_STRIP(self)->start = anchor.value - anchor.position/GENERIC_STRIP(self)->ppv;
+        GENERIC_STRIP(self)->end = anchor.value + (axis_max-anchor.position)/GENERIC_STRIP(self)->ppv;
+    }else{ //RulerGrowAgainstAxis
+        GENERIC_STRIP(self)->start = anchor.value - (axis_max-anchor.position)/GENERIC_STRIP(self)->ppv;
+        GENERIC_STRIP(self)->end = anchor.value + anchor.position/GENERIC_STRIP(self)->ppv;
+    }
+    self->core.ruler_area = (SDL_Rect){
         /*auto-zero x and y*/
         .w = width,
         .h = height
     };
 
-    if(nmultiples > 4){
+    bool rv = ruler_core_set_ticks(
+        &(self->core), base_unit, base_unit_px, base_unit_size,
+        base_unit_labeled, nmultiples, multiples
+    );
+    if(!rv){
         printf("%s: FATAL: nmultiples(%d) must be <= 4. Change compile-time const in generic-ruler.h and rebuild\n", __FUNCTION__, nmultiples);
         exit(EXIT_FAILURE);
     }
-    self->nticks = nmultiples + 1;
-    self->ticks[0].value = base_unit;
-    self->ticks[0].stride = base_unit_px;
-    self->ticks[0].size = base_unit_size;
-    self->ticks[0].labeled = base_unit_labeled;
-    for(int i = 0; i < nmultiples; i++){
-        self->ticks[i+1].value = multiples[i].value * base_unit;
-        self->ticks[i+1].stride = multiples[i].value * base_unit_px;
-        self->ticks[i+1].size = multiples[i].size;
-        self->ticks[i+1].labeled = multiples[i].labeled;
-    }
 
-    generic_ruler_set_anchor(self, anchor);
+    self->core.spine_coord = ruler_core_get_spine_coord(&(self->core), orientation, spine_location);
+
+    ruler_core_set_anchor(&(self->core), GENERIC_STRIP(self), anchor);
 
     return self;
 }
-
-/**
- * @brief Convert a pixel position within the GenericRuler canvas to a value
- * within the ruler's range. This function accepts a pixel position from 0 to
- * the canvas width/height (depending on the orientation) and returns the
- * corresponding value within the ruler's range. If the pixel position is
- * outside the actual ruler_rect portion of the canvas, the function
- * will return NAN.
- *
- * Contrary to generic_ruler_increment_to_value, this function accepts a pixel
- * absolute position within the canvas, not a pixel increment relative to the
- * ruler's start.
- *
- * @param self a GenericRuler
- * @param px_position The pixel position to convert.
- *
- * @return The corresponding value within the ruler's range, or NAN if the pixel
- * position is on the canvas but outside the ruler.
- *
- * @see generic_ruler_increment_to_value
- */
-float generic_ruler_position_to_value(GenericRuler *self, unsigned int px_position)
-{
-    int axis_min, axis_max;
-
-    axis_min = generic_ruler_axis_min(self);
-    axis_max = generic_ruler_axis_max(self);
-
-    if(px_position < axis_min || px_position > axis_max){
-        printf("%s: px_position(%d) is out of bounds (min:%d, max:%d)\n", __FUNCTION__, px_position, axis_min, axis_max);
-        return NAN;
-    }
-
-    return generic_ruler_increment_to_value(self, px_position - axis_min);
-}
-
-/**
- * @brief Convert a pixel increment (relative to the ruler's start) to a value
- * within the ruler's range.
- *
- * @param self a GenericRuler
- * @param px_increment The pixel increment to convert.
- *
- * @return The corresponding value within the ruler's range, or NAN if the pixel
- * increment is out of bounds.
- *
- * @see generic_ruler_position_to_value
- */
-float generic_ruler_increment_to_value(GenericRuler *self, unsigned int px_increment)
-{
-    int delta;
-    int axis_max;
-    TickMark *base;
-
-    base = &(self->ticks[0]);
-    axis_max = generic_ruler_orientation(self, RulerHorizontal)
-               ? self->ruler_area.w-1
-               : self->ruler_area.h-1;
-
-    if(px_increment > axis_max){
-        printf("%s: px_increment(%d) is out of bounds (min:0, max:%d)\n", __FUNCTION__, px_increment, axis_max);
-        return NAN;
-    }
-
-    if(px_increment == self->first_tick.position) return self->first_tick.value;
-
-    delta = (px_increment >= self->first_tick.position)
-          ? (px_increment - self->first_tick.position)
-          : (self->first_tick.position - px_increment);
-    if(delta % base->stride == 0){ /*are we on a tick mark?*/
-        int nunits = delta/base->stride;
-        /* That could be one line with appropriate inverting factors? */
-        if(px_increment > self->first_tick.position){
-            if(generic_ruler_direction(self, RulerGrowAlongAxis))
-                return self->first_tick.value + nunits*base->value;
-            else
-                return self->first_tick.value - nunits*base->value;
-        }else{
-            if(generic_ruler_direction(self, RulerGrowAlongAxis))
-                return self->first_tick.value - nunits*base->value;
-            else
-                return self->first_tick.value + nunits*base->value;
-        }
-    }
-    /*otherwise we resort to approximation*/
-    if(generic_ruler_direction(self, RulerGrowAlongAxis))
-        return GENERIC_STRIP(self)->start + px_increment/GENERIC_STRIP(self)->ppv;
-    else
-        return GENERIC_STRIP(self)->start + (axis_max - px_increment)/GENERIC_STRIP(self)->ppv;
-}
-
-/**
- * @brief Write ruler hatches(graduations) on the underlying canvas.
- *
- * @param self a GenericRuler
- * @param color The color to use for hatches, in the underlying surface format
- * @param etch_spine Whether (true/false) to draw the ruler's spine i.e. main
- * line or not.
- * @param spine_location Where to draw the spine. Valid locations for
- * Horizontal gauges are Top,Center,Bottom and Left, Center, Right for Vertical
- * gauges. Ignored when @p spine is false.
- *
- * @return true on success, false otherwise.
- */
-bool generic_ruler_etch_hatches(GenericRuler *self, Uint32 color, bool etch_spine, Location spine_location)
-{
-    /*This first version ignores the orientation or direction, it will only work for vertical bottom-up*/
-
-    TickMark base;
-    Anchor anchor;
-    int axis_max;
-
-
-    base = self->ticks[0];
-    anchor = self->first_tick;
-    axis_max = generic_ruler_orientation(self, RulerHorizontal)
-               ? self->ruler_area.w-1
-               : self->ruler_area.h-1;
-
-    /* We need our anchor to be a big graduation.
-     * If that's an intermediate one (it's asserted to be a multiple
-     * of the base unit earlier), let's walk some base units until we
-     * find the closest big graduation. That will be our "virtual"
-     * anchor point.
-     * ...
-     */
-    /*TODO: Compute that directlty*/
-    while(fmodf(anchor.value, self->ticks[self->nticks-1].value) != 0){
-        anchor.value += base.value;
-        anchor.position += generic_ruler_direction(self, RulerGrowAlongAxis)
-                           ? base.stride
-                           : -base.stride;
-    }
-
-    /* ... so we can start from the biggest graduation and determine how many
-     * of them we have between the "virtual" anchor and the limit of the
-     * drawing area.
-     * We eat that up and we are left with the remaining pixels. Those pixels
-     * are the end of another virtual big graduation that starts big grad size
-     * minus remaining pixels before the drawing area. We just preload that
-     * and continue from there and everything will line up
-     */
-    int preload_px = 0;
-    int delta = axis_max - anchor.position;
-    int nunits = delta/self->ticks[self->nticks-1].stride;
-    int remaining = delta - nunits*self->ticks[self->nticks-1].stride;
-    if(remaining){
-        preload_px = self->ticks[self->nticks-1].stride - remaining;
-    }
-    return generic_ruler_draw_hatches(self, color, etch_spine, spine_location, preload_px);
-}
-
-/**
- * @brief Draw the hatches(graduations) on the ruler.
- *
- * This function does a pure graphical etch of the hatches, it does not consider
- * values. From pixel 0 to the end of the ruler, it will draw hatches at each
- * multiple of the TickMarks of @p self. @p preload_px allows to pretend that
- * some pixels have already been drawn, so that the hatches will be drawn as if
- * the ruler was already drawn up to that. See generic_ruler_etch_hatches for
- * an example of how to use this.
- *
- * @param self a GenericRuler
- * @param color The color to use for hatches, in the underlying surface format
- * @param etch_spine Whether (true/false) to draw the ruler's spine i.e. main
- * line or not.
- * @param spine_location Where to draw the spine.
- * @param preload_px How much pixels to pretend to have already written.
- *
- * @return true on success, false otherwise.
- */
-bool generic_ruler_draw_hatches(GenericRuler *self, Uint32 color, bool etch_spine, Location spine_location, int preload_px)
-{
-    return generic_ruler_orientation(self, RulerHorizontal)
-           ? generic_ruler_draw_hatches_horizontal(self, color, etch_spine, spine_location, preload_px)
-           : generic_ruler_draw_hatches_vertical(self, color, etch_spine, spine_location, preload_px);
-}
-
-/**
- * @brief Etch markings (numbers) on the ruler at the predefined
- * step
- *
- * @param self a GenericRuler
- * @param location Where to put the markings. Valid locations for Horizontal
- * rulers are: Top, Bottom while valid locations for Vertical gauges are
- * Left and Right.
- * @param text_margin How many pixels to leave between the ruler and the markings.
- * When unsure, use GENERIC_RULER_DEFAULT_TEXT_MARGIN.
- * @param font The PCF_Font to use. Must be the same used when calling
- * generic_ruler_get_size_request
- * @param color The color to use, in the underlying surface format
- * @param precision How many digital places to write. 0 for integral part only.
- *
- * @return true on success, false otherwise.
- *
- * @see generic_ruler_get_size_request
- */
-bool generic_ruler_etch_markings(GenericRuler *self, Location markings_location, int text_margin, PCF_Font *font, Uint32 color, uint8_t precision)
-{
-    return generic_ruler_orientation(self, RulerHorizontal)
-           ? generic_ruler_etch_markings_horizontal(self, markings_location, text_margin, font, color, precision)
-           : generic_ruler_etch_markings_vertical(self, markings_location, text_margin, font, color, precision);
-#if DEBUG_GENERIC_RULER
-    generic_layer_save_bmp(GENERIC_LAYER(self), "/tmp/ruler-try-hatches.bmp");
-#endif
-}
-
-/**
- * @brief This is the default implementation of the etch_tick_label operation, that
- * just writes the value at the given position using the appropriate font and color.
- *
- * Subclasses can override this operation using their version of GenericRulerOps to
- * provide a different behavior, e.g. to ignore some values, write some others in
- * different colors, etc.
- *
- * This function is exported so that Subclasses can chain call to it to only change
- * the part they need to alter (e.g. changing the value, the color, ...)
- *
- * @param self a GenericRuler
- * @param value The value to be written
- * @param precision How many digital places to write. 0 for integral part only.
- * @param font The PCF_Font to use
- * @param color The color to use, in the underlying surface format
- * @param x The x position where to write the value
- * @param y The y position where to write the value
- * @param placement The placement (@see PCF_TextPlacement)
- *
- * @return true on success, false otherwise.
- */
-bool generic_ruler_etch_tick_label_impl(GenericRuler *self, float value, uint8_t precision, PCF_Font *font, Uint32 color, int x, int y, PCF_TextPlacement placement)
-{
-    PCF_FontWriteNumberAt(font,
-        &value, TypeFloat, precision,
-        color, false,
-        GENERIC_LAYER(self)->canvas,
-        x,y, placement
-
-    );
-    return true;
-}
-
-/**
- * @brief Given a value, return the pixel increment (relative to the ruler's
- * start) that represents it on the ruler.
- *
- * @param self a GenericRuler
- * @param value The value to translate.
- *
- * @return The corresponding pixel increment, or 0 if the value is -INFINITY.
- */
-int generic_ruler_get_pixel_increment_for(GenericRuler *self, float value)
-{
-    TickMark *base;
-    int axis_max;
-    int axis_min;
-    int rv;
-
-    if(value == -INFINITY) return 0;
-    if(value == INFINITY)
-        value = GENERIC_STRIP(self)->end;
-
-    base = &self->ticks[0];
-    axis_max = generic_ruler_orientation(self, RulerHorizontal)
-               ? self->ruler_area.w-1
-               : self->ruler_area.h-1;
-    axis_min = generic_ruler_orientation(self, RulerHorizontal)
-               ? self->ruler_area.x
-               : self->ruler_area.y;
-
-    if(fmodf(value, base->value) == 0){ /* are we on a tick mark? */
-        float delta = value - self->first_tick.value;
-        int nunits = fabsf(delta/base->value);
-        if(delta >= 0){
-            if(generic_ruler_direction(self, RulerGrowAlongAxis))
-                rv = self->first_tick.position + nunits*base->stride;
-            else
-                rv = self->first_tick.position - nunits*base->stride;
-        }else{
-            if(generic_ruler_direction(self, RulerGrowAlongAxis))
-                rv = self->first_tick.position - nunits*base->stride;
-            else
-                rv = self->first_tick.position + nunits*base->stride;
-        }
-        /*we do not need to offset back the returned value from ruler_area
-         * because it as been computed from anchor which has not been
-         * offseted by ruler_area, i.e anchor is already a relative increment*/
-    }else{
-        /* we are not on an exact tick mark, so approximate */
-        rv = (value - GENERIC_STRIP(self)->start)*(axis_max - 0)/(GENERIC_STRIP(self)->end - GENERIC_STRIP(self)->start) + 0;
-        rv = generic_ruler_direction(self, RulerGrowAlongAxis)
-             ? rv
-             : axis_max - rv;
-    }
-    return rv;
-}
-
 
 /**
  * @brief Release resources held by @p self.
@@ -634,22 +340,22 @@ void generic_ruler_dispose(GenericRuler *self)
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wformat-truncation"
 #endif
-bool generic_ruler_get_size_request(GenericRuler *self, int8_t precision, PCF_Font *font, Location markings_location, int text_margin, int *w, int *h)
+bool generic_ruler_get_size_request(GenericRuler *self, int8_t precision,
+                                    PCF_Font *font, Location markings_location,
+                                    int text_margin, int *w, int *h)
 {
-    int pixel_increment = roundf(self->ticks[0].value * GENERIC_STRIP(self)->ppv);
+    int pixel_increment = roundf(self->core.ticks[0].value * GENERIC_STRIP(self)->ppv);
     int glyph_height = PCF_FontCharHeight(font);
 
     char vbuffer[10]; /*9999999999 or 999999999 with a floating dot*/
     SDL_Rect m_rect; //mark rect
 
-    /*Pixels to add on each side of the ruler to
-     * accomodate etching marks
-     * */
+    /*Pixels to add on each side of the ruler to accomodate labels*/
     int left, right;
     int top, bottom;
 
-    int fbw = self->ruler_area.w;
-    int fbh = self->ruler_area.h;
+    int fbw = self->core.ruler_area.w;
+    int fbh = self->core.ruler_area.h;
 
     left = right = top = bottom = 0;
     if(generic_ruler_orientation(self, RulerHorizontal)){
@@ -716,7 +422,7 @@ bool generic_ruler_get_size_request(GenericRuler *self, int8_t precision, PCF_Fo
     *w = fbw + left + right;
     *h = fbh + top + bottom;
 
-    self->ruler_area = (SDL_Rect){
+    self->core.ruler_area = (SDL_Rect){
         .x = left,
         .y = top,
         /* Pretty useless, this is just
@@ -732,422 +438,91 @@ bool generic_ruler_get_size_request(GenericRuler *self, int8_t precision, PCF_Fo
 #pragma GCC diagnostic pop
 #endif
 
-
 /**
- * @brief Draw the give color zones on the ruler
- *
- * If you want to have a spine line and/or hatch marks on top of said zones
- * you have to draw the zones first, and other etches on top of that.
- *
- * @param self a GenericRuler
- * @param spine_location Location of the spine line of the ruler. Even if you
- * don't etch lines on the ruler at all, this function needs to know from where
- * to start filling the ruler with color, especially if @p fill_ratio is not
- * 1.0. The filling will start on the given location and grow to the opposite
- * e.g. Left->Right, Bottom->Top, etc. The center location will grow as evenly
- * as possible towards both opposite sides.
- * @param nzones Number of zones in the @p zones array
- * @param zones Address to the first of @p nzones zones. If overlapping, the
- * last drawn zone will take precedence.
- * @param fill_ratio amount of the ruler to fill with colors, from 0 (0%)
- * to 1.0 (100%).
- * @return true on success, false otherwise.
- *
- * TODO: When areas overlap, make them stack on top of
- * one another, equally sharing the fill_ratio space.
- */
-bool generic_ruler_draw_zones(GenericRuler *self, Location spine_location, int nzones, ColorZone *zones, float fill_ratio)
-{
-    int begin, end;
-
-    int start_y,end_y;
-    int start_x, end_x;
-    int npixels;
-
-    if(generic_ruler_orientation(self, RulerHorizontal)){
-        /* number of px *to add* and thus can't be self->ruler_area.h
-         * which would go overboard as the area goes from area.x to
-         * area.x + (area.h-1)
-         */
-        npixels = (self->ruler_area.h - 1)*fill_ratio;
-        if(spine_location == Top){
-            start_y = self->ruler_area.y;
-            end_y = self->ruler_area.y + npixels;
-        }else if(spine_location == Center){
-            start_y = SDLExt_RectMidY(&self->ruler_area) - (SDLExt_RectMidY(&self->ruler_area)-self->ruler_area.y)*fill_ratio;
-            end_y = SDLExt_RectMidY(&self->ruler_area) + (SDLExt_RectLastY(&self->ruler_area)-SDLExt_RectMidY(&self->ruler_area))*fill_ratio;
-        }else if (spine_location == Bottom) {
-            start_y = SDLExt_RectLastY(&self->ruler_area) - npixels;
-            end_y = SDLExt_RectLastY(&self->ruler_area);
-        }else{
-            printf("GenericRuler: Unsupported line position for Horizontal orientation");
-            return false;
-        }
-    }else{ /* RulerVertical */
-        npixels = (self->ruler_area.w - 1)*fill_ratio;
-        if(spine_location == Left){
-            start_x = self->ruler_area.x;
-            end_x = self->ruler_area.x + npixels;
-        }else if(spine_location == Center){
-            start_x = SDLExt_RectMidX(&self->ruler_area) - (SDLExt_RectMidX(&self->ruler_area)-self->ruler_area.x)*fill_ratio;
-            end_x = SDLExt_RectMidX(&self->ruler_area) + (SDLExt_RectLastX(&self->ruler_area)-SDLExt_RectMidX(&self->ruler_area))*fill_ratio;
-        }else if(spine_location == Right){
-            start_x = SDLExt_RectLastX(&self->ruler_area) - npixels;
-            end_x = SDLExt_RectLastX(&self->ruler_area);
-        }else{
-            printf("GenericRuler: Unsupported line position for Vertical orientation");
-            return false;
-        }
-    }
-
-    /* Colored areas, if any are assumed to be sorted
-     * */
-    SDL_LockSurface(GENERIC_LAYER(self)->canvas);
-    Uint32 *pixels = GENERIC_LAYER(self)->canvas->pixels;
-    for(int i = 0; i < nzones; i++){
-        begin = generic_ruler_direction(self, RulerGrowAlongAxis)
-                ? generic_ruler_get_pixel_increment_for(self, zones[i].from)
-                : generic_ruler_get_pixel_increment_for(self, zones[i].to);
-        end = generic_ruler_direction(self, RulerGrowAlongAxis)
-              ? generic_ruler_get_pixel_increment_for(self, zones[i].to)
-              : generic_ruler_get_pixel_increment_for(self, zones[i].from);
-        /* begin/end are the pixels that represent the from/to area bound values
-         * if they are excluded, just go one pixel after/before.*/
-        if(zones[i].flags & FromExcluded)
-            begin += 1;
-        if(zones[i].flags & ToExcluded)
-            end -= 1;
-        Uint32 bcolor = SDL_MapRGBA(GENERIC_LAYER(self)->canvas->format,
-            zones[i].color.r,
-            zones[i].color.g,
-            zones[i].color.b,
-            zones[i].color.a
-        );
-        if(generic_ruler_orientation(self, RulerHorizontal)){
-            for(int y = start_y; y <= end_y; y++){
-                for(int x = self->ruler_area.x + begin; x <= self->ruler_area.x + end; x++){
-                    pixels[y * GENERIC_LAYER(self)->canvas->w + x] = bcolor;
-                }
-            }
-        }else{ /* RulerVertical */
-            for(int y = self->ruler_area.y + begin; y <= self->ruler_area.y + end; y++){
-                for(int x = start_x; x <= end_x; x++){
-                    pixels[y * GENERIC_LAYER(self)->canvas->w + x] = bcolor;
-                }
-            }
-        }
-    }
-    SDL_UnlockSurface(GENERIC_LAYER(self)->canvas);
-    return true;
-}
-
-/* private helper functions. Can go public as needed */
-
-
-/**
- * @brief Helper function to compute the "first" (value-wise) tick mark
- * form the anchor point provided by the user. The anchor point allows to pin
- * the ruler to a certain position, e.g. 0 is in the middle of the ruler.
- * It must be a multiple of the base unit.
- *
- *
- * @param self a GenericRuler
- * @param anchor The anchor point, where a value is mapped to a pixel position.
- *
- */
-static void generic_ruler_set_anchor(GenericRuler *self, Anchor anchor)
-{
-    TickMark *base;
-    int axis_min, axis_max;
-
-    base = &(self->ticks[0]);
-    axis_min = generic_ruler_axis_min(self);
-    axis_max = generic_ruler_axis_max(self);
-
-    if(generic_ruler_direction(self, RulerGrowAlongAxis)){
-        int delta = anchor.position - axis_min;
-        int nunits = delta/base->stride;
-        self->first_tick.position = anchor.position - nunits*base->stride;
-        self->first_tick.value = anchor.value - nunits*base->value;
-    }else{ /* RulerGrowAgainstAxis */
-        int delta = axis_max - anchor.position;
-        int nunits = delta/base->stride;
-        self->first_tick.position = anchor.position + nunits*base->stride;
-        self->first_tick.value = anchor.value - nunits*base->value;
-    }
-}
-
-/**
- * @brief Helper function to actually draw the hatches(graduations) on the ruler
- * for vertical orientation.
+ * @brief Write ruler ticks(graduations) on the underlying canvas.
  *
  * @param self a GenericRuler
  * @param color The color to use for hatches, in the underlying surface format
  * @param etch_spine Whether (true/false) to draw the ruler's spine i.e. main
  * line or not.
- * @param spine_location Where to draw the spine. Valid locations for vertical
- * rulers are Left, Center, Right. Ignored when @p spine is false.
- * @param preload_px How much pixels to pretend to have already written.
+ * @param spine_location Where to draw the spine. Valid locations for
+ * Horizontal gauges are Top,Center,Bottom and Left, Center, Right for Vertical
+ * gauges. Ignored when @p spine is false.
  *
  * @return true on success, false otherwise.
  */
-static bool generic_ruler_draw_hatches_vertical(GenericRuler *self, Uint32 color, bool etch_spine, Location spine_location, int preload_px)
+bool generic_ruler_draw_ticks(GenericRuler *self, Uint32 color,
+                              bool etch_spine, Location spine_location)
 {
-
-    SDL_Surface *canvas;
-    int spine_x;
-    int firstx, lastx;
-
-    canvas = GENERIC_LAYER(self)->canvas;
-
-
-    if(spine_location == Center)
-        spine_x = SDLExt_RectMidX(&self->ruler_area);
-    else if(spine_location == Left)
-        spine_x = self->ruler_area.x;
-    else if(spine_location == Right)
-        spine_x = SDLExt_RectLastX(&self->ruler_area);
-    else
-        return printf("GenericRuler: %d: Unsupported spine position for Vertical orientation\n", spine_location) ? false : false; //TODO: prettyLocation
-        //TODO: macro the above trick
-    self->spine_coord = spine_x;
-
-    generic_layer_lock(GENERIC_LAYER(self));
-    Uint32 *pixels = canvas->pixels;
-    Uint32 save_color = color;
-    for(int y = SDLExt_RectLastY(&self->ruler_area), cnt = 0; y >= self->ruler_area.y; y--, cnt++){
-        firstx = spine_x;
-        lastx = firstx;
-        int current_px = cnt + preload_px;
-        if(current_px % self->ticks[0].stride == 0){ /*tick mark*/
-            for(int k = self->nticks-1; k >= 0; k--){
-                int size = self->ticks[k].size;
-                if(self->ops->will_etch_tick)
-                    self->ops->will_etch_tick(self, generic_ruler_position_to_value(self, y), &size, &color);
-
-                if(current_px % self->ticks[k].stride == 0){
-                    if(spine_location == Left || spine_location == Center)
-                        lastx = min_int(spine_x + size, SDLExt_RectLastX(&self->ruler_area));
-                    if(spine_location == Right || spine_location == Center)
-                        firstx = max_int(spine_x - size, 0);
-                    break;
-                }
-            }
-        }
-        if(firstx == lastx && !etch_spine) continue;
-        for(int j = firstx; j <= lastx; j++){
-#if 0
-            if(j > SDLExt_RectLastX(&self->ruler_area) || j < self->ruler_area.x){
-                printf("GenericRuler: WARNING j=%d is OOB from (x:%d, w:%d)!\n", j, self->ruler_area.x, self->ruler_area.w);
-            }
-#endif
-            Uint32 idx = y * canvas->w + j;
-            pixels[idx] = color;
-        }
-        color = save_color; /*reset color in case the etch_tick callback changed it*/
-    }
-    generic_layer_unlock(GENERIC_LAYER(self));
-#if DEBUG_GENERIC_RULER
-    generic_layer_save_bmp(GENERIC_LAYER(self), "/tmp/ruler-try-vertical.bmp");
-#endif
-    return true;
+    return ruler_core_draw_ticks(
+        &(self->core), GENERIC_STRIP(self), color, etch_spine, spine_location,
+        generic_ruler_will_draw_tick
+    );
 }
 
 /**
- * @brief Helper function to actually draw the hatches(graduations) on the ruler
- * for horizontal orientation.
+ * @brief Draw labels (numbers) on the ruler at the predefined
+ * step
  *
  * @param self a GenericRuler
- * @param color The color to use for hatches, in the underlying surface format
- * @param etch_spine Whether (true/false) to draw the ruler's spine i.e. main
- * line or not.
- * @param spine_location Where to draw the spine. Valid locations for horizontal
- * rulers are Top, Center, Bottom. Ignored when @p spine is false.
- * @param preload_px How much pixels to pretend to have already written.
- *
- * @return true on success, false otherwise.
- */
-static bool generic_ruler_draw_hatches_horizontal(GenericRuler *self, Uint32 color, bool etch_spine, Location spine_location, int preload_px)
-{
-
-    SDL_Surface *canvas;
-    TickMark base;
-    int spine_y;
-    int firstx, lastx;
-    int firsty, lasty;
-
-    canvas = GENERIC_LAYER(self)->canvas;
-    base = self->ticks[0];
-
-    /*assumes that the biggest mark is the tallest*/
-    if(spine_location == Center){
-        spine_y = SDLExt_RectMidY(&self->ruler_area);
-        firsty  = spine_y - self->ticks[self->nticks-1].size;
-        lasty = spine_y + self->ticks[self->nticks-1].size;
-    }else if(spine_location == Top){
-        spine_y = self->ruler_area.y;
-        firsty  = spine_y;
-        lasty = spine_y + self->ticks[self->nticks-1].size;
-    }else if(spine_location == Bottom){
-        spine_y = SDLExt_RectLastY(&self->ruler_area);
-        firsty  = spine_y - self->ticks[self->nticks-1].size;
-        lasty = spine_y;
-    }
-    else{
-        return printf("GenericRuler: %d: Unsupported spine position for Horizontal orientation\n", spine_location) ? false : false; //TODO: prettyLocation
-        //TODO: macro the above trick
-    }
-    self->spine_coord = spine_y;
-
-    generic_layer_lock(GENERIC_LAYER(self));
-    Uint32 *pixels = canvas->pixels;
-    for(int y = firsty; y <= lasty; y++){
-        for(int x = SDLExt_RectLastX(&self->ruler_area), cnt = 0; x >= self->ruler_area.x; x--, cnt++){
-            int current_px = cnt + preload_px;
-            if(current_px % base.stride == 0){ /*tick mark*/
-                for(int k = self->nticks-1; k >= 0; k--){
-                    if(current_px % self->ticks[k].stride == 0){
-                        int size = self->ticks[k].size;
-                        Uint32 tick_color = color;
-                        if(self->ops->will_etch_tick){
-                            self->ops->will_etch_tick(self, generic_ruler_position_to_value(self, x), &size, &tick_color);
-                        }
-                        if(size && size >= abs(y - spine_y)){
-                            pixels[y * canvas->w + x] = tick_color;
-                        }
-                        break;
-                    }
-                }
-            }
-            if(etch_spine && y == spine_y){
-                pixels[y * canvas->w + x] = color;
-            }
-        }
-    }
-
-    generic_layer_unlock(GENERIC_LAYER(self));
-#if DEBUG_GENERIC_RULER
-    generic_layer_save_bmp(GENERIC_LAYER(self), "/tmp/ruler-try-horizontal.bmp");
-#endif
-    return true;
-}
-
-/**
- * @brief Helper function to actually draw the markings (numbers) on the ruler
- * for vertical orientation.
- *
- * @param self a GenericRuler
- * @param location Where to put the markings. Valid locations for vertical rulers
- * are: Left and Right.
- * @param text_margin How many pixels to leave between the ruler and the markings.
- * When unsure, use GENERIC_RULER_DEFAULT_TEXT_MARGIN.
- * @param font The PCF_Font to use.
+ * @param location Where to put the labels. Valid locations for Horizontal
+ * rulers are: Top, Bottom while valid locations for Vertical gauges are
+ * Left and Right.
+ * @param text_margin How many pixels to leave between the ruler and the labels.
+ * When unsure, use RULER_CORE_DEFAULT_TEXT_MARGIN.
+ * @param font The PCF_Font to use. Must be the same used when calling
+ * generic_ruler_get_size_request
  * @param color The color to use, in the underlying surface format
  * @param precision How many digital places to write. 0 for integral part only.
  *
  * @return true on success, false otherwise.
+ *
+ * @see generic_ruler_get_size_request
  */
-static bool generic_ruler_etch_markings_vertical(GenericRuler *self, Location markings_location, int text_margin, PCF_Font *font, Uint32 color, uint8_t precision)
+bool generic_ruler_draw_labels(GenericRuler *self, Location markings_location,
+                               int text_margin, PCF_Font *font,
+                               Uint32 color, uint8_t precision)
 {
-    int start_pos;
-    float start_value;
-    TickMark *base;
+    return ruler_core_draw_labels(
+        &(self->core), GENERIC_STRIP(self), markings_location, text_margin,
+        font, color, precision, generic_ruler_draw_tick_label
+    );
+}
 
-    base = &self->ticks[0];
+/* private helper functions */
 
-    start_pos = self->first_tick.position;
-    start_value = self->first_tick.value;
+/**
+ * @brief Trampoline adapter function to call the will_draw_tick operation of
+ * the GenericRulerOps with the correct arguments.
+ *
+ * @see WillDrawTickFunc
+ */
+static bool generic_ruler_will_draw_tick(RulerCore *self, GenericStrip *strip,
+                                         float value, int *tick_size, Uint32 *color)
+{
+    GenericRuler *ruler;
 
-    float value;
-    int y;
-    for(y = self->ruler_area.y + start_pos, value = start_value;
-        generic_ruler_direction(self, RulerGrowAlongAxis) ? y <= SDLExt_RectLastY(&(self->ruler_area)) : y >= self->ruler_area.y;
-        y += generic_ruler_direction(self, RulerGrowAlongAxis) ? base->stride : -base->stride, value += base->value){
-
-        TickMark *current_tick;
-        for(int k = self->nticks-1; k >= 0; k--){
-            current_tick = &self->ticks[k];
-            if(fmodf(value, current_tick->value) == 0){
-                break;
-            }
-        }
-        if(current_tick->labeled == false) continue;
-
-        if(markings_location & Left){
-            generic_ruler_etch_tick_label(self, value, precision, font, color,
-                self->spine_coord - current_tick->size - text_margin,
-                y,
-                LeftToCol | CenterOnRow
-            );
-        }
-        if(markings_location & Right){
-            generic_ruler_etch_tick_label(self, value, precision, font, color,
-                self->spine_coord + current_tick->size + text_margin,
-                y,
-                RightToCol | CenterOnRow
-            );
-        }
-    }
-#if DEBUG_GENERIC_RULER
-    generic_layer_save_bmp(GENERIC_LAYER(self), "/tmp/ruler-try-hatches.bmp");
-#endif
-    return true;
+    ruler = container_of(self, GenericRuler, core);
+    return ruler->ops->will_draw_tick
+           ? ruler->ops->will_draw_tick(ruler, value, tick_size, color)
+           : true;
 }
 
 /**
- * @brief Helper function to actually draw the markings (numbers) on the ruler
- * for horizontal orientation.
+ * @brief Trampoline adapter function to call the draw_tick_label operation of
+ * the GenericRulerOps with the correct arguments.
  *
- * @param self a GenericRuler
- * @param location Where to put the markings. Valid locations for horizontal rulers
- * are: Top and Bottom.
- * @param text_margin How many pixels to leave between the ruler and the markings.
- * When unsure, use GENERIC_RULER_DEFAULT_TEXT_MARGIN.
- * @param font The PCF_Font to use.
- * @param color The color to use, in the underlying surface format
- * @param precision How many digital places to write. 0 for integral part only.
- *
- * @return true on success, false otherwise.
+ * @see DrawTickLabelFunc
  */
-static bool generic_ruler_etch_markings_horizontal(GenericRuler *self, Location markings_location, int text_margin, PCF_Font *font, Uint32 color, uint8_t precision)
+static bool generic_ruler_draw_tick_label(RulerCore *self, GenericStrip *strip,
+                                          float value, uint8_t precision,
+                                          PCF_Font *font, Uint32 color,
+                                          int x, int y, PCF_TextPlacement placement)
 {
-    int start_pos;
-    float start_value;
-    TickMark *base;
+    GenericRuler *ruler;
 
-    base = &self->ticks[0];
-
-    start_pos = self->first_tick.position;
-    start_value = self->first_tick.value;
-
-    for(int x = self->ruler_area.x + start_pos, value = start_value;
-        generic_ruler_direction(self, RulerGrowAlongAxis) ? x <= SDLExt_RectLastX(&(self->ruler_area)) : x >= self->ruler_area.x;
-        x += generic_ruler_direction(self, RulerGrowAlongAxis) ? base->stride : -base->stride, value += base->value){
-
-        TickMark *current_tick;
-        for(int k = self->nticks-1; k >= 0; k--){
-            current_tick = &self->ticks[k];
-            if(fmodf(value, current_tick->value) == 0){
-                break;
-            }
-        }
-        if(current_tick->labeled == false) continue;
-
-        if(markings_location & Top){
-            generic_ruler_etch_tick_label(self, value, precision, font, color,
-                x,
-                self->spine_coord - current_tick->size - text_margin,
-                CenterOnCol | AboveRow
-            );
-        }
-        if(markings_location & Bottom){
-            generic_ruler_etch_tick_label(self, value, precision, font, color,
-                x,
-                self->spine_coord + current_tick->size + text_margin,
-                CenterOnCol | BelowRow
-            );
-        }
-    }
-
-    return true;
+    ruler = container_of(self, GenericRuler, core);
+    return ruler->ops->draw_tick_label
+           ? ruler->ops->draw_tick_label(ruler, value, precision, font, color, x, y, placement)
+           : ruler_core_draw_tick_label_impl(self, strip, value, precision, font, color, x, y, placement);
 }

@@ -101,7 +101,7 @@ FishboneGauge *fishbone_gauge_init(FishboneGauge *self,
         from, to, step,
         bar_max_h / 2,
         font, Bottom,
-        GENERIC_RULER_DEFAULT_TEXT_MARGIN, 0,
+        RULER_CORE_DEFAULT_TEXT_MARGIN, 0,
         bar_max_w, bar_max_h
     );
 
@@ -110,6 +110,7 @@ FishboneGauge *fishbone_gauge_init(FishboneGauge *self,
     if(!self->zones)
         return NULL;
 
+    ruler_core_preprocess_color_zones(nzones, zones);
     for(int i = 0; i < nzones; i++){
         self->zones[i] = zones[i];
     }
@@ -124,9 +125,9 @@ FishboneGauge *fishbone_gauge_init(FishboneGauge *self,
     if(self->nzones > 0){
         generic_ruler_draw_zones(&self->ruler, Center, self->nzones, self->zones, 0.7);
     }
-    generic_ruler_etch_hatches(&(self->ruler), fcolor, false, Center);
+    generic_ruler_draw_ticks(&(self->ruler), fcolor, false, Center);
     if(marked && font) /*Font will also be used to tag the cursors (itf)*/
-        generic_ruler_etch_markings(&(self->ruler), Bottom, GENERIC_RULER_DEFAULT_TEXT_MARGIN, font, fcolor, 0);
+        generic_ruler_draw_labels(&(self->ruler), Bottom, RULER_CORE_DEFAULT_TEXT_MARGIN, font, fcolor, 0);
     generic_layer_build_texture(GENERIC_LAYER(&self->ruler));
 
     /* Loads the cursor.
@@ -139,7 +140,7 @@ FishboneGauge *fishbone_gauge_init(FishboneGauge *self,
         return NULL;
     generic_layer_build_texture(self->cursor);
 
-    int extra_h = SDLExt_RectMidY(&self->ruler.ruler_area) - self->cursor->canvas->w;
+    int extra_h = SDLExt_RectMidY(&self->ruler.core.ruler_area) - self->cursor->canvas->w;
     /*Does Cursor go out of the area?*/
     extra_h = (extra_h < 0) ? abs(extra_h) : 0;
     /* Check if the cursor goes outside of the ruler area when at it's leftmost
@@ -148,7 +149,7 @@ FishboneGauge *fishbone_gauge_init(FishboneGauge *self,
     int first_etch = generic_ruler_direction(&self->ruler, RulerGrowAlongAxis)
                      ? generic_ruler_get_pixel_increment_for(&self->ruler, GENERIC_STRIP(&self->ruler)->start)
                      : generic_ruler_get_pixel_increment_for(&self->ruler, GENERIC_STRIP(&self->ruler)->end);
-    int delta = self->ruler.ruler_area.x - first_etch - generic_layer_w(self->cursor)/2;
+    int delta = self->ruler.core.ruler_area.x - first_etch - generic_layer_w(self->cursor)/2;
     delta = (delta < 0) ? abs(delta) : 0;
     self->ruler_rect = (SDL_Rect){
         .x = delta,
@@ -209,7 +210,7 @@ static void fishbone_gauge_update_state(FishboneGauge *self, Uint32 dt)
 
     cursor_center = self->cursor->canvas->w/2;
 
-    self->state.cursor_rect.x = (self->ruler.ruler_area.x + xinc)
+    self->state.cursor_rect.x = (self->ruler.core.ruler_area.x + xinc)
                                 + self->ruler_rect.x
                                 - cursor_center;
 }

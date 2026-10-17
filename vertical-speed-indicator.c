@@ -17,7 +17,7 @@
 #include "base-gauge.h"
 #include "generic-layer.h"
 #include "vertical-speed-indicator.h"
-#include "generic-strip.h"
+#include "generic-ruler.h"
 #include "resource-manager.h"
 #include "sdl-colors.h"
 #include "misc.h"
@@ -32,10 +32,21 @@ static BaseGaugeOps vertical_speed_indicator_ops = {
    .dispose = (DisposeFunc)vertical_speed_indicator_dispose
 };
 
+static bool vertical_speed_indicator_will_draw_tick(GenericRuler *self, float value, int *tick_size, Uint32 *color);
+static bool vertical_speed_indicator_draw_tick_label(GenericRuler *self, float value, uint8_t precision, PCF_Font *font,
+                                                     Uint32 color, int x, int y, PCF_TextPlacement placement);
+static GenericRulerOps vertical_speed_indicator_ruler_ops = {
+    .draw_tick_label = vertical_speed_indicator_draw_tick_label,
+    .will_draw_tick = vertical_speed_indicator_will_draw_tick
+};
+
+
 static void vertical_speed_indicator_draw_background(VerticalSpeedIndicator *self, int width, int height,
                                            uint8_t base_unit_px, uint8_t small_step_width,
                                            uint8_t big_step_width, FontResource font);
 static void vertical_speed_indicator_draw_cursor(VerticalSpeedIndicator *self);
+
+
 
 VerticalSpeedIndicator *vertical_speed_indicator_new(int width, int height, FontResource font)
 {
@@ -60,6 +71,16 @@ VerticalSpeedIndicator *vertical_speed_indicator_init(VerticalSpeedIndicator *se
         return NULL;
     PCF_StaticFontRef(self->font);
 
+    generic_ruler_init(
+        &(self->scale), width, height,
+        RulerVertical, RulerGrowAgainstAxis,
+        Left,
+        500.0, roundf(height*0.11f), roundf(width*0.24f), false,
+        1, (RulerUnitMultiple[]){{.value=2, .size=roundf(width*0.33f), .labeled=true}},
+        (Anchor){.value=0,.position=height/2}
+    );
+    self->scale.ops = &vertical_speed_indicator_ruler_ops;
+
     vertical_speed_indicator_draw_background(
         self, width, height,
         roundf(height*0.11f), roundf(width*0.24f),
@@ -68,7 +89,6 @@ VerticalSpeedIndicator *vertical_speed_indicator_init(VerticalSpeedIndicator *se
     vertical_speed_indicator_draw_cursor(self);
     /*TODO: Check if drawing worked*/
 
-    self->scale.flags = ORIENTATION_VERTICAL | GROW_AGAINST_AXIS;
     generic_layer_build_texture(GENERIC_LAYER(&self->scale));
     generic_layer_build_texture(&self->cursor);
 
@@ -86,7 +106,7 @@ VerticalSpeedIndicator *vertical_speed_indicator_init(VerticalSpeedIndicator *se
 
 static void *vertical_speed_indicator_dispose(VerticalSpeedIndicator *self)
 {
-    generic_strip_dispose(&self->scale);
+    generic_ruler_dispose(&self->scale);
     generic_layer_dispose(&self->cursor);
     if(self->font)
         PCF_FreeStaticFont(self->font);
@@ -114,9 +134,9 @@ static void vertical_speed_indicator_update_state(VerticalSpeedIndicator *self, 
 //    printf("%s %p value: %f\n", __FUNCTION__, self, SFV_GAUGE(self)->value);
     ivalue = round(SFV_GAUGE(self)->value);
     len = snprintf(number, VS_VALUE_MAX_LEN, "% -d", ivalue);
-    generic_strip_clip_value(&self->scale, &SFV_GAUGE(self)->value);
+    generic_strip_clip_value(GENERIC_STRIP(&self->scale), &SFV_GAUGE(self)->value);
 
-    y = generic_strip_resolve_value(&self->scale, SFV_GAUGE(self)->value);
+    y = generic_ruler_get_pixel_increment_for(&self->scale, SFV_GAUGE(self)->value);
     y = round(round(y) - generic_layer_h(&self->cursor)/2.0);
     self->state.cloc = (SDL_Rect){
         1, y,
@@ -178,15 +198,12 @@ static void vertical_speed_indicator_draw_background(VerticalSpeedIndicator *sel
                                            uint8_t base_unit_px, uint8_t small_step_width,
                                            uint8_t big_step_width, FontResource font)
 {
+    /*TODO: Consider having a Line type in view to clear that up*/
     int line1_y_start = 0;
     int line2_y_start = 0;
 
     // assert height is odd ?
 
-
-    bool rv = generic_layer_init(GENERIC_LAYER(&self->scale), width, height);
-    if(!rv)
-        return;
 
     int mid_y = height/2;
     line1_y_start = mid_y;
@@ -201,18 +218,14 @@ static void vertical_speed_indicator_draw_background(VerticalSpeedIndicator *sel
     int line2_y_end = mid_y + aperture/2;
     int line2_x_end = (width-1);
     int line2_x_start = 0;
+#if 0
     printf("%s: line1: %d,%d -> %d,%d\n", __FUNCTION__, 0, line1_y_start, line1_x_end, line1_y_end);
     printf("%s: line2: %d,%d -> %d,%d\n", __FUNCTION__, 0, line2_y_start, line2_x_end, line2_y_end);
-
-    int dy = abs(line1_y_end - line1_y_start);
+#endif
 
     SDL_Surface *canvas = GENERIC_LAYER(&self->scale)->canvas;
     view_draw_line(canvas, line1_x_start, line1_y_start, line1_x_end, line1_y_end, &(SDL_WHITE));
     view_draw_line(canvas, line2_x_start, line2_y_start, line2_x_end, line2_y_end, &(SDL_WHITE));
-
-    self->scale.ppv = base_unit_px/500.0;
-    self->scale.start = (500.0/base_unit_px) * (mid_y-(height-1));
-    self->scale.end = (500.0/base_unit_px) * (mid_y - 0);
 
 
     SDL_LockSurface(canvas);
@@ -232,45 +245,10 @@ static void vertical_speed_indicator_draw_background(VerticalSpeedIndicator *sel
 
         pixels[y * canvas->w + (width-1)] = white;
     }
-
-    int tick_drawn = 1; /* The midpoint is considered to be an undrawn tick (0)*/
-    for(int y = mid_y-1; y >= 0; y--){ /*+1 skips the mid point tick*/
-        if((y-mid_y) % base_unit_px == 0){ /* tick mark*/
-            /* big tick mark, every two small ticks (500/1000) */
-            uint8_t tick_width = (tick_drawn % 2 == 0) ? big_step_width : small_step_width;
-            for(int x = 1; x <= tick_width; x++){
-                pixels[y * canvas->w + x] = white;
-            }
-            tick_drawn++;
-        }
-    }
-
-    tick_drawn = 1; /* The midpoint is considered to be an undrawn tick (0)*/
-    for(int y = mid_y+1; y < height; y++){ /*+1 skips the mid point tick*/
-        if((y-mid_y) % base_unit_px == 0){ /* tick mark*/
-            /* big tick mark, every two small ticks (500/1000) */
-            uint8_t tick_width = (tick_drawn % 2 == 0) ? big_step_width : small_step_width;
-            for(int x = 1; x <= tick_width; x++){
-                pixels[y * canvas->w + x] = white;
-            }
-            tick_drawn++;
-        }
-    }
-
     SDL_UnlockSurface(canvas);
-    int offset = 5;
-    PCF_Font *font_handle = resource_manager_get_font(font);
-    for(int i = -2000; i <= 2000; i += 500){
-        if(i == 0) continue; /* skip zero */
-        if(i % 1000) continue; /* only draw big ticks*/
 
-        int y = generic_strip_resolve_value(&self->scale, i);
-        int val = abs(i / 1000);
-        PCF_FontWriteNumberAt(font_handle,
-            &val, TypeInt, 0,
-            white, false, canvas,
-            big_step_width + offset, y, RightToCol | CenterOnRow);
-    }
+    generic_ruler_draw_ticks(&(self->scale), white, true, Left);
+    generic_ruler_draw_labels(&(self->scale), Right, 5, resource_manager_get_font(font), white, 1);
 }
 
 static void vertical_speed_indicator_draw_cursor(VerticalSpeedIndicator *self)
@@ -382,4 +360,24 @@ static void vertical_speed_indicator_draw_cursor(VerticalSpeedIndicator *self)
 
     SDL_UnlockSurface(canvas);
     free(frontiers);
+}
+
+static bool vertical_speed_indicator_will_draw_tick(GenericRuler *self, float value, int *tick_size, Uint32 *color)
+{
+    if(value == 0)
+        *tick_size = 0;
+    return true;
+}
+
+static bool vertical_speed_indicator_draw_tick_label(GenericRuler *self, float value, uint8_t precision, PCF_Font *font, Uint32 color, int x, int y, PCF_TextPlacement placement)
+{
+    if(value == 0) return true;
+    value = fabsf(value);
+    value = value/1000.0f;
+    precision = 0;
+
+    return ruler_core_draw_tick_label_impl(
+        &(self->core), GENERIC_STRIP(self), value,
+        precision, font, color, x, y, placement
+    );
 }

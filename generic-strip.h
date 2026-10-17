@@ -47,4 +47,31 @@ bool generic_strip_has_value(GenericStrip *self, float value);
 float generic_strip_resolve_value(GenericStrip *self, float value);
 void generic_strip_clip_value(GenericStrip *self, float *value);
 
+/**
+ * @brief Helper function to determine the orientation of a GenericStrip.
+ *
+ * @param self a GenericStrip
+ * @param orientation The orientation to check for.
+ *
+ * @return true if the GenericStrip has the specified orientation, false otherwise.
+ */
+static inline bool generic_strip_orientation(GenericStrip *self, StripFlags orientation)
+{
+    return ((self->flags & ORIENTATION_MASK) == orientation);
+}
+
+/**
+ * @brief Helper function to determine the direction of a GenericStrip.
+ *
+ * @param self a GenericStrip
+ * @param direction The direction to check for.
+ *
+ * @return true if the GenericStrip has the specified direction, false otherwise.
+ */
+static inline bool generic_strip_direction(GenericStrip *self, StripFlags direction)
+{
+    return ((self->flags & DIRECTION_MASK) == direction);
+}
+
+
 #endif /* GENERIC_STRIP_H */

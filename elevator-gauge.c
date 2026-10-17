@@ -17,6 +17,7 @@
 #include "generic-ruler.h"
 #include "misc.h"
 #include "res-dirs.h"
+#include "ruler-core.h"
 
 static void elevator_gauge_render(ElevatorGauge *self, Uint32 dt, RenderContext *ctx);
 static void elevator_gauge_update_state(ElevatorGauge *self, Uint32 dt);
@@ -107,10 +108,10 @@ ElevatorGauge *elevator_gauge_init(ElevatorGauge *self,
         from, to, step,
         bar_max_w,
         font, marks_location,
-        GENERIC_RULER_DEFAULT_TEXT_MARGIN, 0,
+        RULER_CORE_DEFAULT_TEXT_MARGIN, 0,
         bar_max_w, bar_max_h
     );
-    self->ruler.ticks[0].size = self->ruler.ruler_area.w;
+    self->ruler.core.ticks[0].size = self->ruler.core.ruler_area.w;
     SFV_GAUGE(self)->value = from;
 
 
@@ -119,6 +120,7 @@ ElevatorGauge *elevator_gauge_init(ElevatorGauge *self,
     if(!self->zones)
         return NULL;
 
+    ruler_core_preprocess_color_zones(nzones, zones);
     for(int i = 0; i < nzones; i++){
         self->zones[i] = zones[i];
     }
@@ -136,12 +138,12 @@ ElevatorGauge *elevator_gauge_init(ElevatorGauge *self,
         if(!rv)
             printf("Draw zones failed!\n");
     }
-    rv = generic_ruler_etch_hatches(&(self->ruler), fcolor, false, spine_location);
+    rv = generic_ruler_draw_ticks(&(self->ruler), fcolor, false, spine_location);
     if(!rv)
         printf("Draw etches failed!\n");
 
     if(marked && font){ /*Font will also be used to tag the cursors (itf)*/
-        rv = generic_ruler_etch_markings(&(self->ruler), marks_location, GENERIC_RULER_DEFAULT_TEXT_MARGIN, font, fcolor, 0);
+        rv = generic_ruler_draw_labels(&(self->ruler), marks_location, RULER_CORE_DEFAULT_TEXT_MARGIN, font, fcolor, 0);
         if(!rv)
             printf("Draw markings failed!\n");
     }
@@ -220,7 +222,7 @@ static bool elevator_gauge_build_elevator(ElevatorGauge *self, Uint32 color)
         return NULL;
     SDL_SetSurfaceBlendMode(triangle, SDL_BLENDMODE_NONE);
 
-    self->elevator = generic_layer_new(triangle->w, self->ruler.ruler_area.h);
+    self->elevator = generic_layer_new(triangle->w, self->ruler.core.ruler_area.h);
     if(!self->elevator)
         return NULL;
 
@@ -253,21 +255,21 @@ static void elevator_gauge_update_state(ElevatorGauge *self, Uint32 dt)
     int elevator_top;
 
     yinc = generic_ruler_get_pixel_increment_for(&self->ruler, SFV_GAUGE(self)->value);
-    elevator_top = SDLExt_RectLastY(&self->ruler.ruler_area) - yinc;
+    elevator_top = SDLExt_RectLastY(&self->ruler.core.ruler_area) - yinc;
 
     /*Area to copy from the whole elevator image*/
     self->state.elevator_src = (SDL_Rect){
         .x = 0,
         .y = 0,
         .w = self->elevator->canvas->w,
-        .h = self->ruler.ruler_area.h - yinc
+        .h = self->ruler.core.ruler_area.h - yinc
     };
     /*Where to put it*/
     self->state.elevator_dst = (SDL_Rect){
         .x = (self->elevator_location == Left)
              ? 0
              : SDLExt_RectLastX(&self->ruler_rect) + 1,
-        .y = self->ruler_rect.y + (self->ruler.ruler_area.y + yinc),
+        .y = self->ruler_rect.y + (self->ruler.core.ruler_area.y + yinc),
         .w = self->state.elevator_src.w,
         .h = self->state.elevator_src.h
     };
