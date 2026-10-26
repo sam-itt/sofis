@@ -111,7 +111,7 @@ ElevatorGauge *elevator_gauge_init(ElevatorGauge *self,
         RULER_CORE_DEFAULT_TEXT_MARGIN, 0,
         bar_max_w, bar_max_h
     );
-    self->ruler.core.ticks[0].size = self->ruler.core.ruler_area.w;
+    self->ruler.core.ticks[0].size = self->ruler.core.ruler_area.w-1;
     SFV_GAUGE(self)->value = from;
 
 
