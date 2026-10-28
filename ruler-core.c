@@ -148,18 +148,18 @@ int ruler_core_get_spine_coord(RulerCore *self, RulerOrientation orientation,
     int rv = -1;
     if(orientation == RulerVertical){
         if(spine_location == Center)
-            self->spine_coord = SDLExt_RectMidX(&self->ruler_area);
+            rv = SDLExt_RectMidX(&self->ruler_area);
         else if(spine_location == Left)
-            self->spine_coord = self->ruler_area.x;
+            rv = self->ruler_area.x;
         else if(spine_location == Right)
-            self->spine_coord = SDLExt_RectLastX(&self->ruler_area);
+            rv = SDLExt_RectLastX(&self->ruler_area);
     }else{ //RulerHorizontal
         if(spine_location == Center)
-            self->spine_coord = SDLExt_RectMidY(&self->ruler_area);
+            rv = SDLExt_RectMidY(&self->ruler_area);
         else if(spine_location == Top)
-            self->spine_coord = self->ruler_area.y;
+            rv = self->ruler_area.y;
         else if(spine_location == Bottom)
-            self->spine_coord = SDLExt_RectLastY(&self->ruler_area);
+            rv = SDLExt_RectLastY(&self->ruler_area);
     }
     return rv;
 }
@@ -546,6 +546,11 @@ bool ruler_core_draw_zones(RulerCore *self, GenericStrip *strip,
     int start_x, end_x;
     int npixels;
 
+    self->spine_coord = ruler_core_get_spine_coord(
+        self,
+        generic_strip_orientation(strip, ORIENTATION_HORIZONTAL) ? RulerHorizontal : RulerVertical,
+        spine_location
+    );
 
     /* Colored areas, if any are assumed to be sorted
      * */
@@ -632,14 +637,14 @@ static bool ruler_core_get_zone_extent(RulerCore *self, GenericStrip *strip,
          * which would go overboard as the area goes from area.x to
          * area.x + (tick.size-1)
          */
-        npixels = (self->ticks[self->nticks-1].size-1)*fill_ratio; //assumes higher value tick is the longest
+        npixels = (self->ticks[self->nticks-1].size)*fill_ratio; //assumes higher value tick is the longest
         npixels /= zone->divider;
         if(spine_location == Top){
             *start = self->ruler_area.y;
             *end = self->ruler_area.y + npixels;
         }else if(spine_location == Center){
-            *start = SDLExt_RectMidY(&self->ruler_area) - ((SDLExt_RectMidY(&self->ruler_area)-self->ruler_area.y)*fill_ratio)/zone->divider;
-            *end = SDLExt_RectMidY(&self->ruler_area) + ((SDLExt_RectLastY(&self->ruler_area)-SDLExt_RectMidY(&self->ruler_area))*fill_ratio)/zone->divider;
+            *start = self->spine_coord - npixels;
+            *end = self->spine_coord + npixels;
         }else if (spine_location == Bottom) {
             *start = SDLExt_RectLastY(&self->ruler_area) - npixels;
             *end = SDLExt_RectLastY(&self->ruler_area);
@@ -648,14 +653,14 @@ static bool ruler_core_get_zone_extent(RulerCore *self, GenericStrip *strip,
             return false;
         }
     }else{ /* RulerVertical */
-        npixels = (self->ticks[self->nticks-1].size-1)*fill_ratio;
+        npixels = (self->ticks[self->nticks-1].size)*fill_ratio;
         npixels /= zone->divider;
         if(spine_location == Left){
             *start = self->ruler_area.x;
             *end = self->ruler_area.x + npixels;
         }else if(spine_location == Center){
-            *start = SDLExt_RectMidX(&self->ruler_area) - ((SDLExt_RectMidX(&self->ruler_area)-self->ruler_area.x)*fill_ratio)/zone->divider;
-            *end = SDLExt_RectMidX(&self->ruler_area) + ((SDLExt_RectLastX(&self->ruler_area)-SDLExt_RectMidX(&self->ruler_area))*fill_ratio)/zone->divider;
+            *start = self->spine_coord - npixels;
+            *end = self->spine_coord + npixels;
         }else if(spine_location == Right){
             *start = SDLExt_RectLastX(&self->ruler_area) - npixels;
             *end = SDLExt_RectLastX(&self->ruler_area);

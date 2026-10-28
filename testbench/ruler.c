@@ -17,6 +17,7 @@
 #include "generic-ruler.h"
 #include "resource-manager.h"
 
+#include "ruler-core.h"
 #include "sdl-colors.h"
 
 #define SCREEN_WIDTH 640
@@ -83,6 +84,41 @@ int main(int argc, char **argv)
     int i;
     float oldv[5] = {0,0,0,0,0};
     RenderTarget rtarget;
+
+    RulerOrientation orientation;
+    Location spine_location;
+
+
+    if(argc < 3){
+        printf("Usage: %s <orientation> <spine-location>\n", argv[0]);
+        return 1;
+    }
+
+    if(strcmp(argv[1], "horizontal") == 0){
+        orientation = RulerHorizontal;
+    }else if(strcmp(argv[1], "vertical") == 0){
+        orientation = RulerVertical;
+    }else{
+        printf("Invalid orientation: %s\n", argv[1]);
+        return 1;
+    }
+
+    if(strcmp(argv[2], "top") == 0 && orientation == RulerHorizontal){
+        spine_location = Top;
+    }else if(strcmp(argv[2], "center") == 0){
+        spine_location = Center;
+    }else if(strcmp(argv[2], "bottom") == 0 && orientation == RulerHorizontal){
+        spine_location = Bottom;
+    }else if(strcmp(argv[2], "left") == 0 && orientation == RulerVertical){
+        spine_location = Left;
+    }else if(strcmp(argv[2], "right") == 0 && orientation == RulerVertical){
+        spine_location = Right;
+    }else{
+        printf("Invalid spine location: %s for orienation %s\n", argv[2], argv[1]);
+        return 1;
+    }
+
+
 
 #if USE_SDL_GPU
     GPU_Target* gpu_screen = NULL;
@@ -155,16 +191,30 @@ int main(int argc, char **argv)
     exit(0);
 #elif TEST_4
     generic_ruler_init(
-        ruler, 68, 245, RulerVertical, RulerGrowAgainstAxis,
-        Right,
+        ruler, 68, 245, orientation, RulerGrowAlongAxis,
+        spine_location,
         20, 7, 6, false,
         1, (RulerUnitMultiple[]){{.value=5, .size=10, .labeled=true}},
-        (Anchor){.value=0,.position=227}
+        (Anchor){.value=0,.position=0}
     );
 
-    generic_ruler_etch_hatches(ruler, SDL_UWHITE(GENERIC_LAYER(ruler)->canvas), true, Right);
-    generic_ruler_etch_markings(ruler, Left, 5, resource_manager_get_font(TERMINUS_16), SDL_UWHITE(GENERIC_LAYER(ruler)->canvas), 0);
-    generic_layer_save_bmp(GENERIC_LAYER(ruler), "/tmp/ruler-new.bmp");
+    ColorZone zones[4] = {
+        { .from = 0, .to = 99, .flags = FromIncluded | ToIncluded, .color = SDL_GREEN},
+        { .from = 100, .to = 299, .flags = FromIncluded | ToIncluded, .color = SDL_YELLOW},
+        { .from = 300, .to = 399, .flags = FromIncluded | ToIncluded, .color = (SDL_Color){.r=205, .g=205, .b=205, .a=SDL_ALPHA_OPAQUE}},
+        { .from = 400, .to = 600, .flags = FromIncluded | ToIncluded, .color = SDL_RED}
+    };
+
+    Location markings_location;
+    if(orientation == RulerHorizontal)
+        markings_location = (spine_location == Top) ? Bottom : Top;
+    else
+        markings_location = (spine_location == Left) ? Right : Left;
+    ruler_core_preprocess_color_zones(4, zones);
+    generic_ruler_draw_zones(ruler, spine_location, 4, zones, 1.0);
+    generic_ruler_draw_ticks(ruler, SDL_UWHITE(GENERIC_LAYER(ruler)->canvas), true, spine_location);
+    generic_ruler_draw_labels(ruler, markings_location, 5, resource_manager_get_font(TERMINUS_16), SDL_UWHITE(GENERIC_LAYER(ruler)->canvas), 0);
+    generic_layer_save_bmp(GENERIC_LAYER(ruler), "/tmp/ruler-test.bmp");
     exit(0);
 
 #else
