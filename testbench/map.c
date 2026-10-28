@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021 Samuel Cuella <samuel.cuella@gmail.com>
+ * SPDX-FileCopyrightText: 2021-2026 Samuel Cuella <samuel.cuella@gmail.com>
  *
  * This file is part of SoFIS - an open source EFIS
  *

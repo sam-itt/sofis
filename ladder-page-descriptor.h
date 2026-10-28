@@ -1,3 +1,10 @@
+/*
+ * SPDX-FileCopyrightText: 2026 Samuel Cuella <samuel.cuella@gmail.com>
+ *
+ * This file is part of SoFIS - an open source EFIS
+ *
+ * SPDX-License-Identifier: GPL-2.0-only
+ */
 #ifndef LADDER_PAGE_DESCRIPTOR_H
 #define LADDER_PAGE_DESCRIPTOR_H
 
