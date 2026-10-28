@@ -10,6 +10,7 @@
 
 #include "ladder-gauge.h"
 #include "generic-layer.h"
+#include "ladder-page-descriptor.h"
 #include "sdl-colors.h"
 #include "misc.h"
 
@@ -121,15 +122,6 @@ LadderPage *ladder_gauge_get_page(LadderGauge *self, uintf8_t idx)
     return self->pages[a_idx];
 }
 
-LadderPage *ladder_gauge_get_page_for(LadderGauge *self, float value)
-{
-    int page_idx;
-
-    page_idx = (int)value/(self->descriptor->page_size);
-
-    return ladder_gauge_get_page(self, page_idx);
-}
-
 static void ladder_gauge_update_state(LadderGauge *self, Uint32 dt)
 {
     float y;
@@ -141,7 +133,10 @@ static void ladder_gauge_update_state(LadderGauge *self, Uint32 dt)
 
     SFV_GAUGE(self)->value = SFV_GAUGE(self)->value >= 0 ? SFV_GAUGE(self)->value : 0.0f;
 
-    page = ladder_gauge_get_page_for(self, SFV_GAUGE(self)->value);
+    page = ladder_gauge_get_page(
+        self,
+        ladder_page_descriptor_get_idx_for(self->descriptor, SFV_GAUGE(self)->value)
+    );
 
     y = ladder_page_resolve_value(page, SFV_GAUGE(self)->value);
 //    printf("y = %f for value = %f\n",y,value);

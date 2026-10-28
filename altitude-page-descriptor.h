@@ -9,15 +9,13 @@
 #define ALTITUDE_PAGE_DESCRIPTOR_H
 #include <stdint.h>
 
-#include "vruler-page-descriptor.h"
+#include "ladder-page-descriptor.h"
 
 typedef struct{
-    VRulerPageDescriptor super;
+    LadderPageDescriptor super;
 }AltitudePageDescriptor;
 
-AltitudePageDescriptor *altitude_page_descriptor_new(int page_w, int page_h_min,
-                                                     uintf8_t unit_px_sz, int small_step_width,
-                                                     int big_step_width);
+AltitudePageDescriptor *altitude_page_descriptor_new(int page_w, int page_h_min);
 LadderPage *altitude_ladder_page_init(LadderPage *self);
 
 

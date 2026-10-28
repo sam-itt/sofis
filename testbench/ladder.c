@@ -133,11 +133,7 @@ int main(int argc, char **argv)
     }
     rtarget.surface = screenSurface;
 #endif
-    AltitudePageDescriptor *desc = altitude_page_descriptor_new(
-            68, 220,
-            roundf(215*0.032f),
-            roundf(0.55f*(68*0.15f)), roundf(68*0.15f)
-    );
+    AltitudePageDescriptor *desc = altitude_page_descriptor_new(68, 220);
 
     ladder = ladder_gauge_new(68, 240, (LadderPageDescriptor *)desc, -1);
     ladder_gauge_set_value(ladder, alt, true);

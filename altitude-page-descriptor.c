@@ -9,27 +9,35 @@
 #include <stdlib.h>
 
 #include "altitude-page-descriptor.h"
+#include "ladder-page-descriptor.h"
+#include "ladder-page.h"
+#include "resource-manager.h"
+#include "sdl-colors.h"
 #include "misc.h"
 
-
-AltitudePageDescriptor *altitude_page_descriptor_new(int page_w, int page_h_min,
-                                                     uintf8_t unit_px_sz, int small_step_width,
-                                                     int big_step_width)
+AltitudePageDescriptor *altitude_page_descriptor_new(int page_w, int page_h_min)
 {
     AltitudePageDescriptor *self;
     int pattern_h;
+
+    uintf8_t unit_px_sz = roundf(page_h_min*0.032f);
+    int small_step_width = roundf(0.55f*(page_w*0.15f));
+    int big_step_width = roundf(page_w*0.15f);
 
     self = calloc(1, sizeof(AltitudePageDescriptor));
     if(!self)
         return NULL;
 
-    vruler_page_descriptor_init(
-        VRULER_PAGE_DESCRIPTOR(self),
+    ladder_page_descriptor_init(
+        LADDER_PAGE_DESCRIPTOR(self),
         page_w, page_h_min,
-        unit_px_sz,
-        small_step_width, big_step_width,
-        100, 20,
-        BOTTUM_UP, altitude_ladder_page_init);
+        BOTTUM_UP, 20, unit_px_sz,
+        small_step_width, false,
+        1, (RulerUnitMultiple[]){
+            { .value = 5, .size = big_step_width, .labeled = true }
+        },
+        altitude_ladder_page_init
+    );
 
     return self;
 }
@@ -37,7 +45,22 @@ AltitudePageDescriptor *altitude_page_descriptor_new(int page_w, int page_h_min,
 
 LadderPage *altitude_ladder_page_init(LadderPage *self)
 {
-    vruler_ladder_page_init(self, LocationLeft);
+
+    Uint32 white;
+    LadderPageDescriptor *descriptor;
+
+    descriptor = LADDER_PAGE_DESCRIPTOR(self->descriptor);
+
+    ladder_page_init(self);
+    white = SDL_UWHITE(GENERIC_LAYER(self)->canvas);
+
+    ruler_core_draw_ticks(RULER_CORE(descriptor), GENERIC_STRIP(self),
+                          white, true, Left,
+                          NULL);
+    ruler_core_draw_labels(RULER_CORE(descriptor), GENERIC_STRIP(self),
+                           Right, 5,
+                           resource_manager_get_font(TERMINUS_16), white, 0,
+                           NULL);
     generic_layer_build_texture(GENERIC_LAYER(self));
 
     return self;

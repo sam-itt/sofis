@@ -12,23 +12,28 @@
 #include "airspeed-page-descriptor.h"
 #include "generic-layer.h"
 #include "ladder-page.h"
+#include "ruler-core.h"
 #include "sdl-colors.h"
 
 #include "generic-strip.h"
-
+#include "resource-manager.h"
 
 LadderPage *airspeed_ladder_page_init(LadderPage *self);
 static void airspeed_ladder_page_draw_arc(LadderPage *self, float start, float end, uintf8_t width, Uint32 color);
 static void airspeed_ladder_page_draw_arcs(LadderPage *self);
 
 
-AirspeedPageDescriptor *airspeed_page_descriptor_new(int page_w, int page_h_min, uintf8_t unit_px_sz,
-                                                     int small_step_width, int big_step_width,
-                                                     speed_t v_so, speed_t v_s1, speed_t v_fe,
-                                                     speed_t v_no, speed_t v_ne)
+AirspeedPageDescriptor *airspeed_page_descriptor_new(int page_w, int page_h_min, speed_t v_so,
+                                                     speed_t v_s1, speed_t v_fe, speed_t v_no,
+                                                     speed_t v_ne)
 {
     AirspeedPageDescriptor *self;
     int pattern_h;
+
+    uintf8_t unit_px_sz = roundf(page_h_min*0.0835f);
+    int small_step_width = roundf(0.55f*(page_w*0.20f));
+    int big_step_width = roundf(page_w*0.20f);
+
 
     self = calloc(1, sizeof(AirspeedPageDescriptor));
     if(!self)
@@ -40,14 +45,40 @@ AirspeedPageDescriptor *airspeed_page_descriptor_new(int page_w, int page_h_min,
     self->v_no = v_no;
     self->v_ne = v_ne;
 
-    vruler_page_descriptor_init(
-        VRULER_PAGE_DESCRIPTOR(self),
+    self->zones[0] = (ColorZone){
+        .from = v_s1, .to = v_no,
+        .flags = FromIncluded | ToIncluded,
+        .color = SDL_GREEN
+    };
+    self->zones[1] = (ColorZone){
+        .from = v_no, .to = v_ne,
+        .flags = FromIncluded | ToIncluded,
+        .color = SDL_YELLOW
+    };
+    self->zones[2] = (ColorZone){
+        .from = v_so,
+        .to = v_fe,
+        .flags = FromIncluded | ToIncluded,
+        .color = (SDL_Color){.r=205, .g=205, .b=205, .a=SDL_ALPHA_OPAQUE}
+    };
+    self->zones[3] = (ColorZone){
+        .from = v_ne,
+        .to = v_ne+2,
+        .flags = FromIncluded | ToIncluded,
+        .color = SDL_RED
+    };
+
+    ladder_page_descriptor_init(
+        LADDER_PAGE_DESCRIPTOR(self),
         page_w, page_h_min,
-        unit_px_sz,
-        small_step_width, big_step_width,
-        10, 5,
-        BOTTUM_UP, airspeed_ladder_page_init
+        BOTTUM_UP, 5, unit_px_sz,
+        small_step_width, false,
+        1, (RulerUnitMultiple[]){
+            { .value = 2, .size = big_step_width, .labeled = true }
+        },
+        airspeed_ladder_page_init
     );
+    ruler_core_preprocess_color_zones(MAX_AIRPSEED_COLOR_ZONES, self->zones);
 
     return self;
 }
@@ -55,87 +86,28 @@ AirspeedPageDescriptor *airspeed_page_descriptor_new(int page_w, int page_h_min,
 
 LadderPage *airspeed_ladder_page_init(LadderPage *self)
 {
-    vruler_ladder_page_init(self, LocationRight);
+    AirspeedPageDescriptor *descriptor;
+    Uint32 white;
 
-    airspeed_ladder_page_draw_arcs(self);
+    descriptor = (AirspeedPageDescriptor *)self->descriptor;
+
+    ladder_page_init(self);
+    white = SDL_UWHITE(GENERIC_LAYER(self)->canvas);
+
+    ruler_core_draw_zones(
+        RULER_CORE(descriptor), GENERIC_STRIP(self), Right,
+        MAX_AIRPSEED_COLOR_ZONES, descriptor->zones, 0.30
+    );
+    ruler_core_draw_ticks(
+        RULER_CORE(descriptor), GENERIC_STRIP(self), white,
+        true, Right, NULL
+    );
+    ruler_core_draw_labels(
+        RULER_CORE(descriptor), GENERIC_STRIP(self), Left, 5,
+        resource_manager_get_font(TERMINUS_16), white, 0, NULL
+    );
+
     generic_layer_build_texture(GENERIC_LAYER(self));
 
     return self;
 }
-
-void airspeed_ladder_page_draw_arcs(LadderPage *self)
-{
-    AirspeedPageDescriptor *descriptor;
-    float green_start, green_end;
-    float yellow_start, yellow_end;
-    float white_start, white_end;
-
-    descriptor = (AirspeedPageDescriptor *)self->descriptor;
-    green_start = (descriptor->v_s1);
-    green_end = (descriptor->v_no);
-    yellow_start = (descriptor->v_no);
-    yellow_end = (descriptor->v_ne);
-    white_start = (descriptor->v_so);
-    white_end = (descriptor->v_fe);
-
-    /*Green arc*/
-//    printf("Green arc from %d kts to %d kts\n",descriptor->v_s1, descriptor->v_no);
-    airspeed_ladder_page_draw_arc(self, descriptor->v_s1, descriptor->v_no, 4, SDL_UGREEN(GENERIC_LAYER(self)->canvas));
-    /*Yellow*/
-    airspeed_ladder_page_draw_arc(self, descriptor->v_no, descriptor->v_ne, 4, SDL_UYELLOW(GENERIC_LAYER(self)->canvas));
-    /*White last, over any existing*/
-    airspeed_ladder_page_draw_arc(self, descriptor->v_so, descriptor->v_fe, 2, SDL_UGREY(GENERIC_LAYER(self)->canvas));
-
-    /*VNE*/
-    airspeed_ladder_page_draw_arc(self, descriptor->v_ne, descriptor->v_ne+2, 4, SDL_URED(GENERIC_LAYER(self)->canvas));
-}
-
-
-static void airspeed_ladder_page_draw_arc(LadderPage *self, float start, float end, uintf8_t width, Uint32 color)
-{
-    float istart, iend;
-    float ystart, yend;
-    int firsty, lasty;
-    Uint32 *pixels;
-    SDL_Surface *surface;
-    int x;
-    Uint32 white;
-
-    if(interval_intersect(start, end, GENERIC_STRIP(self)->start, GENERIC_STRIP(self)->end, &istart, &iend)){
-        surface = GENERIC_LAYER(self)->canvas;
-        white = SDL_UWHITE(surface);
-
-        ystart = ladder_page_resolve_value(self, istart);
-        yend = ladder_page_resolve_value(self, iend);
-
-        firsty = (ystart < yend) ? ystart : yend;
-        lasty = (yend > ystart) ? yend : ystart;
-
-        if(firsty < 0) firsty = 0;
-        if(lasty > (surface->h-1)) lasty = surface->h-1;
-/*
-        printf("Intersection between arc from %f to %f and current page from %f to %f is %f,%f and will be starting at Y:%d to Y:%d\n",
-                start, end, GENERIC_STRIP(self)->start, GENERIC_STRIP(self)->end,
-                istart, iend,
-                firsty, lasty
-                );*/
-
-        SDL_LockSurface(surface);
-        pixels = surface->pixels;
-        for(int i = firsty; i <= lasty; i++){
-            x = ((surface->w-1)-1) - (width-1); /*second -1 to avoid eating the border*/
-            for(int j = x; j < surface->w; j++){
-                Uint32 idx = i * surface->w + j;
-                if(pixels[idx] != white) /*Avoid eating the marks*/
-                    pixels[idx] = color;
-            }
-        }
-        SDL_UnlockSurface(surface);
-    }else{/*
-        printf("No intersection between arc from %f to %f and current page from %f to %f\n",
-                start, end, GENERIC_STRIP(self)->start, GENERIC_STRIP(self)->end
-                );*/
-
-    }
-}
-

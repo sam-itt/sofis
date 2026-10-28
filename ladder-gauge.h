@@ -11,6 +11,7 @@
 
 #include "sfv-gauge.h"
 #include "ladder-page.h"
+#include "ladder-page-descriptor.h"
 #include "misc.h"
 
 #define N_PAGES 4
